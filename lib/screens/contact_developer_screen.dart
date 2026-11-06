@@ -71,7 +71,7 @@ class _ContactDeveloperScreenState
 
   @override
   Widget build(BuildContext context) {
-    final photo = settings['developer_photo'] ?? '';
+    final photo = settings['developer_photo_ur1'] ?? '';
     final name = settings['developer_name'] ?? '';
     final phone = settings['developer_phone'] ?? '';
 
