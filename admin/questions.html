@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Question Management - JABER FOOTBALL QUIZ</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080d0b;color:white;font-family:Arial,sans-serif}
+header{background:#101b15;padding:20px;border-bottom:2px solid #16c766}
+h2{color:#20e879}
+main{max-width:850px;margin:auto;padding:18px}
+.card{background:#14221a;padding:18px;border-radius:12px;margin-bottom:18px}
+input,select,button{width:100%;padding:12px;margin:7px 0;border:0;border-radius:7px;font-size:15px}
+input,select{background:#e8eee9;color:#111}
+button{background:#16c766;color:#06130a;font-weight:bold}
+.delete{background:#b52d2d;color:white}
+.question{background:#203528;padding:12px;border-radius:8px;margin:10px 0}
+small{color:#b7c8bd}
+</style>
+</head>
+<body>
+<header>
+<h2>⚽ JABER FOOTBALL QUIZ</h2>
+<p>প্রশ্ন পরিচালনা | Admin Panel</p>
+</header>
+
+<main>
+<div class="card">
+<h2>নতুন প্রশ্ন যোগ করুন</h2>
+
+<form id="questionForm">
+<label>প্রশ্নের ধরন</label>
+<select id="type">
+<option>সাধারণ MCQ</option>
+<option>Guess the Player</option>
+<option>Guess the Club</option>
+<option>Guess the Country</option>
+<option>Guess the Jersey</option>
+<option>Guess the Stadium</option>
+<option>Guess by Clues</option>
+</select>
+
+<label>প্রশ্ন লিখুন</label>
+<input id="question" placeholder="প্রশ্ন লিখুন" required>
+
+<label>Option A</label>
+<input id="a" placeholder="প্রথম উত্তর" required>
+
+<label>Option B</label>
+<input id="b" placeholder="দ্বিতীয় উত্তর" required>
+
+<label>Option C</label>
+<input id="c" placeholder="তৃতীয় উত্তর" required>
+
+<label>Option D</label>
+<input id="d" placeholder="চতুর্থ উত্তর" required>
+
+<label>সঠিক উত্তর নির্বাচন করুন</label>
+<select id="answer">
+<option value="A">Option A</option>
+<option value="B">Option B</option>
+<option value="C">Option C</option>
+<option value="D">Option D</option>
+</select>
+
+<label>কঠিনতার লেভেল</label>
+<select id="level">
+<option>Easy</option>
+<option>Medium</option>
+<option>Hard</option>
+</select>
+
+<label>ব্যাখ্যা</label>
+<input id="explanation" placeholder="সঠিক উত্তরের ব্যাখ্যা">
+
+<button type="submit">প্রশ্ন সংরক্ষণ করুন</button>
+</form>
+</div>
+
+<div class="card">
+<h2>সংরক্ষিত প্রশ্নসমূহ</h2>
+<div id="questionList">এখনো কোনো প্রশ্ন যোগ করা হয়নি।</div>
+</div>
+</main>
+
+<script>
+let questions=JSON.parse(localStorage.getItem("jaberQuestions")||"[]");
+
+function render(){
+ const list=document.getElementById("questionList");
+ list.innerHTML="";
+
+ if(questions.length===0){
+ list.textContent="এখনো কোনো প্রশ্ন যোগ করা হয়নি।";
+ return;
+ }
+
+ questions.forEach((q,i)=>{
+ const div=document.createElement("div");
+ div.className="question";
+
+ const title=document.createElement("strong");
+ title.textContent=(i+1)+". "+q.question;
+
+ const info=document.createElement("p");
+ info.textContent="ধরন: "+q.type+" | সঠিক উত্তর: "+q.answer+" | "+q.level;
+
+ const del=document.createElement("button");
+ del.className="delete";
+ del.textContent="মুছে ফেলুন";
+ del.onclick=()=>{
+ questions.splice(i,1);
+ save();
+ };
+
+ div.append(title,info,del);
+ list.appendChild(div);
+ });
+}
+
+function save(){
+ localStorage.setItem("jaberQuestions",JSON.stringify(questions));
+ render();
+}
+
+document.getElementById("questionForm").addEventListener("submit",function(e){
+ e.preventDefault();
+
+ const q={
+ type:type.value,
+ question:question.value,
+ a:a.value,
+ b:b.value,
+ c:c.value,
+ d:d.value,
+ answer:answer.value,
+ level:level.value,
+ explanation:explanation.value
+ };
+
+ questions.push(q);
+ save();
+ this.reset();
+ alert("প্রশ্নটি এই ব্রাউজারে সংরক্ষিত হয়েছে।");
+});
+
+render();
+</script>
+</body>
+</html>
