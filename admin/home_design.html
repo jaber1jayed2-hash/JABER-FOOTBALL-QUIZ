@@ -1,0 +1,232 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Screen Designer | JABER FOOTBALL QUIZ</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080d0b;color:white;font-family:Arial,sans-serif}
+header{padding:18px;background:#101b15;border-bottom:2px solid #16c766}
+header h2{color:#20e879;margin:0}
+main{max-width:1100px;margin:auto;padding:16px}
+.card{background:#14221a;padding:18px;border-radius:12px;margin:15px 0}
+h3{color:#20e879}
+input,button,select{width:100%;padding:12px;margin:7px 0;border-radius:7px;border:0}
+input,select{background:#e8eee9;color:#111}
+button{background:#16c766;color:#06130a;font-weight:bold}
+.preview{padding:20px;border-radius:15px;background:#101b15;text-align:center}
+.preview h2{color:#20e879}
+.logo{font-size:38px}
+.modes{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.mode{background:#203528;padding:14px;border-radius:9px}
+label{display:block;margin-top:12px}
+.row{display:flex;gap:10px;align-items:center}
+.row input[type=checkbox]{width:auto}
+@media(min-width:800px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:15px}}
+</style>
+</head>
+<body>
+<header>
+<h2>⚽ JABER FOOTBALL QUIZ</h2>
+<p>HOME SCREEN DESIGNER</p>
+</header>
+
+<main>
+<div class="layout">
+<section class="card">
+<h3>হোম স্ক্রিন ডিজাইন সেটিংস</h3>
+
+<label>অ্যাপের নাম</label>
+<input id="appName" value="JABER FOOTBALL QUIZ">
+
+<label>লোগো বা আইকন (ইমোজি)</label>
+<input id="logo" value="⚽">
+
+<label>হোম স্ক্রিনের শিরোনাম</label>
+<input id="heading" value="ফুটবল কুইজে স্বাগতম">
+
+<label>সাবটাইটেল</label>
+<input id="subtitle" value="আপনার ফুটবল জ্ঞান পরীক্ষা করুন">
+
+<label>ব্যাকগ্রাউন্ড রং</label>
+<input type="color" id="bg" value="#101b15">
+
+<label>প্রধান রং</label>
+<input type="color" id="primary" value="#16c766">
+
+<label>ব্যানারের লেখা</label>
+<input id="banner" value="আজকের ফুটবল কুইজ খেলুন!">
+
+<h3>Quiz Mode নির্বাচন</h3>
+<div id="modeSettings"></div>
+
+<h3>নিজের বাটন যোগ করুন</h3>
+<input id="customButton" placeholder="নতুন বাটনের নাম">
+<button onclick="addButton()">বাটন যোগ করুন</button>
+<div id="customList"></div>
+
+<button onclick="saveDesign()">ডিজাইন সংরক্ষণ করুন</button>
+<button onclick="resetDesign()" style="background:#b52d2d;color:white">
+আগের ডিজাইনে ফিরুন
+</button>
+<p id="status"></p>
+</section>
+
+<section class="card">
+<h3>লাইভ Preview</h3>
+<div class="preview" id="preview">
+<div class="logo" id="pLogo">⚽</div>
+<h2 id="pName">JABER FOOTBALL QUIZ</h2>
+<h3 id="pHeading">ফুটবল কুইজে স্বাগতম</h3>
+<p id="pSubtitle">আপনার ফুটবল জ্ঞান পরীক্ষা করুন</p>
+<div class="mode" id="pBanner">আজকের ফুটবল কুইজ খেলুন!</div>
+<div class="modes" id="pModes"></div>
+<div id="pCustom"></div>
+</div>
+</section>
+</div>
+</main>
+
+<script>
+const defaultModes=[
+"Guess the Club",
+"Guess the Country",
+"Guess the Jersey",
+"Guess the Stadium",
+"Guess the Silhouette",
+"Guess by Clues",
+"General MCQ Quiz",
+"Guess the Player"
+];
+
+let modes=[...defaultModes];
+let customButtons=[];
+
+const $=id=>document.getElementById(id);
+
+function buildSettings(){
+ $("modeSettings").innerHTML="";
+ modes.forEach((mode,i)=>{
+ const row=document.createElement("label");
+ row.className="row";
+ const check=document.createElement("input");
+ check.type="checkbox";
+ check.checked=true;
+ check.dataset.index=i;
+ check.addEventListener("change",updatePreview);
+ const name=document.createElement("span");
+ name.textContent=mode;
+ row.append(check,name);
+ $("modeSettings").append(row);
+ });
+}
+
+function updatePreview(){
+ $("pLogo").textContent=$("logo").value;
+ $("pName").textContent=$("appName").value;
+ $("pHeading").textContent=$("heading").value;
+ $("pSubtitle").textContent=$("subtitle").value;
+ $("pBanner").textContent=$("banner").value;
+ $("preview").style.background=$("bg").value;
+ $("preview").style.color="#ffffff";
+
+ $("pModes").innerHTML="";
+ document.querySelectorAll("#modeSettings input").forEach((check,i)=>{
+ if(check.checked){
+ const item=document.createElement("div");
+ item.className="mode";
+ item.textContent=modes[i];
+ $("pModes").append(item);
+ }
+ });
+
+ $("pCustom").innerHTML="";
+ customButtons.forEach(name=>{
+ const item=document.createElement("div");
+ item.className="mode";
+ item.textContent=name;
+ $("pCustom").append(item);
+ });
+ document.querySelectorAll(".preview h2,.preview h3").forEach(el=>{
+ el.style.color=$("primary").value;
+ });
+}
+
+function addButton(){
+ const name=$("customButton").value.trim();
+ if(!name)return;
+ customButtons.push(name);
+ $("customButton").value="";
+ renderCustom();
+ updatePreview();
+}
+
+function renderCustom(){
+ $("customList").innerHTML="";
+ customButtons.forEach((name,i)=>{
+ const row=document.createElement("div");
+ row.className="row";
+ const text=document.createElement("span");
+ text.textContent=name;
+ const del=document.createElement("button");
+ del.textContent="বাদ দিন";
+ del.onclick=()=>{
+ customButtons.splice(i,1);
+ renderCustom();
+ updatePreview();
+ };
+ row.append(text,del);
+ $("customList").append(row);
+ });
+}
+
+function getDesign(){
+ return {
+ appName:$("appName").value,
+ logo:$("logo").value,
+ heading:$("heading").value,
+ subtitle:$("subtitle").value,
+ banner:$("banner").value,
+ bg:$("bg").value,
+ primary:$("primary").value,
+ modes:modes.filter((m,i)=>
+ document.querySelectorAll("#modeSettings input")[i].checked),
+ customButtons
+ };
+}
+
+function saveDesign(){
+ localStorage.setItem("jaberHomeDesign",JSON.stringify(getDesign()));
+ $("status").textContent="এই ব্রাউজারে ডিজাইন সংরক্ষণ হয়েছে।";
+}
+
+function resetDesign(){
+ localStorage.removeItem("jaberHomeDesign");
+ location.reload();
+}
+
+function loadDesign(){
+ const saved=localStorage.getItem("jaberHomeDesign");
+ if(!saved)return;
+ try{
+ const d=JSON.parse(saved);
+ ["appName","logo","heading","subtitle","banner","bg","primary"]
+ .forEach(key=>{if(d[key]!==undefined)$(key).value=d[key]});
+ modes=defaultModes;
+ customButtons=d.customButtons||[];
+ }catch(e){}
+}
+
+["appName","logo","heading","subtitle","banner","bg","primary"]
+.forEach(id=>$(id).addEventListener("input",updatePreview));
+
+loadDesign();
+buildSettings();
+renderCustom();
+updatePreview();
+</script>
+</body>
+  </html>
+  
