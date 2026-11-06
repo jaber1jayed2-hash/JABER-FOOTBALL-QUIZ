@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JABER FOOTBALL QUIZ - Admin Panel</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ font-family:Arial,sans-serif;
+ background:#080d0b;
+ color:white;
+}
+header{
+ background:#101b15;
+ padding:20px;
+ border-bottom:2px solid #16c766;
+}
+header h2{margin:0;color:#20e879}
+.container{padding:20px;max-width:1100px;margin:auto}
+.card{
+ background:#14221a;
+ padding:20px;
+ border-radius:12px;
+ margin:15px 0;
+ border:1px solid #244a32;
+}
+input,button{
+ width:100%;
+ padding:13px;
+ margin:8px 0;
+ border-radius:7px;
+ border:0;
+ font-size:16px;
+}
+input{background:#e8eee9;color:#111}
+button{
+ background:#16c766;
+ color:#06130a;
+ font-weight:bold;
+ cursor:pointer;
+}
+button:hover{background:#0eaa51}
+.grid{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(145px,1fr));
+ gap:12px;
+}
+.stat{
+ background:#1a3022;
+ padding:18px;
+ border-radius:10px;
+ text-align:center;
+}
+.stat h2{color:#20e879}
+.menu button{background:#203d2a;color:white}
+.hidden{display:none}
+small{color:#b7c8bd}
+</style>
+</head>
+
+<body>
+
+<header>
+<h2>⚽ JABER FOOTBALL QUIZ</h2>
+<p>ADMIN CONTROL PANEL</p>
+</header>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div id="login" class="card">
+<h2>Admin Login</h2>
+<p>আপনার Admin Account দিয়ে প্রবেশ করুন</p>
+
+<input type="email" id="email" placeholder="Admin Email">
+<input type="password" id="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+
+<small id="message">
+এই পেজটি এখন ডিজাইন ডেমো। নিরাপদ লগইন এখনো যুক্ত হয়নি।
+</small>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="hidden">
+
+<div class="card">
+<h2>স্বাগতম, Admin!</h2>
+<p>আপনার Football Quiz App নিয়ন্ত্রণ করুন।</p>
+</div>
+
+<div class="grid">
+<div class="stat">
+<h2>0</h2>
+<p>মোট প্রশ্ন</p>
+</div>
+
+<div class="stat">
+<h2>0</h2>
+<p>মোট খেলোয়াড়</p>
+</div>
+
+<div class="stat">
+<h2>0</h2>
+<p>মোট ক্লাব</p>
+</div>
+
+<div class="stat">
+<h2>0</h2>
+<p>মোট রিপোর্ট</p>
+</div>
+</div>
+
+<div class="card menu">
+<h2>Admin Menu</h2>
+<button onclick="show('questions')">প্রশ্ন পরিচালনা</button>
+<button onclick="show('players')">খেলোয়াড় পরিচালনা</button>
+<button onclick="show('clubs')">ক্লাব পরিচালনা</button>
+<button onclick="show('countries')">দেশ পরিচালনা</button>
+<button onclick="show('tournaments')">টুর্নামেন্ট পরিচালনা</button>
+<button onclick="show('users')">ব্যবহারকারী পরিচালনা</button>
+<button onclick="show('settings')">অ্যাপ সেটিংস</button>
+</div>
+
+<div id="section" class="card hidden">
+<h2 id="sectionTitle"></h2>
+<p id="sectionText"></p>
+<button onclick="back()">ড্যাশবোর্ডে ফিরে যান</button>
+</div>
+
+<button onclick="logout()">Logout</button>
+
+</div>
+</div>
+
+<script>
+function login(){
+ document.getElementById("message").innerText =
+ "এটি শুধু ডিজাইন ডেমো। নিরাপদ Admin Authentication যুক্ত হলে লগইন চালু হবে।";
+}
+
+function show(name){
+ const titles={
+ questions:"প্রশ্ন পরিচালনা",
+ players:"খেলোয়াড় পরিচালনা",
+ clubs:"ক্লাব পরিচালনা",
+ countries:"দেশ পরিচালনা",
+ tournaments:"টুর্নামেন্ট পরিচালনা",
+ users:"ব্যবহারকারী পরিচালনা",
+ settings:"অ্যাপ সেটিংস"
+ };
+
+ document.getElementById("sectionTitle").innerText=titles[name];
+ document.getElementById("sectionText").innerText=
+ "এই অংশের কাজ পরবর্তী ধাপে তৈরি করা হবে।";
+ document.getElementById("section").classList.remove("hidden");
+}
+
+function back(){
+ document.getElementById("section").classList.add("hidden");
+}
+
+function logout(){
+ document.getElementById("dashboard").classList.add("hidden");
+ document.getElementById("login").classList.remove("hidden");
+}
+</script>
+
+</body>
+  </html>
+  
