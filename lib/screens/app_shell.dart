@@ -54,7 +54,7 @@ class _AppShellState extends State<AppShell> {
           ),
           NavigationDestination(
             icon: Icon(Icons.contact_support_outlined),
-            label: 'Contact with Developer',
+            label: 'Contact Us',
           ),
         ],
       ),
