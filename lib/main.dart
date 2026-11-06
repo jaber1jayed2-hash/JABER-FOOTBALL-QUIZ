@@ -1,8 +1,16 @@
+
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/app_shell.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://cuvfoltgtopchiugrbuf.supabase.co',
+    anonKey: 'sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D',
+  );
+
   runApp(const JaberFootballQuizApp());
 }
 
@@ -12,6 +20,7 @@ class JaberFootballQuizApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const green = Color(0xFF27D66B);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'JABER FOOTBALL QUIZ',
