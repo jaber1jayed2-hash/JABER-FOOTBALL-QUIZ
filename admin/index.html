@@ -5,60 +5,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JABER FOOTBALL QUIZ - Admin Panel</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;
- font-family:Arial,sans-serif;
- background:#080d0b;
- color:white;
-}
-header{
- background:#101b15;
- padding:20px;
- border-bottom:2px solid #16c766;
-}
+body{margin:0;font-family:Arial,sans-serif;background:#080d0b;color:white}
+header{background:#101b15;padding:20px;border-bottom:2px solid #16c766}
 header h2{margin:0;color:#20e879}
 .container{padding:20px;max-width:1100px;margin:auto}
-.card{
- background:#14221a;
- padding:20px;
- border-radius:12px;
- margin:15px 0;
- border:1px solid #244a32;
-}
-input,button{
- width:100%;
- padding:13px;
- margin:8px 0;
- border-radius:7px;
- border:0;
- font-size:16px;
-}
-input{background:#e8eee9;color:#111}
-button{
- background:#16c766;
- color:#06130a;
- font-weight:bold;
- cursor:pointer;
-}
+.card{background:#14221a;padding:20px;border-radius:12px;margin:15px 0;border:1px solid #244a32}
+input{width:100%;padding:13px;margin:8px 0;border-radius:7px;border:0;font-size:15px;background:#e8eee9;color:#111}
+button{width:100%;padding:13px;margin:8px 0;border-radius:7px;border:0;font-size:15px;background:#16c766;color:#06130a;font-weight:bold;cursor:pointer}
 button:hover{background:#0eaa51}
-.grid{
- display:grid;
- grid-template-columns:repeat(auto-fit,minmax(145px,1fr));
- gap:12px;
-}
-.stat{
- background:#1a3022;
- padding:18px;
- border-radius:10px;
- text-align:center;
-}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}
+.stat{background:#1a3022;padding:18px;border-radius:10px;text-align:center}
 .stat h2{color:#20e879}
 .menu button{background:#203d2a;color:white}
 .hidden{display:none}
 small{color:#b7c8bd}
+.preview{max-width:180px;max-height:120px;display:block;margin:10px 0;border-radius:8px}
+.status{color:#b7c8bd;white-space:pre-wrap;line-height:1.6}
 </style>
 </head>
 
@@ -71,22 +37,15 @@ small{color:#b7c8bd}
 
 <div class="container">
 
-<!-- LOGIN -->
 <div id="login" class="card">
 <h2>Admin Login</h2>
 <p>আপনার Admin Account দিয়ে প্রবেশ করুন</p>
-
 <input type="email" id="email" placeholder="Admin Email">
 <input type="password" id="password" placeholder="Password">
-
 <button onclick="login()">Login</button>
-
-<small id="message">
-এই পেজটি এখন ডিজাইন ডেমো। নিরাপদ লগইন এখনো যুক্ত হয়নি।
-</small>
+<p id="message" class="status">Admin Account দিয়ে প্রবেশ করুন।</p>
 </div>
 
-<!-- DASHBOARD -->
 <div id="dashboard" class="hidden">
 
 <div class="card">
@@ -95,25 +54,10 @@ small{color:#b7c8bd}
 </div>
 
 <div class="grid">
-<div class="stat">
-<h2>0</h2>
-<p>মোট প্রশ্ন</p>
-</div>
-
-<div class="stat">
-<h2>0</h2>
-<p>মোট খেলোয়াড়</p>
-</div>
-
-<div class="stat">
-<h2>0</h2>
-<p>মোট ক্লাব</p>
-</div>
-
-<div class="stat">
-<h2>0</h2>
-<p>মোট রিপোর্ট</p>
-</div>
+<div class="stat"><h2 id="questionCount">0</h2><p>মোট প্রশ্ন</p></div>
+<div class="stat"><h2 id="playerCount">0</h2><p>মোট খেলোয়াড়</p></div>
+<div class="stat"><h2 id="clubCount">0</h2><p>মোট ক্লাব</p></div>
+<div class="stat"><h2>0</h2><p>মোট রিপোর্ট</p></div>
 </div>
 
 <div class="card menu">
@@ -125,52 +69,364 @@ small{color:#b7c8bd}
 <button onclick="show('tournaments')">টুর্নামেন্ট পরিচালনা</button>
 <button onclick="show('users')">ব্যবহারকারী পরিচালনা</button>
 <button onclick="show('settings')">অ্যাপ সেটিংস</button>
+<button onclick="show('developer')">Contact with Developer</button>
+</div>
+
+<div id="settings" class="card hidden">
+<h2>অ্যাপ সেটিংস</h2>
+
+<label>Home Cover Image</label>
+<input type="file" id="coverFile" accept="image/jpeg,image/png,image/webp">
+<img id="coverPreview" class="preview hidden">
+
+<label>Home Logo</label>
+<input type="file" id="logoFile" accept="image/jpeg,image/png,image/webp">
+<img id="logoPreview" class="preview hidden">
+
+<label>App Icon</label>
+<input type="file" id="iconFile" accept="image/jpeg,image/png,image/webp">
+<img id="iconPreview" class="preview hidden">
+
+<button onclick="saveAppSettings()">Save App Settings</button>
+<p id="appStatus" class="status"></p>
+</div>
+
+<div id="developer" class="card hidden">
+<h2>Contact with Developer</h2>
+
+<label>Developer Photo</label>
+<input type="file" id="developerPhotoFile" accept="image/jpeg,image/png,image/webp">
+<img id="developerPreview" class="preview hidden">
+
+<label>Developer Name</label>
+<input type="text" id="developerName" placeholder="আপনার নাম">
+
+<label>Developer Phone</label>
+<input type="tel" id="developerPhone" placeholder="আপনার ফোন নম্বর">
+
+<label>WhatsApp Link</label>
+<input type="url" id="whatsappLink" placeholder="https://wa.me/">
+
+<button onclick="saveDeveloperSettings()">Save Developer Settings</button>
+<p id="developerStatus" class="status"></p>
 </div>
 
 <div id="section" class="card hidden">
 <h2 id="sectionTitle"></h2>
 <p id="sectionText"></p>
-<button onclick="back()">ড্যাশবোর্ডে ফিরে যান</button>
 </div>
 
+<button onclick="back()">ড্যাশবোর্ডে ফিরে যান</button>
 <button onclick="logout()">Logout</button>
 
 </div>
 </div>
 
 <script>
-function login(){
- document.getElementById("message").innerText =
- "এটি শুধু ডিজাইন ডেমো। নিরাপদ Admin Authentication যুক্ত হলে লগইন চালু হবে।";
+
+// SUPABASE CONNECTION
+
+const SUPABASE_URL = "https://cuvfoltgtopchiugrbuf.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D";
+
+const BUCKET = "app-assets";
+
+const db = window.supabase.createClient(
+ SUPABASE_URL,
+ SUPABASE_PUBLISHABLE_KEY
+);
+
+let currentUser = null;
+
+// LOGIN
+
+async function login(){
+
+ const message=document.getElementById("message");
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
+
+ if(!email || !password){
+  message.innerText="Email ও Password লিখুন।";
+  return;
+ }
+
+ message.innerText="লগইন হচ্ছে...";
+
+ try{
+
+  const {data,error}=await db.auth.signInWithPassword({
+   email,password
+  });
+
+  if(error)throw error;
+
+  currentUser=data.user;
+
+  const {data:admin,error:adminError}=await db
+   .from("admin_users")
+   .select("user_id")
+   .eq("user_id",currentUser.id)
+   .maybeSingle();
+
+  if(adminError || !admin){
+   await db.auth.signOut();
+   currentUser=null;
+   throw new Error("আপনার Account-এ Admin অনুমতি নেই।");
+  }
+
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+
+  await loadSettings();
+
+ }catch(error){
+  message.innerText="Login Error: "+error.message;
+ }
 }
 
+// MENU
+
 function show(name){
+
+ ["settings","developer","section"].forEach(id=>{
+  document.getElementById(id).classList.add("hidden");
+ });
+
+ if(name==="settings"){
+  document.getElementById("settings").classList.remove("hidden");
+  return;
+ }
+
+ if(name==="developer"){
+  document.getElementById("developer").classList.remove("hidden");
+  return;
+ }
+
  const titles={
- questions:"প্রশ্ন পরিচালনা",
- players:"খেলোয়াড় পরিচালনা",
- clubs:"ক্লাব পরিচালনা",
- countries:"দেশ পরিচালনা",
- tournaments:"টুর্নামেন্ট পরিচালনা",
- users:"ব্যবহারকারী পরিচালনা",
- settings:"অ্যাপ সেটিংস"
+  questions:"প্রশ্ন পরিচালনা",
+  players:"খেলোয়াড় পরিচালনা",
+  clubs:"ক্লাব পরিচালনা",
+  countries:"দেশ পরিচালনা",
+  tournaments:"টুর্নামেন্ট পরিচালনা",
+  users:"ব্যবহারকারী পরিচালনা"
  };
 
  document.getElementById("sectionTitle").innerText=titles[name];
  document.getElementById("sectionText").innerText=
- "এই অংশের কাজ পরবর্তী ধাপে তৈরি করা হবে।";
+ "এই অংশের কার্যক্রম পরবর্তী ধাপে তৈরি করা হবে।";
+
  document.getElementById("section").classList.remove("hidden");
 }
 
 function back(){
- document.getElementById("section").classList.add("hidden");
+ ["settings","developer","section"].forEach(id=>{
+  document.getElementById(id).classList.add("hidden");
+ });
 }
 
-function logout(){
+// IMAGE PREVIEW
+
+function preview(inputId,previewId){
+
+ document.getElementById(inputId).addEventListener("change",function(){
+
+  const file=this.files[0];
+  const img=document.getElementById(previewId);
+
+  if(!file)return;
+
+  if(!["image/jpeg","image/png","image/webp"].includes(file.type)){
+   alert("JPG, PNG অথবা WEBP ছবি দিন।");
+   this.value="";
+   return;
+  }
+
+  if(file.size>10*1024*1024){
+   alert("ছবির সাইজ ১০ MB-এর বেশি হতে পারবে না।");
+   this.value="";
+   return;
+  }
+
+  img.src=URL.createObjectURL(file);
+  img.classList.remove("hidden");
+ });
+}
+
+preview("coverFile","coverPreview");
+preview("logoFile","logoPreview");
+preview("iconFile","iconPreview");
+preview("developerPhotoFile","developerPreview");
+
+// UPLOAD IMAGE
+
+async function uploadImage(file,folder){
+
+ if(!file)return null;
+
+ if(!currentUser)throw new Error("Admin Login নেই।");
+
+ if(file.size>10*1024*1024){
+  throw new Error("ছবির সাইজ ১০ MB-এর বেশি।");
+ }
+
+ const ext=file.name.split(".").pop().toLowerCase();
+
+ if(!["jpg","jpeg","png","webp"].includes(ext)){
+  throw new Error("ছবির ফরম্যাট সঠিক নয়।");
+ }
+
+ const path=folder+"/"+crypto.randomUUID()+"."+ext;
+
+ const {error}=await db.storage
+  .from(BUCKET)
+  .upload(path,file,{
+   cacheControl:"3600",
+   upsert:false,
+   contentType:file.type
+  });
+
+ if(error)throw error;
+
+ const {data}=db.storage
+  .from(BUCKET)
+  .getPublicUrl(path);
+
+ return data.publicUrl;
+}
+
+// SAVE SETTING
+
+async function saveSetting(key,value){
+
+ const {error}=await db
+  .from("app_settings")
+  .upsert({
+   key:key,
+   value:value,
+   updated_at:new Date().toISOString()
+  },{onConflict:"key"});
+
+ if(error)throw error;
+}
+
+// LOAD SETTINGS
+
+async function loadSettings(){
+
+ try{
+
+  const {data,error}=await db
+   .from("app_settings")
+   .select("key,value");
+
+  if(error)throw error;
+
+  const settings={};
+
+  (data||[]).forEach(item=>{
+   settings[item.key]=item.value;
+  });
+
+  document.getElementById("developerName").value=settings.developer_name||"";
+  document.getElementById("developerPhone").value=settings.developer_phone||"";
+  document.getElementById("whatsappLink").value=settings.whatsapp_link||"";
+
+  setPreview("coverPreview",settings.home_cover_url);
+  setPreview("logoPreview",settings.home_logo_url);
+  setPreview("iconPreview",settings.app_icon_url);
+  setPreview("developerPreview",settings.developer_photo_url);
+
+ }catch(error){
+  console.log("Settings Load Error:",error.message);
+ }
+}
+
+function setPreview(id,url){
+ if(!url)return;
+ const img=document.getElementById(id);
+ img.src=url;
+ img.classList.remove("hidden");
+}
+
+// SAVE APP SETTINGS
+
+async function saveAppSettings(){
+
+ const status=document.getElementById("appStatus");
+ status.innerText="সংরক্ষণ হচ্ছে...";
+
+ try{
+
+  const files=[
+   ["coverFile","home-cover","home_cover_url"],
+   ["logoFile","home-logo","home_logo_url"],
+   ["iconFile","app-icon","app_icon_url"]
+  ];
+
+  for(const [inputId,folder,key] of files){
+
+   const file=document.getElementById(inputId).files[0];
+
+   if(file){
+    const url=await uploadImage(file,folder);
+    await saveSetting(key,url);
+   }
+  }
+
+  status.innerText="App Settings সংরক্ষিত হয়েছে।";
+
+ }catch(error){
+  status.innerText="Error: "+error.message;
+ }
+}
+
+// SAVE DEVELOPER SETTINGS
+
+async function saveDeveloperSettings(){
+
+ const status=document.getElementById("developerStatus");
+ status.innerText="সংরক্ষণ হচ্ছে...";
+
+ try{
+
+  const photo=document.getElementById("developerPhotoFile").files[0];
+
+  if(photo){
+   const url=await uploadImage(photo,"developer-photo");
+   await saveSetting("developer_photo_url",url);
+  }
+
+  await saveSetting("developer_name",
+   document.getElementById("developerName").value.trim());
+
+  await saveSetting("developer_phone",
+   document.getElementById("developerPhone").value.trim());
+
+  await saveSetting("whatsapp_link",
+   document.getElementById("whatsappLink").value.trim());
+
+  status.innerText="Developer Settings সংরক্ষিত হয়েছে।";
+
+ }catch(error){
+  status.innerText="Error: "+error.message;
+ }
+}
+
+// LOGOUT
+
+async function logout(){
+
+ await db.auth.signOut();
+ currentUser=null;
+
  document.getElementById("dashboard").classList.add("hidden");
  document.getElementById("login").classList.remove("hidden");
+ document.getElementById("password").value="";
+ document.getElementById("message").innerText="আপনি Logout করেছেন।";
 }
-</script>
 
+</script>
 </body>
-  </html>
-  
+ </html>
+ 
