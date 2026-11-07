@@ -12,6 +12,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String coverUrl = '';
   String logoUrl = '';
+  String? loadError;
   bool loading = true;
 
   @override
@@ -21,24 +22,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> loadHomeSettings() async {
+    if (mounted) {
+      setState(() {
+        loading = true;
+        loadError = null;
+      });
+    }
+
     try {
       final data = await Supabase.instance.client
           .from('app_settings')
           .select('key, value')
-          .inFilter('key', ['home_cover_url', 'home_logo_url']);
+          .inFilter('key', [
+        'home_cover_url',
+        'home_logo_url',
+      ]);
 
       String cover = '';
       String logo = '';
 
       for (final item in data) {
-        final key = item['key'].toString();
+        final key = item['key']?.toString() ?? '';
         final value = item['value']?.toString() ?? '';
 
         if (key == 'home_cover_url') {
           cover = value;
-        }
-
-        if (key == 'home_logo_url') {
+        } else if (key == 'home_logo_url') {
           logo = value;
         }
       }
@@ -55,6 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       setState(() {
         loading = false;
+        loadError = e.toString();
       });
     }
   }
@@ -102,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Container(
                     color: const Color(0xFF164B2C),
                     child: const Icon(
-                      Icons.image,
+                      Icons.broken_image,
                       size: 55,
                       color: Colors.white70,
                     ),
@@ -127,9 +137,27 @@ class _HomeScreenState extends State<HomeScreen> {
       child: RefreshIndicator(
         onRefresh: loadHomeSettings,
         child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(18),
           children: [
-            // Top Logo
+            if (loading)
+              const LinearProgressIndicator(
+                color: Color(0xFF27D66B),
+                backgroundColor: Color(0xFF164B2C),
+              ),
+
+            if (loadError != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                'সেটিংস লোড করা যায়নি: $loadError',
+                style: const TextStyle(color: Colors.redAccent),
+              ),
+              TextButton(
+                onPressed: loadHomeSettings,
+                child: const Text('আবার চেষ্টা করুন'),
+              ),
+            ],
+
             Row(
               children: [
                 buildLogo(),
@@ -149,7 +177,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 18),
 
-            // Cover Header Image
             buildCover(),
 
             const SizedBox(height: 22),
