@@ -30,6 +30,27 @@ jobs:
       - name: Create Android project files
         run: flutter create --platforms=android --org com.jaber.footballquiz .
 
+      - name: Add Internet Permission
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("android/app/src/main/AndroidManifest.xml")
+          content = path.read_text()
+
+          permission = '    <uses-permission android:name="android.permission.INTERNET" />\n'
+
+          if "android.permission.INTERNET" not in content:
+              content = content.replace(
+                  "<application",
+                  permission + "    <application",
+                  1
+              )
+
+          path.write_text(content)
+          print("Internet Permission added successfully.")
+          PY
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -41,4 +62,3 @@ jobs:
         with:
           name: JABER-FOOTBALL-QUIZ-APK
           path: build/app/outputs/flutter-apk/app-release.apk
-          
