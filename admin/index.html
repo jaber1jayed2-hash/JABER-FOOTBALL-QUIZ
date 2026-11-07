@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JABER FOOTBALL QUIZ - Admin Panel</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -17,11 +18,12 @@ header h2{margin:0;color:#20e879}
 input{width:100%;padding:13px;margin:8px 0;border-radius:7px;border:0;font-size:15px;background:#e8eee9;color:#111}
 button{width:100%;padding:13px;margin:8px 0;border-radius:7px;border:0;font-size:15px;background:#16c766;color:#06130a;font-weight:bold;cursor:pointer}
 button:hover{background:#0eaa51}
+button:disabled{opacity:.6;cursor:not-allowed}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}
 .stat{background:#1a3022;padding:18px;border-radius:10px;text-align:center}
 .stat h2{color:#20e879}
 .menu button{background:#203d2a;color:white}
-.hidden{display:none}
+.hidden{display:none!important}
 small{color:#b7c8bd}
 .preview{max-width:180px;max-height:120px;display:block;margin:10px 0;border-radius:8px}
 .status{color:#b7c8bd;white-space:pre-wrap;line-height:1.6}
@@ -37,20 +39,29 @@ small{color:#b7c8bd}
 
 <div class="container">
 
+<!-- LOGIN -->
+
 <div id="login" class="card">
 <h2>Admin Login</h2>
 <p>আপনার Admin Account দিয়ে প্রবেশ করুন</p>
-<input type="email" id="email" placeholder="Admin Email">
-<input type="password" id="password" placeholder="Password">
-<button onclick="login()">Login</button>
+
+<input type="email" id="email" placeholder="Admin Email" autocomplete="username">
+
+<input type="password" id="password" placeholder="Password" autocomplete="current-password">
+
+<button id="loginButton" onclick="login()">Login</button>
+
 <p id="message" class="status">Admin Account দিয়ে প্রবেশ করুন।</p>
 </div>
+
+<!-- DASHBOARD -->
 
 <div id="dashboard" class="hidden">
 
 <div class="card">
 <h2>স্বাগতম, Admin!</h2>
 <p>আপনার Football Quiz App নিয়ন্ত্রণ করুন।</p>
+<p id="adminEmail" class="status"></p>
 </div>
 
 <div class="grid">
@@ -62,6 +73,7 @@ small{color:#b7c8bd}
 
 <div class="card menu">
 <h2>Admin Menu</h2>
+
 <button onclick="show('questions')">প্রশ্ন পরিচালনা</button>
 <button onclick="show('players')">খেলোয়াড় পরিচালনা</button>
 <button onclick="show('clubs')">ক্লাব পরিচালনা</button>
@@ -71,6 +83,8 @@ small{color:#b7c8bd}
 <button onclick="show('settings')">অ্যাপ সেটিংস</button>
 <button onclick="show('developer')">Contact with Developer</button>
 </div>
+
+<!-- APP SETTINGS -->
 
 <div id="settings" class="card hidden">
 <h2>অ্যাপ সেটিংস</h2>
@@ -90,6 +104,8 @@ small{color:#b7c8bd}
 <button onclick="saveAppSettings()">Save App Settings</button>
 <p id="appStatus" class="status"></p>
 </div>
+
+<!-- DEVELOPER SETTINGS -->
 
 <div id="developer" class="card hidden">
 <h2>Contact with Developer</h2>
@@ -111,6 +127,8 @@ small{color:#b7c8bd}
 <p id="developerStatus" class="status"></p>
 </div>
 
+<!-- OTHER SECTIONS -->
+
 <div id="section" class="card hidden">
 <h2 id="sectionTitle"></h2>
 <p id="sectionText"></p>
@@ -127,22 +145,122 @@ small{color:#b7c8bd}
 // SUPABASE CONNECTION
 
 const SUPABASE_URL = "https://cuvfoltgtopchiugrbuf.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D";
+
+const SUPABASE_PUBLISHABLE_KEY =
+"sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D";
 
 const BUCKET = "app-assets";
 
 const db = window.supabase.createClient(
  SUPABASE_URL,
- SUPABASE_PUBLISHABLE_KEY
+ SUPABASE_PUBLISHABLE_KEY,
+ {
+  auth:{
+   persistSession:true,
+   autoRefreshToken:true,
+   detectSessionInUrl:true
+  }
+ }
 );
 
 let currentUser = null;
+let isAdminVerified = false;
+
+// VERIFY ADMIN
+
+async function verifyAdmin(user){
+
+ if(!user){
+  return false;
+ }
+
+ const {data,error} = await db
+  .from("admin_users")
+  .select("user_id")
+  .eq("user_id",user.id)
+  .maybeSingle();
+
+ if(error){
+  console.error("Admin verification error:",error.message);
+  return false;
+ }
+
+ return !!data;
+}
+
+// SHOW DASHBOARD
+
+async function openDashboard(user){
+
+ const allowed = await verifyAdmin(user);
+
+ if(!allowed){
+  await db.auth.signOut();
+  currentUser=null;
+  isAdminVerified=false;
+
+  document.getElementById("dashboard").classList.add("hidden");
+  document.getElementById("login").classList.remove("hidden");
+
+  document.getElementById("message").innerText =
+   "আপনার Account-এ Admin অনুমতি নেই।";
+
+  return false;
+ }
+
+ currentUser=user;
+ isAdminVerified=true;
+
+ document.getElementById("login").classList.add("hidden");
+ document.getElementById("dashboard").classList.remove("hidden");
+
+ document.getElementById("adminEmail").innerText =
+  "Admin: "+(user.email || "");
+
+ await loadSettings();
+
+ return true;
+}
+
+// AUTO SESSION RESTORE
+
+async function restoreSession(){
+
+ const message=document.getElementById("message");
+
+ message.innerText="Admin Session যাচাই হচ্ছে...";
+
+ try{
+
+  const {data,error}=await db.auth.getSession();
+
+  if(error)throw error;
+
+  const session=data.session;
+
+  if(!session || !session.user){
+   message.innerText="Admin Account দিয়ে প্রবেশ করুন।";
+   return;
+  }
+
+  await openDashboard(session.user);
+
+ }catch(error){
+
+  console.error("Session Error:",error.message);
+
+  message.innerText=
+   "Session যাচাই করা যায়নি। আবার Login করুন।";
+ }
+}
 
 // LOGIN
 
 async function login(){
 
  const message=document.getElementById("message");
+ const loginButton=document.getElementById("loginButton");
+
  const email=document.getElementById("email").value.trim();
  const password=document.getElementById("password").value;
 
@@ -151,43 +269,49 @@ async function login(){
   return;
  }
 
+ loginButton.disabled=true;
  message.innerText="লগইন হচ্ছে...";
 
  try{
 
   const {data,error}=await db.auth.signInWithPassword({
-   email,password
+   email,
+   password
   });
 
   if(error)throw error;
 
-  currentUser=data.user;
+  const success=await openDashboard(data.user);
 
-  const {data:admin,error:adminError}=await db
-   .from("admin_users")
-   .select("user_id")
-   .eq("user_id",currentUser.id)
-   .maybeSingle();
-
-  if(adminError || !admin){
-   await db.auth.signOut();
-   currentUser=null;
-   throw new Error("আপনার Account-এ Admin অনুমতি নেই।");
+  if(!success){
+   throw new Error("Admin অনুমতি পাওয়া যায়নি।");
   }
 
-  document.getElementById("login").classList.add("hidden");
-  document.getElementById("dashboard").classList.remove("hidden");
-
-  await loadSettings();
-
  }catch(error){
+
   message.innerText="Login Error: "+error.message;
+
+ }finally{
+
+  loginButton.disabled=false;
  }
 }
 
 // MENU
 
 function show(name){
+
+ if(!isAdminVerified || !currentUser){
+  alert("প্রথমে Admin Login করুন।");
+  return;
+ }
+
+ // OPEN QUESTIONS PAGE
+
+ if(name==="questions"){
+  window.location.href="questions.html";
+  return;
+ }
 
  ["settings","developer","section"].forEach(id=>{
   document.getElementById(id).classList.add("hidden");
@@ -204,7 +328,6 @@ function show(name){
  }
 
  const titles={
-  questions:"প্রশ্ন পরিচালনা",
   players:"খেলোয়াড় পরিচালনা",
   clubs:"ক্লাব পরিচালনা",
   countries:"দেশ পরিচালনা",
@@ -212,14 +335,19 @@ function show(name){
   users:"ব্যবহারকারী পরিচালনা"
  };
 
- document.getElementById("sectionTitle").innerText=titles[name];
- document.getElementById("sectionText").innerText=
- "এই অংশের কার্যক্রম পরবর্তী ধাপে তৈরি করা হবে।";
+ document.getElementById("sectionTitle").innerText =
+  titles[name] || "পরিচালনা";
+
+ document.getElementById("sectionText").innerText =
+  "এই অংশের কার্যক্রম পরবর্তী ধাপে তৈরি করা হবে।";
 
  document.getElementById("section").classList.remove("hidden");
 }
 
+// BACK
+
 function back(){
+
  ["settings","developer","section"].forEach(id=>{
   document.getElementById(id).classList.add("hidden");
  });
@@ -262,9 +390,11 @@ preview("developerPhotoFile","developerPreview");
 
 async function uploadImage(file,folder){
 
- if(!file)return null;
+ if(!isAdminVerified || !currentUser){
+  throw new Error("Admin Login নেই।");
+ }
 
- if(!currentUser)throw new Error("Admin Login নেই।");
+ if(!file)return null;
 
  if(file.size>10*1024*1024){
   throw new Error("ছবির সাইজ ১০ MB-এর বেশি।");
@@ -299,6 +429,10 @@ async function uploadImage(file,folder){
 
 async function saveSetting(key,value){
 
+ if(!isAdminVerified){
+  throw new Error("Admin অনুমতি নেই।");
+ }
+
  const {error}=await db
   .from("app_settings")
   .upsert({
@@ -328,9 +462,14 @@ async function loadSettings(){
    settings[item.key]=item.value;
   });
 
-  document.getElementById("developerName").value=settings.developer_name||"";
-  document.getElementById("developerPhone").value=settings.developer_phone||"";
-  document.getElementById("whatsappLink").value=settings.whatsapp_link||"";
+  document.getElementById("developerName").value =
+   settings.developer_name||"";
+
+  document.getElementById("developerPhone").value =
+   settings.developer_phone||"";
+
+  document.getElementById("whatsappLink").value =
+   settings.whatsapp_link||"";
 
   setPreview("coverPreview",settings.home_cover_url);
   setPreview("logoPreview",settings.home_logo_url);
@@ -338,12 +477,15 @@ async function loadSettings(){
   setPreview("developerPreview",settings.developer_photo_url);
 
  }catch(error){
+
   console.log("Settings Load Error:",error.message);
  }
 }
 
 function setPreview(id,url){
+
  if(!url)return;
+
  const img=document.getElementById(id);
  img.src=url;
  img.classList.remove("hidden");
@@ -354,6 +496,7 @@ function setPreview(id,url){
 async function saveAppSettings(){
 
  const status=document.getElementById("appStatus");
+
  status.innerText="সংরক্ষণ হচ্ছে...";
 
  try{
@@ -377,6 +520,7 @@ async function saveAppSettings(){
   status.innerText="App Settings সংরক্ষিত হয়েছে।";
 
  }catch(error){
+
   status.innerText="Error: "+error.message;
  }
 }
@@ -386,6 +530,7 @@ async function saveAppSettings(){
 async function saveDeveloperSettings(){
 
  const status=document.getElementById("developerStatus");
+
  status.innerText="সংরক্ষণ হচ্ছে...";
 
  try{
@@ -397,18 +542,25 @@ async function saveDeveloperSettings(){
    await saveSetting("developer_photo_url",url);
   }
 
-  await saveSetting("developer_name",
-   document.getElementById("developerName").value.trim());
+  await saveSetting(
+   "developer_name",
+   document.getElementById("developerName").value.trim()
+  );
 
-  await saveSetting("developer_phone",
-   document.getElementById("developerPhone").value.trim());
+  await saveSetting(
+   "developer_phone",
+   document.getElementById("developerPhone").value.trim()
+  );
 
-  await saveSetting("whatsapp_link",
-   document.getElementById("whatsappLink").value.trim());
+  await saveSetting(
+   "whatsapp_link",
+   document.getElementById("whatsappLink").value.trim()
+  );
 
   status.innerText="Developer Settings সংরক্ষিত হয়েছে।";
 
  }catch(error){
+
   status.innerText="Error: "+error.message;
  }
 }
@@ -417,14 +569,40 @@ async function saveDeveloperSettings(){
 
 async function logout(){
 
- await db.auth.signOut();
+ try{
+
+  await db.auth.signOut();
+
+ }catch(error){
+
+  console.error("Logout Error:",error.message);
+ }
+
  currentUser=null;
+ isAdminVerified=false;
 
  document.getElementById("dashboard").classList.add("hidden");
  document.getElementById("login").classList.remove("hidden");
+
  document.getElementById("password").value="";
  document.getElementById("message").innerText="আপনি Logout করেছেন।";
+ document.getElementById("adminEmail").innerText="";
 }
+
+// AUTH STATE CHANGES
+
+db.auth.onAuthStateChange(async(event,session)=>{
+
+ if(event==="SIGNED_OUT"){
+  currentUser=null;
+  isAdminVerified=false;
+ }
+
+});
+
+// START
+
+restoreSession();
 
 </script>
 </body>
