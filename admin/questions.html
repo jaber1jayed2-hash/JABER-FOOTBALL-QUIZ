@@ -18,6 +18,7 @@ main{max-width:850px;margin:auto;padding:18px}
 input,select,button{width:100%;padding:12px;margin:7px 0;border:0;border-radius:7px;font-size:15px}
 input,select{background:#e8eee9;color:#111}
 button{background:#16c766;color:#06130a;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
 .delete{background:#b52d2d;color:white}
 .edit{background:#e5b93d;color:#111}
 .question{background:#203528;padding:13px;border-radius:8px;margin:12px 0}
@@ -28,20 +29,23 @@ label{display:block;margin-top:10px}
 .actions button{flex:1}
 .checkbox{display:flex;align-items:center;gap:10px}
 .checkbox input{width:auto}
+.back{display:inline-block;color:#20e879;margin-top:8px}
 </style>
 </head>
 
 <body>
+
 <header>
 <h2>⚽ JABER FOOTBALL QUIZ</h2>
 <p>প্রশ্ন পরিচালনা | Admin Panel</p>
+<a class="back" href="index.html">← Admin Dashboard</a>
 </header>
 
-<main>
+<main id="adminContent" style="display:none">
 
 <div class="card">
 <h2 id="formTitle">নতুন প্রশ্ন যোগ করুন</h2>
-<div id="status" class="status">Supabase সংযোগ করা হচ্ছে...</div>
+<div id="status" class="status">Admin যাচাই করা হচ্ছে...</div>
 
 <form id="questionForm">
 
@@ -73,7 +77,7 @@ label{display:block;margin-top:10px}
 <input id="d" placeholder="চতুর্থ উত্তর" required>
 
 <label>সঠিক উত্তর</label>
-<select id="answer">
+<select id="answer" required>
 <option value="A">Option A</option>
 <option value="B">Option B</option>
 <option value="C">Option C</option>
@@ -81,7 +85,7 @@ label{display:block;margin-top:10px}
 </select>
 
 <label>কঠিনতার লেভেল</label>
-<select id="level">
+<select id="level" required>
 <option value="easy">Easy</option>
 <option value="medium">Medium</option>
 <option value="hard">Hard</option>
@@ -99,6 +103,7 @@ label{display:block;margin-top:10px}
 </label>
 
 <button type="submit" id="saveButton">প্রশ্ন সংরক্ষণ করুন</button>
+
 <button type="button" id="cancelButton" class="delete" style="display:none">
 সম্পাদনা বাতিল করুন
 </button>
@@ -119,43 +124,88 @@ const SUPABASE_KEY = 'sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D';
 
 const client = window.supabase.createClient(
   SUPABASE_URL,
-  SUPABASE_KEY
+  SUPABASE_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
 );
 
 const $ = id => document.getElementById(id);
 
 let editingId = null;
 let questions = [];
+let isAdmin = false;
 
 function showStatus(message) {
   $('status').textContent = message;
 }
 
+// Admin যাচাই
+async function checkAdmin() {
+  try {
+    const { data: sessionData, error: sessionError } =
+      await client.auth.getSession();
+
+    if (sessionError || !sessionData.session) {
+      alert('প্রথমে Admin Panel থেকে লগইন করুন।');
+      window.location.replace('index.html');
+      return false;
+    }
+
+    const user = sessionData.session.user;
+
+    const { data: adminData, error: adminError } = await client
+      .from('admin_users')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (adminError) {
+      console.error(adminError);
+      alert('Admin যাচাই করা যায়নি। Supabase RLS Policy পরীক্ষা করুন।');
+      window.location.replace('index.html');
+      return false;
+    }
+
+    if (!adminData) {
+      await client.auth.signOut();
+      alert('আপনার এই প্যানেলে প্রবেশের অনুমতি নেই।');
+      window.location.replace('index.html');
+      return false;
+    }
+
+    isAdmin = true;
+    $('adminContent').style.display = 'block';
+
+    return true;
+
+  } catch (error) {
+    console.error(error);
+    alert('নিরাপত্তা যাচাই করতে সমস্যা হয়েছে।');
+    window.location.replace('index.html');
+    return false;
+  }
+}
+
+// ফর্ম রিসেট
 function resetForm() {
   editingId = null;
   $('questionForm').reset();
   $('published').checked = true;
+  $('level').value = 'easy';
   $('formTitle').textContent = 'নতুন প্রশ্ন যোগ করুন';
   $('saveButton').textContent = 'প্রশ্ন সংরক্ষণ করুন';
   $('cancelButton').style.display = 'none';
 }
 
-async function checkLogin() {
-  const { data, error } = await client.auth.getSession();
-
-  if (error || !data.session) {
-    showStatus('প্রথমে Admin Panel থেকে লগইন করুন।');
-    $('saveButton').disabled = true;
-    $('questionList').innerHTML =
-      '<p>লগইন করার পর এই পেজটি আবার খুলুন।</p>' +
-      '<a href="index.html" style="color:#20e879">Admin Panel-এ যান</a>';
-    return false;
-  }
-
-  return true;
-}
-
+// প্রশ্ন লোড
 async function loadQuestions() {
+  if (!isAdmin) return;
+
   $('questionList').textContent = 'প্রশ্ন লোড হচ্ছে...';
 
   const { data, error } = await client
@@ -164,7 +214,8 @@ async function loadQuestions() {
     .order('id', { ascending: false });
 
   if (error) {
-    $('questionList').textContent = 'প্রশ্ন লোড করা যায়নি: ' + error.message;
+    $('questionList').textContent =
+      'প্রশ্ন লোড করা যায়নি: ' + error.message;
     return;
   }
 
@@ -172,6 +223,7 @@ async function loadQuestions() {
   renderQuestions();
 }
 
+// প্রশ্ন দেখানো
 function renderQuestions() {
   const list = $('questionList');
   list.innerHTML = '';
@@ -216,20 +268,24 @@ function renderQuestions() {
   });
 }
 
+// প্রশ্ন সম্পাদনা
 function editQuestion(q) {
+  if (!isAdmin) return;
+
   editingId = q.id;
 
   $('type').value = q.mode;
   $('question').value = q.question_bn || '';
 
   const options = q.options || {};
+
   $('a').value = options.A || '';
   $('b').value = options.B || '';
   $('c').value = options.C || '';
   $('d').value = options.D || '';
 
   $('answer').value = q.correct_option || 'A';
-  $('level').value = q.difficulty || 'Easy';
+  $('level').value = q.difficulty || 'easy';
   $('explanation').value = q.explanation_bn || '';
   $('imageUrl').value = q.image_url || '';
   $('published').checked = q.is_published === true;
@@ -241,7 +297,10 @@ function editQuestion(q) {
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
+// প্রশ্ন মুছে ফেলা
 async function deleteQuestion(id) {
+  if (!isAdmin) return;
+
   if (!confirm('আপনি কি এই প্রশ্নটি মুছে ফেলতে চান?')) return;
 
   showStatus('প্রশ্ন মুছে ফেলা হচ্ছে...');
@@ -260,8 +319,14 @@ async function deleteQuestion(id) {
   await loadQuestions();
 }
 
+// প্রশ্ন সংরক্ষণ
 $('questionForm').addEventListener('submit', async function(e) {
   e.preventDefault();
+
+  if (!isAdmin) {
+    alert('আপনার Admin অনুমতি নেই।');
+    return;
+  }
 
   const payload = {
     mode: $('type').value,
@@ -314,11 +379,14 @@ $('questionForm').addEventListener('submit', async function(e) {
 
 $('cancelButton').addEventListener('click', resetForm);
 
+// পেজ শুরু
 async function start() {
-  const loggedIn = await checkLogin();
-  if (!loggedIn) return;
+  const authorized = await checkAdmin();
 
-  showStatus('Supabase সংযোগ সফল হয়েছে।');
+  if (!authorized) return;
+
+  showStatus('Admin যাচাই সফল হয়েছে। Supabase সংযুক্ত।');
+
   await loadQuestions();
 }
 
@@ -326,5 +394,5 @@ start();
 </script>
 
 </body>
- </html>
- 
+  </html>
+  
