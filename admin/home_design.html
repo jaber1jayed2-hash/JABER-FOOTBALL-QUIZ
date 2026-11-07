@@ -4,45 +4,81 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Home Screen Designer | JABER FOOTBALL QUIZ</title>
+<title>Home Design Manager | JABER FOOTBALL QUIZ</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080d0b;color:white;font-family:Arial,sans-serif}
 header{padding:18px;background:#101b15;border-bottom:2px solid #16c766}
-header h2{color:#20e879;margin:0}
-main{max-width:1100px;margin:auto;padding:16px}
+header h2,h3{color:#20e879}
+main{max-width:1000px;margin:auto;padding:16px}
 .card{background:#14221a;padding:18px;border-radius:12px;margin:15px 0}
-h3{color:#20e879}
-input,button,select{width:100%;padding:12px;margin:7px 0;border-radius:7px;border:0}
-input,select{background:#e8eee9;color:#111}
-button{background:#16c766;color:#06130a;font-weight:bold}
-.preview{padding:20px;border-radius:15px;background:#101b15;text-align:center}
-.preview h2{color:#20e879}
-.logo{font-size:38px}
-.modes{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.mode{background:#203528;padding:14px;border-radius:9px}
+input,button{width:100%;padding:12px;margin:7px 0;border:0;border-radius:7px;font-size:15px}
+input{background:#e8eee9;color:#111}
+button{background:#16c766;color:#06130a;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5}
+.preview{background:#101b15;padding:15px;border-radius:12px;text-align:center;overflow:hidden}
+.cover{width:100%;height:150px;object-fit:cover;border-radius:9px;background:#203528}
+.logo{width:65px;height:65px;object-fit:contain;border-radius:12px;background:#203528}
+.appicon{width:85px;height:85px;object-fit:contain;border-radius:20px;background:#203528}
+.preview img{max-width:100%}
 label{display:block;margin-top:12px}
-.row{display:flex;gap:10px;align-items:center}
+.status{padding:12px;background:#203528;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}
+.small{color:#b7c8bd;font-size:13px}
+.row{display:flex;align-items:center;gap:12px}
 .row input[type=checkbox]{width:auto}
-@media(min-width:800px){.layout{display:grid;grid-template-columns:1fr 1fr;gap:15px}}
+a{color:#20e879}
 </style>
 </head>
+
 <body>
+
 <header>
 <h2>⚽ JABER FOOTBALL QUIZ</h2>
-<p>HOME SCREEN DESIGNER</p>
+<p>HOME SCREEN DESIGN MANAGER</p>
+<a href="index.html">← Admin Dashboard</a>
 </header>
 
 <main>
-<div class="layout">
-<section class="card">
-<h3>হোম স্ক্রিন ডিজাইন সেটিংস</h3>
+
+<div class="card">
+<h3>🔐 Admin Security</h3>
+<div id="authStatus" class="status">Admin যাচাই হচ্ছে...</div>
+</div>
+
+<div id="designer" style="display:none">
+
+<div class="card">
+<h3>১. Home Cover Image</h3>
+<p class="small">হোম পেজের উপরের বড় কভার ছবি পরিবর্তন করুন।</p>
+<input type="file" id="coverFile" accept="image/png,image/jpeg,image/webp">
+<img id="coverPreview" class="cover" alt="Cover Preview">
+<button type="button" onclick="uploadImage('cover')">Cover Image Upload করুন</button>
+</div>
+
+<div class="card">
+<h3>২. Home Logo</h3>
+<p class="small">হোম পেজের উপরের বাম পাশের লোগো পরিবর্তন করুন।</p>
+<input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp">
+<img id="logoPreview" class="logo" alt="Logo Preview">
+<button type="button" onclick="uploadImage('logo')">Logo Upload করুন</button>
+</div>
+
+<div class="card">
+<h3>৩. App Icon</h3>
+<p class="small">অ্যাপের নতুন Launcher Icon-এর ছবি আপলোড করুন। পরে নতুন APK তৈরি করতে হবে।</p>
+<input type="file" id="iconFile" accept="image/png,image/jpeg,image/webp">
+<img id="iconPreview" class="appicon" alt="App Icon Preview">
+<button type="button" onclick="uploadImage('icon')">App Icon Upload করুন</button>
+</div>
+
+<div class="card">
+<h3>৪. Home Screen Text</h3>
 
 <label>অ্যাপের নাম</label>
 <input id="appName" value="JABER FOOTBALL QUIZ">
-
-<label>লোগো বা আইকন (ইমোজি)</label>
-<input id="logo" value="⚽">
 
 <label>হোম স্ক্রিনের শিরোনাম</label>
 <input id="heading" value="ফুটবল কুইজে স্বাগতম">
@@ -50,183 +86,319 @@ label{display:block;margin-top:12px}
 <label>সাবটাইটেল</label>
 <input id="subtitle" value="আপনার ফুটবল জ্ঞান পরীক্ষা করুন">
 
+<label>ব্যানারের লেখা</label>
+<input id="banner" value="আজকের ফুটবল কুইজ খেলুন!">
+
 <label>ব্যাকগ্রাউন্ড রং</label>
 <input type="color" id="bg" value="#101b15">
 
 <label>প্রধান রং</label>
 <input type="color" id="primary" value="#16c766">
 
-<label>ব্যানারের লেখা</label>
-<input id="banner" value="আজকের ফুটবল কুইজ খেলুন!">
-
-<h3>Quiz Mode নির্বাচন</h3>
-<div id="modeSettings"></div>
-
-<h3>নিজের বাটন যোগ করুন</h3>
-<input id="customButton" placeholder="নতুন বাটনের নাম">
-<button onclick="addButton()">বাটন যোগ করুন</button>
-<div id="customList"></div>
-
-<button onclick="saveDesign()">ডিজাইন সংরক্ষণ করুন</button>
-<button onclick="resetDesign()" style="background:#b52d2d;color:white">
-আগের ডিজাইনে ফিরুন
-</button>
-<p id="status"></p>
-</section>
-
-<section class="card">
-<h3>লাইভ Preview</h3>
-<div class="preview" id="preview">
-<div class="logo" id="pLogo">⚽</div>
-<h2 id="pName">JABER FOOTBALL QUIZ</h2>
-<h3 id="pHeading">ফুটবল কুইজে স্বাগতম</h3>
-<p id="pSubtitle">আপনার ফুটবল জ্ঞান পরীক্ষা করুন</p>
-<div class="mode" id="pBanner">আজকের ফুটবল কুইজ খেলুন!</div>
-<div class="modes" id="pModes"></div>
-<div id="pCustom"></div>
+<button type="button" onclick="saveTextSettings()">Text ও Color সংরক্ষণ করুন</button>
 </div>
-</section>
+
+<div class="card">
+<h3>৫. Live Preview</h3>
+<div class="preview" id="livePreview">
+<img id="liveCover" class="cover" alt="Cover">
+<div style="text-align:left;margin-top:12px">
+<img id="liveLogo" class="logo" alt="Logo">
+</div>
+<h2 id="liveName">JABER FOOTBALL QUIZ</h2>
+<h3 id="liveHeading">ফুটবল কুইজে স্বাগতম</h3>
+<p id="liveSubtitle">আপনার ফুটবল জ্ঞান পরীক্ষা করুন</p>
+<div id="liveBanner" class="status">আজকের ফুটবল কুইজ খেলুন!</div>
+</div>
+</div>
+
+<div class="card">
+<h3>৬. কাজের অবস্থা</h3>
+<div id="status" class="status">প্রস্তুত।</div>
+<button type="button" onclick="loadAllSettings()">Supabase থেকে সেটিংস আবার লোড করুন</button>
+</div>
+
 </div>
 </main>
 
 <script>
-const defaultModes=[
-"Guess the Club",
-"Guess the Country",
-"Guess the Jersey",
-"Guess the Stadium",
-"Guess the Silhouette",
-"Guess by Clues",
-"General MCQ Quiz",
-"Guess the Player"
-];
+const SUPABASE_URL = 'https://cuvfoltgtopchiugrbuf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D';
 
-let modes=[...defaultModes];
-let customButtons=[];
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY,
+  {
+    auth:{
+      persistSession:true,
+      autoRefreshToken:true,
+      detectSessionInUrl:true
+    }
+  }
+);
 
-const $=id=>document.getElementById(id);
+const $ = id => document.getElementById(id);
 
-function buildSettings(){
- $("modeSettings").innerHTML="";
- modes.forEach((mode,i)=>{
- const row=document.createElement("label");
- row.className="row";
- const check=document.createElement("input");
- check.type="checkbox";
- check.checked=true;
- check.dataset.index=i;
- check.addEventListener("change",updatePreview);
- const name=document.createElement("span");
- name.textContent=mode;
- row.append(check,name);
- $("modeSettings").append(row);
- });
+let isAdmin = false;
+
+const settingKeys = {
+  cover:'home_cover_url',
+  logo:'home_logo_url',
+  icon:'app_icon_url'
+};
+
+function setStatus(message){
+  $('status').textContent = message;
 }
 
+function setAuthStatus(message){
+  $('authStatus').textContent = message;
+}
+
+// Admin যাচাই
+async function checkAdmin(){
+  try{
+    const {data,error} = await db.auth.getSession();
+
+    if(error || !data.session){
+      setAuthStatus('লগইন প্রয়োজন। Admin Panel-এ পাঠানো হচ্ছে...');
+      window.location.replace('index.html');
+      return false;
+    }
+
+    const user = data.session.user;
+
+    const {data:admin,error:adminError} = await db
+      .from('admin_users')
+      .select('user_id')
+      .eq('user_id',user.id)
+      .maybeSingle();
+
+    if(adminError || !admin){
+      await db.auth.signOut();
+      alert('আপনার Admin অনুমতি নেই।');
+      window.location.replace('index.html');
+      return false;
+    }
+
+    isAdmin = true;
+    $('designer').style.display = 'block';
+    setAuthStatus('Admin যাচাই সফল হয়েছে।');
+
+    return true;
+
+  }catch(error){
+    console.error(error);
+    setAuthStatus('নিরাপত্তা যাচাই করা যায়নি।');
+    return false;
+  }
+}
+
+// সেটিংস সংরক্ষণ
+async function saveSetting(key,value){
+  if(!isAdmin) throw new Error('Admin অনুমতি নেই');
+
+  const {error} = await db
+    .from('app_settings')
+    .upsert(
+      {key:key,value:value},
+      {onConflict:'key'}
+    );
+
+  if(error) throw error;
+}
+
+// সেটিংস পড়া
+async function getSetting(key){
+  const {data,error} = await db
+    .from('app_settings')
+    .select('value')
+    .eq('key',key)
+    .maybeSingle();
+
+  if(error) throw error;
+
+  return data ? data.value : null;
+}
+
+// ছবি আপলোড
+async function uploadImage(type){
+  if(!isAdmin){
+    alert('Admin অনুমতি নেই।');
+    return;
+  }
+
+  const fileInput = $(type + 'File');
+  const file = fileInput.files[0];
+
+  if(!file){
+    alert('আগে একটি ছবি নির্বাচন করুন।');
+    return;
+  }
+
+  const allowedTypes = ['image/jpeg','image/png','image/webp'];
+
+  if(!allowedTypes.includes(file.type)){
+    alert('শুধু JPG, PNG অথবা WEBP ছবি ব্যবহার করুন।');
+    return;
+  }
+
+  if(file.size > 10 * 1024 * 1024){
+    alert('ছবির সাইজ ১০ MB-এর বেশি হতে পারবে না।');
+    return;
+  }
+
+  const extension = file.name.split('.').pop().toLowerCase();
+  const filePath = type + '/' + Date.now() + '.' + extension;
+
+  setStatus('ছবি আপলোড হচ্ছে...');
+
+  try{
+    const {error:uploadError} = await db.storage
+      .from('app-assets')
+      .upload(filePath,file,{
+        cacheControl:'3600',
+        upsert:false,
+        contentType:file.type
+      });
+
+    if(uploadError) throw uploadError;
+
+    const {data:urlData} = db.storage
+      .from('app-assets')
+      .getPublicUrl(filePath);
+
+    const imageUrl = urlData.publicUrl;
+
+    await saveSetting(settingKeys[type],imageUrl);
+
+    $(type + 'Preview').src = imageUrl;
+
+    if(type === 'cover') $('liveCover').src = imageUrl;
+    if(type === 'logo') $('liveLogo').src = imageUrl;
+
+    setStatus(type.toUpperCase() + ' সফলভাবে আপলোড ও সংরক্ষণ হয়েছে।');
+
+  }catch(error){
+    console.error(error);
+    setStatus('সমস্যা হয়েছে: ' + error.message);
+  }
+}
+
+// Text এবং Color Preview
 function updatePreview(){
- $("pLogo").textContent=$("logo").value;
- $("pName").textContent=$("appName").value;
- $("pHeading").textContent=$("heading").value;
- $("pSubtitle").textContent=$("subtitle").value;
- $("pBanner").textContent=$("banner").value;
- $("preview").style.background=$("bg").value;
- $("preview").style.color="#ffffff";
+  $('liveName').textContent = $('appName').value;
+  $('liveHeading').textContent = $('heading').value;
+  $('liveSubtitle').textContent = $('subtitle').value;
+  $('liveBanner').textContent = $('banner').value;
 
- $("pModes").innerHTML="";
- document.querySelectorAll("#modeSettings input").forEach((check,i)=>{
- if(check.checked){
- const item=document.createElement("div");
- item.className="mode";
- item.textContent=modes[i];
- $("pModes").append(item);
- }
- });
-
- $("pCustom").innerHTML="";
- customButtons.forEach(name=>{
- const item=document.createElement("div");
- item.className="mode";
- item.textContent=name;
- $("pCustom").append(item);
- });
- document.querySelectorAll(".preview h2,.preview h3").forEach(el=>{
- el.style.color=$("primary").value;
- });
+  $('livePreview').style.background = $('bg').value;
+  $('liveName').style.color = $('primary').value;
+  $('liveHeading').style.color = $('primary').value;
+  $('liveBanner').style.borderColor = $('primary').value;
 }
 
-function addButton(){
- const name=$("customButton").value.trim();
- if(!name)return;
- customButtons.push(name);
- $("customButton").value="";
- renderCustom();
- updatePreview();
+[
+  'appName','heading','subtitle','banner','bg','primary'
+].forEach(id=>{
+  $(id).addEventListener('input',updatePreview);
+});
+
+// Text ও Color Supabase-এ সংরক্ষণ
+async function saveTextSettings(){
+  if(!isAdmin) return;
+
+  const settings = {
+    home_app_name:$('appName').value,
+    home_heading:$('heading').value,
+    home_subtitle:$('subtitle').value,
+    home_banner:$('banner').value,
+    home_background_color:$('bg').value,
+    home_primary_color:$('primary').value
+  };
+
+  try{
+    setStatus('Text ও Color সংরক্ষণ হচ্ছে...');
+
+    for(const [key,value] of Object.entries(settings)){
+      await saveSetting(key,value);
+    }
+
+    setStatus('Text ও Color সফলভাবে Supabase-এ সংরক্ষিত হয়েছে।');
+
+  }catch(error){
+    console.error(error);
+    setStatus('সংরক্ষণ করা যায়নি: ' + error.message);
+  }
 }
 
-function renderCustom(){
- $("customList").innerHTML="";
- customButtons.forEach((name,i)=>{
- const row=document.createElement("div");
- row.className="row";
- const text=document.createElement("span");
- text.textContent=name;
- const del=document.createElement("button");
- del.textContent="বাদ দিন";
- del.onclick=()=>{
- customButtons.splice(i,1);
- renderCustom();
- updatePreview();
- };
- row.append(text,del);
- $("customList").append(row);
- });
+// Supabase থেকে সব সেটিংস লোড
+async function loadAllSettings(){
+  if(!isAdmin) return;
+
+  try{
+    setStatus('সেটিংস লোড হচ্ছে...');
+
+    const keys = [
+      'home_cover_url',
+      'home_logo_url',
+      'app_icon_url',
+      'home_app_name',
+      'home_heading',
+      'home_subtitle',
+      'home_banner',
+      'home_background_color',
+      'home_primary_color'
+    ];
+
+    const values = {};
+
+    for(const key of keys){
+      values[key] = await getSetting(key);
+    }
+
+    if(values.home_cover_url){
+      $('coverPreview').src = values.home_cover_url;
+      $('liveCover').src = values.home_cover_url;
+    }
+
+    if(values.home_logo_url){
+      $('logoPreview').src = values.home_logo_url;
+      $('liveLogo').src = values.home_logo_url;
+    }
+
+    if(values.app_icon_url){
+      $('iconPreview').src = values.app_icon_url;
+    }
+
+    if(values.home_app_name) $('appName').value = values.home_app_name;
+    if(values.home_heading) $('heading').value = values.home_heading;
+    if(values.home_subtitle) $('subtitle').value = values.home_subtitle;
+    if(values.home_banner) $('banner').value = values.home_banner;
+    if(values.home_background_color) $('bg').value = values.home_background_color;
+    if(values.home_primary_color) $('primary').value = values.home_primary_color;
+
+    updatePreview();
+    setStatus('সেটিংস লোড সফল হয়েছে।');
+
+  }catch(error){
+    console.error(error);
+    setStatus('সেটিংস লোড করা যায়নি: ' + error.message);
+  }
 }
 
-function getDesign(){
- return {
- appName:$("appName").value,
- logo:$("logo").value,
- heading:$("heading").value,
- subtitle:$("subtitle").value,
- banner:$("banner").value,
- bg:$("bg").value,
- primary:$("primary").value,
- modes:modes.filter((m,i)=>
- document.querySelectorAll("#modeSettings input")[i].checked),
- customButtons
- };
+// শুরু
+async function start(){
+  const authorized = await checkAdmin();
+
+  if(!authorized) return;
+
+  await loadAllSettings();
 }
 
-function saveDesign(){
- localStorage.setItem("jaberHomeDesign",JSON.stringify(getDesign()));
- $("status").textContent="এই ব্রাউজারে ডিজাইন সংরক্ষণ হয়েছে।";
-}
-
-function resetDesign(){
- localStorage.removeItem("jaberHomeDesign");
- location.reload();
-}
-
-function loadDesign(){
- const saved=localStorage.getItem("jaberHomeDesign");
- if(!saved)return;
- try{
- const d=JSON.parse(saved);
- ["appName","logo","heading","subtitle","banner","bg","primary"]
- .forEach(key=>{if(d[key]!==undefined)$(key).value=d[key]});
- modes=defaultModes;
- customButtons=d.customButtons||[];
- }catch(e){}
-}
-
-["appName","logo","heading","subtitle","banner","bg","primary"]
-.forEach(id=>$(id).addEventListener("input",updatePreview));
-
-loadDesign();
-buildSettings();
-renderCustom();
-updatePreview();
+start();
 </script>
+
 </body>
-  </html>
-  
+ </html>
+ 
