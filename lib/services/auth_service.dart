@@ -4,6 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AuthService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
+  static const String redirectUrl =
+      'jaberquiz://login-callback';
+
   // নতুন অ্যাকাউন্ট তৈরি
   Future<AuthResponse> signUp({
     required String email,
@@ -12,6 +15,7 @@ class AuthService {
     return await _supabase.auth.signUp(
       email: email.trim(),
       password: password,
+      emailRedirectTo: redirectUrl,
     );
   }
 
