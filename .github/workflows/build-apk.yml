@@ -30,19 +30,48 @@ jobs:
       - name: Create Android project files
         run: flutter create --platforms=android --org com.jaber.footballquiz .
 
-      - name: Add Internet Permission
+      - name: Add Internet Permission and Deep Link
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
           path = Path("android/app/src/main/AndroidManifest.xml")
           content = path.read_text()
+
           permission = '    <uses-permission android:name="android.permission.INTERNET" />\n'
 
           if "android.permission.INTERNET" not in content:
-              content = content.replace("<application", permission + "    <application", 1)
+              content = content.replace(
+                  "<application",
+                  permission + "    <application",
+                  1
+              )
+
+          deep_link = '''
+                  <intent-filter>
+                      <action android:name="android.intent.action.VIEW" />
+                      <category android:name="android.intent.category.DEFAULT" />
+                      <category android:name="android.intent.category.BROWSABLE" />
+                      <data android:scheme="jaberquiz" android:host="login-callback" />
+                  </intent-filter>
+          '''
+
+          if 'android:scheme="jaberquiz"' not in content:
+              activity_start = content.find("<activity")
+              activity_end = content.find("</activity>", activity_start)
+
+              if activity_start == -1 or activity_end == -1:
+                  raise Exception("MainActivity not found in AndroidManifest.xml")
+
+              content = (
+                  content[:activity_end]
+                  + deep_link
+                  + "\n        "
+                  + content[activity_end:]
+              )
 
           path.write_text(content)
+          print("Internet permission and deep link added successfully.")
           PY
 
       - name: Install dependencies
@@ -106,4 +135,3 @@ jobs:
         with:
           name: JABER-FOOTBALL-QUIZ-APK
           path: build/app/outputs/flutter-apk/app-release.apk
-          
