@@ -37,22 +37,66 @@ jobs:
 
           path = Path("android/app/src/main/AndroidManifest.xml")
           content = path.read_text()
-
           permission = '    <uses-permission android:name="android.permission.INTERNET" />\n'
 
           if "android.permission.INTERNET" not in content:
-              content = content.replace(
-                  "<application",
-                  permission + "    <application",
-                  1
-              )
+              content = content.replace("<application", permission + "    <application", 1)
 
           path.write_text(content)
-          print("Internet Permission added successfully.")
           PY
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Download Admin App Icon
+        run: |
+          mkdir -p assets
+          python3 - <<'PY'
+          import json
+          import urllib.request
+          from pathlib import Path
+
+          base = "https://cuvfoltgtopchiugrbuf.supabase.co"
+          key = "sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D"
+
+          req = urllib.request.Request(
+              base + "/rest/v1/app_settings?select=value&key=eq.app_icon_url",
+              headers={
+                  "apikey": key,
+                  "Authorization": "Bearer " + key
+              }
+          )
+
+          with urllib.request.urlopen(req) as response:
+              data = json.loads(response.read().decode())
+
+          if not data or not data[0].get("value"):
+              raise Exception("Admin App Icon URL not found")
+
+          image_url = data[0]["value"]
+
+          if not image_url.startswith(base + "/storage/v1/object/public/"):
+              raise Exception("Invalid App Icon URL")
+
+          urllib.request.urlretrieve(image_url, "assets/app_icon.png")
+
+          if Path("assets/app_icon.png").stat().st_size == 0:
+              raise Exception("Downloaded icon is empty")
+
+          print("Admin App Icon downloaded successfully")
+          PY
+
+      - name: Generate Android App Icon
+        run: |
+          cat > flutter_launcher_icons.yaml <<'EOF'
+          flutter_launcher_icons:
+            android: true
+            ios: false
+            image_path: "assets/app_icon.png"
+            adaptive_icon_background: "#090D0B"
+            adaptive_icon_foreground: "assets/app_icon.png"
+          EOF
+          dart run flutter_launcher_icons
 
       - name: Build APK
         run: flutter build apk --release
@@ -62,3 +106,4 @@ jobs:
         with:
           name: JABER-FOOTBALL-QUIZ-APK
           path: build/app/outputs/flutter-apk/app-release.apk
+          
