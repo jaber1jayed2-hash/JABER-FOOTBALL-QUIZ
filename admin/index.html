@@ -27,6 +27,10 @@ button:disabled{opacity:.6;cursor:not-allowed}
 small{color:#b7c8bd}
 .preview{max-width:180px;max-height:120px;display:block;margin:10px 0;border-radius:8px}
 .status{color:#b7c8bd;white-space:pre-wrap;line-height:1.6}
+label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
+.setting-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.setting-box{background:#1a3022;padding:12px;border-radius:9px}
+.setting-box input{margin-bottom:2px}
 </style>
 </head>
 
@@ -39,22 +43,14 @@ small{color:#b7c8bd}
 
 <div class="container">
 
-<!-- LOGIN -->
-
 <div id="login" class="card">
 <h2>Admin Login</h2>
 <p>আপনার Admin Account দিয়ে প্রবেশ করুন</p>
-
 <input type="email" id="email" placeholder="Admin Email" autocomplete="username">
-
 <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-
 <button id="loginButton" onclick="login()">Login</button>
-
 <p id="message" class="status">Admin Account দিয়ে প্রবেশ করুন।</p>
 </div>
-
-<!-- DASHBOARD -->
 
 <div id="dashboard" class="hidden">
 
@@ -73,7 +69,6 @@ small{color:#b7c8bd}
 
 <div class="card menu">
 <h2>Admin Menu</h2>
-
 <button onclick="show('questions')">প্রশ্ন পরিচালনা</button>
 <button onclick="show('players')">খেলোয়াড় পরিচালনা</button>
 <button onclick="show('clubs')">ক্লাব পরিচালনা</button>
@@ -81,6 +76,7 @@ small{color:#b7c8bd}
 <button onclick="show('tournaments')">টুর্নামেন্ট পরিচালনা</button>
 <button onclick="show('users')">ব্যবহারকারী পরিচালনা</button>
 <button onclick="show('settings')">অ্যাপ সেটিংস</button>
+<button onclick="show('quiz-settings')">কুইজ সেটিংস</button>
 <button onclick="show('developer')">Contact with Developer</button>
 </div>
 
@@ -105,6 +101,60 @@ small{color:#b7c8bd}
 <p id="appStatus" class="status"></p>
 </div>
 
+<!-- QUIZ SETTINGS -->
+
+<div id="quiz-settings" class="card hidden">
+<h2>কুইজ সেটিংস</h2>
+<p class="status">এখান থেকে Quiz-এর নিয়ম পরিবর্তন করতে পারবেন। পরিবর্তন Supabase-এ সংরক্ষিত হবে।</p>
+
+<div class="setting-grid">
+
+<div class="setting-box">
+<label>সর্বনিম্ন প্রশ্ন সংখ্যা</label>
+<input type="number" id="quizMin" min="1" max="500">
+</div>
+
+<div class="setting-box">
+<label>সর্বোচ্চ প্রশ্ন সংখ্যা</label>
+<input type="number" id="quizMax" min="1" max="500">
+</div>
+
+<div class="setting-box">
+<label>ডিফল্ট প্রশ্ন সংখ্যা</label>
+<input type="number" id="quizDefault" min="1" max="500">
+</div>
+
+<div class="setting-box">
+<label>প্রতি প্রশ্নের টাইমার (সেকেন্ড)</label>
+<input type="number" id="quizTimer" min="1" max="300">
+</div>
+
+<div class="setting-box">
+<label>সঠিক উত্তরে XP</label>
+<input type="number" id="quizCorrectXP" min="0" max="10000">
+</div>
+
+<div class="setting-box">
+<label>ভুল উত্তরে XP</label>
+<input type="number" id="quizWrongXP" min="-10000" max="0">
+</div>
+
+<div class="setting-box">
+<label>সঠিক উত্তরে পয়েন্ট</label>
+<input type="number" id="quizCorrectPoints" min="0" max="10000">
+</div>
+
+<div class="setting-box">
+<label>ভুল উত্তরে পয়েন্ট</label>
+<input type="number" id="quizWrongPoints" min="0" max="10000">
+</div>
+
+</div>
+
+<button id="saveQuizButton" onclick="saveQuizSettings()">কুইজ সেটিংস সংরক্ষণ করুন</button>
+<p id="quizStatus" class="status"></p>
+</div>
+
 <!-- DEVELOPER SETTINGS -->
 
 <div id="developer" class="card hidden">
@@ -126,8 +176,6 @@ small{color:#b7c8bd}
 <button onclick="saveDeveloperSettings()">Save Developer Settings</button>
 <p id="developerStatus" class="status"></p>
 </div>
-
-<!-- OTHER SECTIONS -->
 
 <div id="section" class="card hidden">
 <h2 id="sectionTitle"></h2>
@@ -169,10 +217,7 @@ let isAdminVerified = false;
 // VERIFY ADMIN
 
 async function verifyAdmin(user){
-
- if(!user){
-  return false;
- }
+ if(!user)return false;
 
  const {data,error} = await db
   .from("admin_users")
@@ -201,7 +246,6 @@ async function openDashboard(user){
 
   document.getElementById("dashboard").classList.add("hidden");
   document.getElementById("login").classList.remove("hidden");
-
   document.getElementById("message").innerText =
    "আপনার Account-এ Admin অনুমতি নেই।";
 
@@ -213,7 +257,6 @@ async function openDashboard(user){
 
  document.getElementById("login").classList.add("hidden");
  document.getElementById("dashboard").classList.remove("hidden");
-
  document.getElementById("adminEmail").innerText =
   "Admin: "+(user.email || "");
 
@@ -222,18 +265,15 @@ async function openDashboard(user){
  return true;
 }
 
-// AUTO SESSION RESTORE
+// RESTORE SESSION
 
 async function restoreSession(){
 
  const message=document.getElementById("message");
-
  message.innerText="Admin Session যাচাই হচ্ছে...";
 
  try{
-
   const {data,error}=await db.auth.getSession();
-
   if(error)throw error;
 
   const session=data.session;
@@ -246,11 +286,8 @@ async function restoreSession(){
   await openDashboard(session.user);
 
  }catch(error){
-
   console.error("Session Error:",error.message);
-
-  message.innerText=
-   "Session যাচাই করা যায়নি। আবার Login করুন।";
+  message.innerText="Session যাচাই করা যায়নি। আবার Login করুন।";
  }
 }
 
@@ -273,26 +310,15 @@ async function login(){
  message.innerText="লগইন হচ্ছে...";
 
  try{
-
-  const {data,error}=await db.auth.signInWithPassword({
-   email,
-   password
-  });
-
+  const {data,error}=await db.auth.signInWithPassword({email,password});
   if(error)throw error;
 
   const success=await openDashboard(data.user);
-
-  if(!success){
-   throw new Error("Admin অনুমতি পাওয়া যায়নি।");
-  }
+  if(!success)throw new Error("Admin অনুমতি পাওয়া যায়নি।");
 
  }catch(error){
-
   message.innerText="Login Error: "+error.message;
-
  }finally{
-
   loginButton.disabled=false;
  }
 }
@@ -306,19 +332,28 @@ function show(name){
   return;
  }
 
- // OPEN QUESTIONS PAGE
-
  if(name==="questions"){
   window.location.href="questions.html";
   return;
  }
 
- ["settings","developer","section"].forEach(id=>{
+ [
+  "settings",
+  "quiz-settings",
+  "developer",
+  "section"
+ ].forEach(id=>{
   document.getElementById(id).classList.add("hidden");
  });
 
  if(name==="settings"){
   document.getElementById("settings").classList.remove("hidden");
+  return;
+ }
+
+ if(name==="quiz-settings"){
+  document.getElementById("quiz-settings").classList.remove("hidden");
+  loadQuizSettings();
   return;
  }
 
@@ -347,8 +382,12 @@ function show(name){
 // BACK
 
 function back(){
-
- ["settings","developer","section"].forEach(id=>{
+ [
+  "settings",
+  "quiz-settings",
+  "developer",
+  "section"
+ ].forEach(id=>{
   document.getElementById(id).classList.add("hidden");
  });
 }
@@ -437,19 +476,18 @@ async function saveSetting(key,value){
   .from("app_settings")
   .upsert({
    key:key,
-   value:value,
+   value:String(value),
    updated_at:new Date().toISOString()
   },{onConflict:"key"});
 
  if(error)throw error;
 }
 
-// LOAD SETTINGS
+// LOAD ALL SETTINGS
 
 async function loadSettings(){
 
  try{
-
   const {data,error}=await db
    .from("app_settings")
    .select("key,value");
@@ -476,14 +514,14 @@ async function loadSettings(){
   setPreview("iconPreview",settings.app_icon_url);
   setPreview("developerPreview",settings.developer_photo_url);
 
- }catch(error){
+  fillQuizSettings(settings);
 
+ }catch(error){
   console.log("Settings Load Error:",error.message);
  }
 }
 
 function setPreview(id,url){
-
  if(!url)return;
 
  const img=document.getElementById(id);
@@ -491,16 +529,138 @@ function setPreview(id,url){
  img.classList.remove("hidden");
 }
 
+// QUIZ SETTINGS
+
+function fillQuizSettings(settings){
+
+ document.getElementById("quizMin").value =
+  settings.quiz_min_questions ?? 5;
+
+ document.getElementById("quizMax").value =
+  settings.quiz_max_questions ?? 50;
+
+ document.getElementById("quizDefault").value =
+  settings.quiz_default_questions ?? 10;
+
+ document.getElementById("quizTimer").value =
+  settings.quiz_timer_seconds ?? 20;
+
+ document.getElementById("quizCorrectXP").value =
+  settings.quiz_correct_xp ?? 5;
+
+ document.getElementById("quizWrongXP").value =
+  settings.quiz_wrong_xp ?? -2;
+
+ document.getElementById("quizCorrectPoints").value =
+  settings.quiz_correct_points ?? 5;
+
+ document.getElementById("quizWrongPoints").value =
+  settings.quiz_wrong_points ?? 0;
+}
+
+async function loadQuizSettings(){
+
+ const status=document.getElementById("quizStatus");
+ status.innerText="সেটিংস লোড হচ্ছে...";
+
+ try{
+  const {data,error}=await db
+   .from("app_settings")
+   .select("key,value")
+   .like("key","quiz_%");
+
+  if(error)throw error;
+
+  const settings={};
+  (data||[]).forEach(item=>{
+   settings[item.key]=item.value;
+  });
+
+  fillQuizSettings(settings);
+  status.innerText="Quiz Settings লোড হয়েছে।";
+
+ }catch(error){
+  status.innerText="Settings Load Error: "+error.message;
+ }
+}
+
+async function saveQuizSettings(){
+
+ const status=document.getElementById("quizStatus");
+ const button=document.getElementById("saveQuizButton");
+
+ if(!isAdminVerified || !currentUser){
+  status.innerText="Admin Login নেই।";
+  return;
+ }
+
+ const values={
+  quiz_min_questions:Number(document.getElementById("quizMin").value),
+  quiz_max_questions:Number(document.getElementById("quizMax").value),
+  quiz_default_questions:Number(document.getElementById("quizDefault").value),
+  quiz_timer_seconds:Number(document.getElementById("quizTimer").value),
+  quiz_correct_xp:Number(document.getElementById("quizCorrectXP").value),
+  quiz_wrong_xp:Number(document.getElementById("quizWrongXP").value),
+  quiz_correct_points:Number(document.getElementById("quizCorrectPoints").value),
+  quiz_wrong_points:Number(document.getElementById("quizWrongPoints").value)
+ };
+
+ for(const [key,value] of Object.entries(values)){
+  if(!Number.isInteger(value)){
+   status.innerText="সব ঘরে পূর্ণসংখ্যা লিখুন।";
+   return;
+  }
+ }
+
+ if(values.quiz_min_questions<1 ||
+    values.quiz_max_questions<values.quiz_min_questions ||
+    values.quiz_max_questions>500){
+  status.innerText="প্রশ্নের সর্বনিম্ন ও সর্বোচ্চ সংখ্যা সঠিকভাবে দিন।";
+  return;
+ }
+
+ if(values.quiz_default_questions<values.quiz_min_questions ||
+    values.quiz_default_questions>values.quiz_max_questions){
+  status.innerText="ডিফল্ট প্রশ্ন সংখ্যা সর্বনিম্ন ও সর্বোচ্চ সংখ্যার মধ্যে হতে হবে।";
+  return;
+ }
+
+ if(values.quiz_timer_seconds<1 || values.quiz_timer_seconds>300){
+  status.innerText="টাইমার ১ থেকে ৩০০ সেকেন্ডের মধ্যে হতে হবে।";
+  return;
+ }
+
+ if(values.quiz_correct_xp<0 || values.quiz_wrong_xp>0 ||
+    values.quiz_correct_points<0 || values.quiz_wrong_points<0){
+  status.innerText="XP ও পয়েন্টের মান সঠিকভাবে দিন।";
+  return;
+ }
+
+ button.disabled=true;
+ status.innerText="Quiz Settings সংরক্ষণ হচ্ছে...";
+
+ try{
+  for(const [key,value] of Object.entries(values)){
+   await saveSetting(key,value);
+  }
+
+  status.innerText="সফলভাবে Quiz Settings সংরক্ষিত হয়েছে।";
+
+ }catch(error){
+  status.innerText="Save Error: "+error.message;
+ }finally{
+  button.disabled=false;
+ }
+}
+
 // SAVE APP SETTINGS
 
 async function saveAppSettings(){
 
  const status=document.getElementById("appStatus");
-
  status.innerText="সংরক্ষণ হচ্ছে...";
 
  try{
-
   const files=[
    ["coverFile","home-cover","home_cover_url"],
    ["logoFile","home-logo","home_logo_url"],
@@ -508,7 +668,6 @@ async function saveAppSettings(){
   ];
 
   for(const [inputId,folder,key] of files){
-
    const file=document.getElementById(inputId).files[0];
 
    if(file){
@@ -520,7 +679,6 @@ async function saveAppSettings(){
   status.innerText="App Settings সংরক্ষিত হয়েছে।";
 
  }catch(error){
-
   status.innerText="Error: "+error.message;
  }
 }
@@ -530,11 +688,9 @@ async function saveAppSettings(){
 async function saveDeveloperSettings(){
 
  const status=document.getElementById("developerStatus");
-
  status.innerText="সংরক্ষণ হচ্ছে...";
 
  try{
-
   const photo=document.getElementById("developerPhotoFile").files[0];
 
   if(photo){
@@ -560,7 +716,6 @@ async function saveDeveloperSettings(){
   status.innerText="Developer Settings সংরক্ষিত হয়েছে।";
 
  }catch(error){
-
   status.innerText="Error: "+error.message;
  }
 }
@@ -570,11 +725,8 @@ async function saveDeveloperSettings(){
 async function logout(){
 
  try{
-
   await db.auth.signOut();
-
  }catch(error){
-
   console.error("Logout Error:",error.message);
  }
 
@@ -583,7 +735,6 @@ async function logout(){
 
  document.getElementById("dashboard").classList.add("hidden");
  document.getElementById("login").classList.remove("hidden");
-
  document.getElementById("password").value="";
  document.getElementById("message").innerText="আপনি Logout করেছেন।";
  document.getElementById("adminEmail").innerText="";
@@ -591,13 +742,11 @@ async function logout(){
 
 // AUTH STATE CHANGES
 
-db.auth.onAuthStateChange(async(event,session)=>{
-
+db.auth.onAuthStateChange((event,session)=>{
  if(event==="SIGNED_OUT"){
   currentUser=null;
   isAdminVerified=false;
  }
-
 });
 
 // START
@@ -606,5 +755,4 @@ restoreSession();
 
 </script>
 </body>
- </html>
- 
+</html>
