@@ -204,7 +204,7 @@ class _ContactDeveloperScreenState
 
                       const Center(
                         child: Text(
-                          'Contact Us',
+                          'Developer',
                           style: TextStyle(
                             fontSize: 18,
                             color: Color(0xFF27D66B),
