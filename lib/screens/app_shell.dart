@@ -224,7 +224,7 @@ class LoginRequiredScreen extends StatelessWidget {
                     onPressed: () {
                       showDialog(
                         context: context,
-                        builder: (_) => const AuthDialog(),
+                        builder: (_) => AuthDialog(),
                       );
                     },
                     icon: const Icon(Icons.login),
