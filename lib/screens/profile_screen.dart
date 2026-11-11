@@ -1,7 +1,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -11,48 +10,68 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final AuthService _authService = AuthService();
+  final supabase = Supabase.instance.client;
 
-  Future<void> _openAuthDialog() async {
-    await showDialog(
-      context: context,
-      builder: (_) => const AuthDialog(),
-    );
+  Future<Map<String, dynamic>?> _loadProfile() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return null;
+
+    return await supabase
+        .from('profiles')
+        .select()
+        .eq('id', user.id)
+        .maybeSingle();
   }
 
   Future<void> _logout() async {
     try {
-      await _authService.signOut();
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('লগআউট সফল হয়েছে'),
-        ),
-      );
+      await supabase.auth.signOut();
     } catch (e) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('লগআউট করতে সমস্যা হয়েছে: $e'),
-        ),
+        const SnackBar(content: Text('লগআউট করতে সমস্যা হয়েছে।')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<AuthState>(
-      stream: Supabase.instance.client.auth.onAuthStateChange,
-      builder: (context, snapshot) {
-        final user = Supabase.instance.client.auth.currentUser;
+    final user = supabase.auth.currentUser;
 
-        final email = user?.email ?? 'অতিথি খেলোয়াড়';
+    if (user == null) {
+      return const Center(
+        child: Text('লগইন প্রয়োজন।'),
+      );
+    }
 
-        return SafeArea(
-          child: ListView(
+    return SafeArea(
+      child: FutureBuilder<Map<String, dynamic>?>(
+        future: _loadProfile(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF27D66B),
+              ),
+            );
+          }
+
+          if (snapshot.hasError || snapshot.data == null) {
+            return const Center(
+              child: Text('Profile লোড করা যায়নি।'),
+            );
+          }
+
+          final profile = snapshot.data!;
+
+          final nickname =
+              profile['display_name']?.toString() ?? 'Player';
+          final xp = profile['xp'] ?? 0;
+          final level = profile['level'] ?? 1;
+          final points = profile['total_points'] ?? 0;
+          final avatarUrl = profile['avatar_url']?.toString();
+
+          return ListView(
             padding: const EdgeInsets.all(18),
             children: [
               const Text(
@@ -62,19 +81,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 25),
 
-              // Profile Photo
               Center(
                 child: CircleAvatar(
                   radius: 48,
                   backgroundColor: const Color(0xFF245D39),
-                  child: const Icon(
-                    Icons.person,
-                    size: 50,
-                    color: Colors.white,
-                  ),
+                  backgroundImage:
+                      avatarUrl != null && avatarUrl.isNotEmpty
+                          ? NetworkImage(avatarUrl)
+                          : null,
+                  child: avatarUrl == null || avatarUrl.isEmpty
+                      ? const Icon(
+                          Icons.person,
+                          size: 50,
+                          color: Colors.white,
+                        )
+                      : null,
                 ),
               ),
 
@@ -82,54 +105,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               Center(
                 child: Text(
-                  email,
-                  textAlign: TextAlign.center,
+                  nickname,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 21,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
-              Center(
+              const Center(
                 child: Text(
-                  user == null
-                      ? 'Guest Player'
-                      : 'আপনি সফলভাবে লগইন করেছেন।',
-                  style: const TextStyle(
-                    color: Colors.white60,
-                  ),
+                  'Football Quiz Player',
+                  style: TextStyle(color: Colors.white60),
                 ),
               ),
 
               const SizedBox(height: 25),
 
-              // Login / Logout
-              if (user == null)
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: _openAuthDialog,
-                    icon: const Icon(Icons.login),
-                    label: const Text(
-                      'লগইন / অ্যাকাউন্ট তৈরি',
-                    ),
-                  ),
-                )
-              else
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: _logout,
-                    icon: const Icon(Icons.logout),
-                    label: const Text('লগআউট'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                    ),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _logout,
+                  icon: const Icon(Icons.logout),
+                  label: const Text('লগআউট'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
                   ),
                 ),
+              ),
 
               const SizedBox(height: 25),
 
@@ -146,53 +151,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _StatCard(
                 icon: Icons.star,
                 title: 'XP',
-                value: '0',
+                value: '$xp',
               ),
 
               _StatCard(
                 icon: Icons.military_tech,
                 title: 'Level',
-                value: '1',
+                value: '$level',
               ),
 
               _StatCard(
                 icon: Icons.emoji_events,
-                title: 'Rank',
-                value: '--',
+                title: 'Total Points',
+                value: '$points',
               ),
 
-              _StatCard(
+              const _StatCard(
                 icon: Icons.quiz,
                 title: 'Played Quizzes',
-                value: '0',
+                value: 'পরবর্তী ধাপে যুক্ত হবে',
               ),
 
-              _StatCard(
+              const _StatCard(
                 icon: Icons.check_circle,
                 title: 'Correct Answers',
-                value: '0',
-              ),
-
-              _StatCard(
-                icon: Icons.history,
-                title: 'Quiz History',
-                value: '0',
-              ),
-
-              const SizedBox(height: 15),
-
-              const Text(
-                'নোট: XP, Rank এবং অন্যান্য Statistics '
-                'পরবর্তী ধাপে Database-এর সঙ্গে যুক্ত করা হবে।',
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 12,
-                ),
+                value: 'পরবর্তী ধাপে যুক্ত হবে',
               ),
             ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
@@ -220,237 +208,12 @@ class _StatCard extends StatelessWidget {
         trailing: Text(
           value,
           style: const TextStyle(
-            fontSize: 17,
+            fontSize: 15,
             fontWeight: FontWeight.bold,
             color: Color(0xFF27D66B),
           ),
         ),
       ),
-    );
-  }
-}
-
-class AuthDialog extends StatefulWidget {
-  const AuthDialog({super.key});
-
-  @override
-  State<AuthDialog> createState() => _AuthDialogState();
-}
-
-class _AuthDialogState extends State<AuthDialog> {
-  final AuthService _authService = AuthService();
-
-  final TextEditingController _emailController =
-      TextEditingController();
-
-  final TextEditingController _passwordController =
-      TextEditingController();
-
-  bool _isLogin = true;
-  bool _loading = false;
-  bool _hidePassword = true;
-
-  String? _error;
-  String? _success;
-
-  Future<void> _submit() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-
-    if (email.isEmpty || password.isEmpty) {
-      setState(() {
-        _error = 'ইমেইল ও পাসওয়ার্ড লিখুন।';
-      });
-      return;
-    }
-
-    if (!email.contains('@') || !email.contains('.')) {
-      setState(() {
-        _error = 'সঠিক ইমেইল ঠিকানা লিখুন।';
-      });
-      return;
-    }
-
-    if (password.length < 6) {
-      setState(() {
-        _error = 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।';
-      });
-      return;
-    }
-
-    setState(() {
-      _loading = true;
-      _error = null;
-      _success = null;
-    });
-
-    try {
-      if (_isLogin) {
-        await _authService.signIn(
-          email: email,
-          password: password,
-        );
-
-        if (!mounted) return;
-
-        Navigator.pop(context);
-      } else {
-        final response = await _authService.signUp(
-          email: email,
-          password: password,
-        );
-
-        if (!mounted) return;
-
-        if (response.session != null) {
-          Navigator.pop(context);
-        } else {
-          setState(() {
-            _success =
-                'অ্যাকাউন্ট তৈরি হয়েছে। ইমেইলে পাঠানো লিংক দিয়ে যাচাই করুন।';
-          });
-        }
-      }
-    } on AuthException catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.message;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = 'সমস্যা হয়েছে। আবার চেষ্টা করুন।';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: const Color(0xFF151D18),
-
-      title: Text(
-        _isLogin
-            ? 'লগইন করুন'
-            : 'নতুন অ্যাকাউন্ট তৈরি করুন',
-      ),
-
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'ইমেইল',
-                prefixIcon: Icon(Icons.email),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _passwordController,
-              obscureText: _hidePassword,
-              decoration: InputDecoration(
-                labelText: 'পাসওয়ার্ড',
-                prefixIcon: const Icon(Icons.lock),
-                suffixIcon: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _hidePassword = !_hidePassword;
-                    });
-                  },
-                  icon: Icon(
-                    _hidePassword
-                        ? Icons.visibility
-                        : Icons.visibility_off,
-                  ),
-                ),
-              ),
-            ),
-
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _error!,
-                style: const TextStyle(
-                  color: Colors.redAccent,
-                ),
-              ),
-            ],
-
-            if (_success != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _success!,
-                style: const TextStyle(
-                  color: Color(0xFF27D66B),
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 12),
-
-            TextButton(
-              onPressed: _loading
-                  ? null
-                  : () {
-                      setState(() {
-                        _isLogin = !_isLogin;
-                        _error = null;
-                        _success = null;
-                      });
-                    },
-              child: Text(
-                _isLogin
-                    ? 'নতুন অ্যাকাউন্ট তৈরি করবেন?'
-                    : 'আগে থেকেই অ্যাকাউন্ট আছে? লগইন করুন',
-              ),
-            ),
-          ],
-        ),
-      ),
-
-      actions: [
-        TextButton(
-          onPressed: _loading
-              ? null
-              : () => Navigator.pop(context),
-          child: const Text('বন্ধ করুন'),
-        ),
-
-        FilledButton(
-          onPressed: _loading ? null : _submit,
-          child: _loading
-              ? const SizedBox(
-                  height: 18,
-                  width: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
-                )
-              : Text(
-                  _isLogin ? 'লগইন' : 'অ্যাকাউন্ট তৈরি',
-                ),
-        ),
-      ],
     );
   }
 }
