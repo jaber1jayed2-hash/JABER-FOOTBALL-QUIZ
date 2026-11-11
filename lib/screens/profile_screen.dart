@@ -217,3 +217,214 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
+
+// Login এবং Register Dialog
+class AuthDialog extends StatefulWidget {
+  AuthDialog({super.key});
+
+  @override
+  State<AuthDialog> createState() => _AuthDialogState();
+}
+
+class _AuthDialogState extends State<AuthDialog> {
+  final supabase = Supabase.instance.client;
+
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  bool isRegister = false;
+  bool isLoading = false;
+  bool obscurePassword = true;
+
+  String? errorMessage;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() {
+        errorMessage = 'Email এবং Password লিখুন।';
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      setState(() {
+        errorMessage = 'Password কমপক্ষে ৬ অক্ষরের হতে হবে।';
+      });
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      if (isRegister) {
+        final response = await supabase.auth.signUp(
+          email: email,
+          password: password,
+        );
+
+        if (!mounted) return;
+
+        if (response.session != null) {
+          Navigator.of(context).pop();
+        } else {
+          Navigator.of(context).pop();
+
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'অ্যাকাউন্ট তৈরি হয়েছে। Email যাচাই করে লগইন করুন।',
+              ),
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+      } else {
+        await supabase.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
+
+        if (!mounted) return;
+        Navigator.of(context).pop();
+      }
+    } on AuthException catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        errorMessage = e.message;
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        errorMessage = 'সমস্যা হয়েছে। আবার চেষ্টা করুন।';
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF151D18),
+      title: Text(
+        isRegister ? 'নতুন অ্যাকাউন্ট তৈরি' : 'লগইন করুন',
+        style: const TextStyle(color: Colors.white),
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+            ),
+
+            const SizedBox(height: 15),
+
+            TextField(
+              controller: passwordController,
+              obscureText: obscurePassword,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Password',
+                prefixIcon: const Icon(Icons.lock_outline),
+                suffixIcon: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      obscurePassword = !obscurePassword;
+                    });
+                  },
+                  icon: Icon(
+                    obscurePassword
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                  ),
+                ),
+              ),
+            ),
+
+            if (errorMessage != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                errorMessage!,
+                style: const TextStyle(
+                  color: Colors.redAccent,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 12),
+
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () {
+                      setState(() {
+                        isRegister = !isRegister;
+                        errorMessage = null;
+                      });
+                    },
+              child: Text(
+                isRegister
+                    ? 'আগে থেকেই অ্যাকাউন্ট আছে? Login'
+                    : 'নতুন অ্যাকাউন্ট তৈরি করুন',
+                style: const TextStyle(
+                  color: Color(0xFF27D66B),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isLoading
+              ? null
+              : () => Navigator.of(context).pop(),
+          child: const Text('বন্ধ করুন'),
+        ),
+
+        FilledButton(
+          onPressed: isLoading ? null : _submit,
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF27D66B),
+            foregroundColor: Colors.black,
+          ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.black,
+                  ),
+                )
+              : Text(isRegister ? 'Register' : 'Login'),
+        ),
+      ],
+    );
+  }
+}
