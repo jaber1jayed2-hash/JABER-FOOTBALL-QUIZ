@@ -137,6 +137,90 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         answer == getCorrectOptionKey(currentQuestion);
   }
 
+  // ছবির URL থাকলে ছবি দেখাবে।
+  // URL ভুল হলে অ্যাপ ক্র্যাশ করবে না।
+  Widget buildQuestionImage(String imageUrl) {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(
+        maxHeight: 260,
+        minHeight: 120,
+      ),
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF151D18),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Colors.white12,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Image.network(
+        imageUrl,
+        width: double.infinity,
+        height: 220,
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) {
+            return child;
+          }
+
+          return SizedBox(
+            height: 180,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(
+                    color: Color(0xFF27D66B),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'ছবি লোড হচ্ছে...',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  if (loadingProgress.expectedTotalBytes != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        '${(loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return const SizedBox(
+            height: 120,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.broken_image_outlined,
+                    color: Colors.white54,
+                    size: 35,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'ছবিটি লোড করা যায়নি',
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> loadQuiz() async {
     try {
       final user = supabase.auth.currentUser;
@@ -145,7 +229,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         throw Exception('প্রথমে লগইন করুন।');
       }
 
-      // অ্যাডমিন প্যানেলের কুইজ সেটিংস।
       final settingsData = await supabase
           .from('app_settings')
           .select('key, value')
@@ -193,7 +276,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         -2,
       );
 
-      // আগে উত্তর দেওয়া প্রশ্নের ID সংগ্রহ।
       final attemptedData = await supabase
           .from('quiz_question_attempts')
           .select('question_id')
@@ -203,7 +285,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
           .map((item) => item['question_id'].toString())
           .toSet();
 
-      // নির্বাচিত মোডের প্রকাশিত প্রশ্ন।
       final questionData = await supabase
           .from('quiz_questions')
           .select()
@@ -244,8 +325,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     }
   }
 
-  // কুইজের জন্য একটি History Record তৈরি।
-  // প্রথম প্রশ্নের উত্তর দেওয়ার সময় এটি তৈরি হবে।
   Future<void> createQuizAttempt() async {
     if (quizAttemptId != null) return;
 
@@ -327,7 +406,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     await saveQuestionAttempt(isCorrect);
   }
 
-  // প্রতিটি প্রশ্নের উত্তর ও Quiz ID সংরক্ষণ।
   Future<void> saveQuestionAttempt(bool isCorrect) async {
     try {
       await createQuizAttempt();
@@ -402,7 +480,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     });
 
     try {
-      // আগে তৈরি করা History Record আপডেট।
       if (!summarySaved) {
         if (quizAttemptId == null) {
           throw Exception('কুইজের রেকর্ড পাওয়া যায়নি।');
@@ -425,7 +502,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         summarySaved = true;
       }
 
-      // প্রোফাইল আপডেট।
       if (!profileUpdated) {
         final profile = await supabase
             .from('profiles')
@@ -523,6 +599,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     final options = readOptions(question['options']);
     final correct = getCorrectOptionKey(question);
 
+    final imageUrl =
+        question['image_url']?.toString().trim() ?? '';
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.quizName),
@@ -530,178 +609,186 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'প্রশ্ন ${currentIndex + 1} / ${questions.length}',
-              style: const TextStyle(
-                color: Color(0xFF27D66B),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            LinearProgressIndicator(
-              value: (currentIndex + 1) / questions.length,
-              color: const Color(0xFF27D66B),
-              backgroundColor: Colors.white12,
-            ),
-
-            const SizedBox(height: 18),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'সময় বাকি',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '$remainingSeconds সেকেন্ড',
-                  style: TextStyle(
-                    color: remainingSeconds <= 5
-                        ? Colors.redAccent
-                        : const Color(0xFF27D66B),
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 22),
-
-            Text(
-              question['question_bn']?.toString() ?? '',
-              style: const TextStyle(
-                fontSize: 21,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            ...['A', 'B', 'C', 'D'].map((key) {
-              final value = options[key] ?? '';
-
-              if (value.isEmpty) {
-                return const SizedBox.shrink();
-              }
-
-              final isOptionCorrect = key == correct;
-              final isSelected = key == selectedAnswer;
-
-              Color? tileColor;
-
-              if (answered && isOptionCorrect) {
-                tileColor =
-                    Colors.green.withValues(alpha: 0.25);
-              } else if (answered &&
-                  isSelected &&
-                  !isOptionCorrect) {
-                tileColor =
-                    Colors.red.withValues(alpha: 0.25);
-              }
-
-              return Card(
-                color: tileColor,
-                child: ListTile(
-                  leading: CircleAvatar(
-                    child: Text(key),
-                  ),
-                  title: Text(value),
-                  trailing: answered && isOptionCorrect
-                      ? const Icon(
-                          Icons.check_circle,
-                          color: Colors.green,
-                        )
-                      : null,
-                  onTap: answered || savingAttempt
-                      ? null
-                      : () => _answer(key),
-                ),
-              );
-            }),
-
-            if (answered) ...[
-              const SizedBox(height: 12),
-
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               Text(
-                timedOut
-                    ? 'সময় শেষ! উত্তর দেওয়া হয়নি।'
-                    : isCorrectAnswer(selectedAnswer)
-                        ? 'সঠিক উত্তর! +$correctPoints পয়েন্ট'
-                        : 'ভুল উত্তর! $wrongPoints পয়েন্ট',
-                style: TextStyle(
-                  color: timedOut
-                      ? Colors.orange
-                      : isCorrectAnswer(selectedAnswer)
-                          ? Colors.green
-                          : Colors.redAccent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 17,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              Text(
-                'সঠিক উত্তর: $correct'
-                '${options[correct] != null ? ' — ${options[correct]}' : ''}',
+                'প্রশ্ন ${currentIndex + 1} / ${questions.length}',
                 style: const TextStyle(
                   color: Color(0xFF27D66B),
                   fontWeight: FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
 
+              LinearProgressIndicator(
+                value: (currentIndex + 1) / questions.length,
+                color: const Color(0xFF27D66B),
+                backgroundColor: Colors.white12,
+              ),
+
+              const SizedBox(height: 18),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'সময় বাকি',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '$remainingSeconds সেকেন্ড',
+                    style: TextStyle(
+                      color: remainingSeconds <= 5
+                          ? Colors.redAccent
+                          : const Color(0xFF27D66B),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 22),
+
+              // প্রশ্নের লেখা
               Text(
-                question['explanation_bn']?.toString() ??
-                    'কোনো ব্যাখ্যা দেওয়া হয়নি।',
+                question['question_bn']?.toString() ?? '',
                 style: const TextStyle(
-                  color: Colors.white70,
+                  fontSize: 21,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
-              if (savingAttempt)
-                const Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Center(
-                    child: CircularProgressIndicator(),
+              const SizedBox(height: 16),
+
+              // ছবির অবস্থান: প্রশ্নের নিচে, অপশনের উপরে
+              if (imageUrl.isNotEmpty)
+                buildQuestionImage(imageUrl),
+
+              // চারটি MCQ অপশন
+              ...['A', 'B', 'C', 'D'].map((key) {
+                final value = options[key] ?? '';
+
+                if (value.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+
+                final isOptionCorrect = key == correct;
+                final isSelected = key == selectedAnswer;
+
+                Color? tileColor;
+
+                if (answered && isOptionCorrect) {
+                  tileColor =
+                      Colors.green.withValues(alpha: 0.25);
+                } else if (answered &&
+                    isSelected &&
+                    !isOptionCorrect) {
+                  tileColor =
+                      Colors.red.withValues(alpha: 0.25);
+                }
+
+                return Card(
+                  color: tileColor,
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      child: Text(key),
+                    ),
+                    title: Text(value),
+                    trailing: answered && isOptionCorrect
+                        ? const Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                          )
+                        : null,
+                    onTap: answered || savingAttempt
+                        ? null
+                        : () => _answer(key),
+                  ),
+                );
+              }),
+
+              if (answered) ...[
+                const SizedBox(height: 12),
+
+                Text(
+                  timedOut
+                      ? 'সময় শেষ! উত্তর দেওয়া হয়নি।'
+                      : isCorrectAnswer(selectedAnswer)
+                          ? 'সঠিক উত্তর! +$correctPoints পয়েন্ট'
+                          : 'ভুল উত্তর! $wrongPoints পয়েন্ট',
+                  style: TextStyle(
+                    color: timedOut
+                        ? Colors.orange
+                        : isCorrectAnswer(selectedAnswer)
+                            ? Colors.green
+                            : Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
                   ),
                 ),
 
-              if (saveError != null) ...[
                 const SizedBox(height: 8),
+
                 Text(
-                  saveError!,
+                  'সঠিক উত্তর: $correct'
+                  '${options[correct] != null ? ' — ${options[correct]}' : ''}',
                   style: const TextStyle(
-                    color: Colors.redAccent,
+                    color: Color(0xFF27D66B),
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  question['explanation_bn']?.toString() ??
+                      'কোনো ব্যাখ্যা দেওয়া হয়নি।',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                  ),
+                ),
+
+                if (savingAttempt)
+                  const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+
+                if (saveError != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    saveError!,
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: retrySaveAttempt,
+                    child: const Text('আবার সংরক্ষণ করুন'),
+                  ),
+                ],
+
+                const SizedBox(height: 18),
+
                 ElevatedButton(
-                  onPressed: retrySaveAttempt,
-                  child: const Text('আবার সংরক্ষণ করুন'),
+                  onPressed: attemptSaved && !savingAttempt
+                      ? nextQuestion
+                      : null,
+                  child: Text(
+                    currentIndex == questions.length - 1
+                        ? 'ফলাফল দেখুন'
+                        : 'পরবর্তী প্রশ্ন',
+                  ),
                 ),
               ],
-
-              const Spacer(),
-
-              ElevatedButton(
-                onPressed: attemptSaved && !savingAttempt
-                    ? nextQuestion
-                    : null,
-                child: Text(
-                  currentIndex == questions.length - 1
-                      ? 'ফলাফল দেখুন'
-                      : 'পরবর্তী প্রশ্ন',
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -714,7 +801,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         automaticallyImplyLeading: false,
       ),
       body: Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
