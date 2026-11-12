@@ -49,7 +49,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   bool finishing = false;
   bool summarySaved = false;
   bool profileUpdated = false;
-
   bool timedOut = false;
 
   String? error;
@@ -79,7 +78,63 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     String key,
     int fallback,
   ) {
-    return int.tryParse(settings[key]?.toString() ?? '') ?? fallback;
+    return int.tryParse(settings[key]?.toString() ?? '') ??
+        fallback;
+  }
+
+  // JSON Map অথবা JSON List—দুই ধরনের Options পড়বে।
+  Map<String, String> readOptions(dynamic rawOptions) {
+    final result = <String, String>{};
+    const keys = ['A', 'B', 'C', 'D'];
+
+    if (rawOptions is Map) {
+      for (final entry in rawOptions.entries) {
+        final key = entry.key.toString().trim().toUpperCase();
+        final value = entry.value?.toString() ?? '';
+
+        if (keys.contains(key) && value.trim().isNotEmpty) {
+          result[key] = value;
+        }
+      }
+    } else if (rawOptions is List) {
+      for (int i = 0; i < rawOptions.length && i < 4; i++) {
+        final value = rawOptions[i]?.toString() ?? '';
+
+        if (value.trim().isNotEmpty) {
+          result[keys[i]] = value;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  // সঠিক উত্তর A/B/C/D অথবা সরাসরি উত্তর লেখা থাকলেও চিনবে।
+  String getCorrectOptionKey(Map<String, dynamic> question) {
+    final options = readOptions(question['options']);
+
+    final rawCorrect =
+        question['correct_option']?.toString().trim() ?? '';
+
+    final normalized = rawCorrect.toUpperCase();
+
+    if (options.containsKey(normalized)) {
+      return normalized;
+    }
+
+    for (final entry in options.entries) {
+      if (entry.value.trim().toLowerCase() ==
+          rawCorrect.toLowerCase()) {
+        return entry.key;
+      }
+    }
+
+    return normalized;
+  }
+
+  bool isCorrectAnswer(String? answer) {
+    return answer != null &&
+        answer == getCorrectOptionKey(currentQuestion);
   }
 
   Future<void> loadQuiz() async {
@@ -90,17 +145,17 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         throw Exception('প্রথমে লগইন করুন।');
       }
 
-      // অ্যাডমিন প্যানেলের কুইজ সেটিংস
+      // অ্যাডমিন প্যানেলের কুইজ সেটিংস।
       final settingsData = await supabase
           .from('app_settings')
           .select('key, value')
           .inFilter('key', [
-            'quiz_timer_seconds',
-            'quiz_correct_points',
-            'quiz_wrong_points',
-            'quiz_correct_xp',
-            'quiz_wrong_xp',
-          ]);
+        'quiz_timer_seconds',
+        'quiz_correct_points',
+        'quiz_wrong_points',
+        'quiz_correct_xp',
+        'quiz_wrong_xp',
+      ]);
 
       final settings = <String, dynamic>{};
 
@@ -138,7 +193,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         -2,
       );
 
-      // আগে উত্তর দেওয়া প্রশ্নের ID সংগ্রহ
+      // আগে উত্তর দেওয়া প্রশ্নের ID সংগ্রহ।
       final attemptedData = await supabase
           .from('quiz_question_attempts')
           .select('question_id')
@@ -148,24 +203,22 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
           .map((item) => item['question_id'].toString())
           .toSet();
 
-      // সব প্রকাশিত প্রশ্ন সংগ্রহ
+      // নির্বাচিত মোডের সব প্রকাশিত প্রশ্ন।
       final questionData = await supabase
           .from('quiz_questions')
           .select()
           .eq('mode', widget.mode)
           .eq('is_published', true);
 
-      // আগের প্রশ্ন বাদ দেওয়া
       final availableQuestions =
           List<Map<String, dynamic>>.from(questionData)
-              .where(
-                (question) =>
-                    !attemptedIds.contains(
-                      question['id'].toString(),
-                    ),
-              )
-              .toList();
+              .where((question) {
+        return !attemptedIds.contains(
+          question['id'].toString(),
+        );
+      }).toList();
 
+      // প্রশ্ন এলোমেলোভাবে সাজানো।
       availableQuestions.shuffle();
 
       final selectedQuestions = availableQuestions
@@ -227,12 +280,8 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
 
     quizTimer?.cancel();
 
-    final correct = currentQuestion['correct_option']
-        .toString()
-        .trim()
-        .toUpperCase();
-
-    final isCorrect = !isTimeout && option == correct;
+    final isCorrect =
+        !isTimeout && isCorrectAnswer(option);
 
     setState(() {
       selectedAnswer = option;
@@ -263,7 +312,8 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         'quiz_attempt_id': null,
         'is_correct': isCorrect,
         'status': timedOut ? 'timed_out' : 'answered',
-        'attempted_at': DateTime.now().toUtc().toIso8601String(),
+        'attempted_at':
+            DateTime.now().toUtc().toIso8601String(),
       });
 
       if (!mounted) return;
@@ -277,7 +327,8 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
 
       setState(() {
         savingAttempt = false;
-        saveError = 'উত্তর সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।\n$e';
+        saveError =
+            'উত্তর সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।\n$e';
       });
     }
   }
@@ -290,12 +341,8 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       saveError = null;
     });
 
-    final correct = currentQuestion['correct_option']
-        .toString()
-        .trim()
-        .toUpperCase();
-
-    final isCorrect = !timedOut && selectedAnswer == correct;
+    final isCorrect =
+        !timedOut && isCorrectAnswer(selectedAnswer);
 
     await saveQuestionAttempt(isCorrect);
   }
@@ -328,7 +375,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     });
 
     try {
-      // কুইজের সারাংশ একবারই সংরক্ষণ
+      // কুইজের সারাংশ একবারই সংরক্ষণ।
       if (!summarySaved) {
         await supabase.from('quiz_attempts').insert({
           'user_id': userId,
@@ -338,13 +385,14 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
           'wrong_count': wrongCount,
           'points': score,
           'xp_earned': xpEarned,
-          'completed_at': DateTime.now().toUtc().toIso8601String(),
+          'completed_at':
+              DateTime.now().toUtc().toIso8601String(),
         });
 
         summarySaved = true;
       }
 
-      // প্রোফাইল আপডেট
+      // প্রোফাইল আপডেট।
       if (!profileUpdated) {
         final profile = await supabase
             .from('profiles')
@@ -352,15 +400,18 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
             .eq('id', userId)
             .maybeSingle();
 
-        final oldXp = (profile?['xp'] as num?)?.toInt() ?? 0;
+        final oldXp =
+            (profile?['xp'] as num?)?.toInt() ?? 0;
+
         final oldPoints =
             (profile?['total_points'] as num?)?.toInt() ?? 0;
 
-        final newXp = (oldXp + xpEarned).clamp(0, 2147483647);
+        final newXp =
+            (oldXp + xpEarned).clamp(0, 2147483647);
+
         final newPoints =
             (oldPoints + score).clamp(0, 2147483647);
 
-        // প্রতি ১০০ XP-তে ১ লেভেল
         final newLevel = (newXp ~/ 100) + 1;
 
         await supabase.from('profiles').upsert({
@@ -384,7 +435,8 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
 
       setState(() {
         finishing = false;
-        saveError = 'ফলাফল সংরক্ষণে সমস্যা হয়েছে। আবার চেষ্টা করুন।\n$e';
+        saveError =
+            'ফলাফল সংরক্ষণে সমস্যা হয়েছে। আবার চেষ্টা করুন।\n$e';
       });
     }
   }
@@ -393,7 +445,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   Widget build(BuildContext context) {
     if (loading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
@@ -433,15 +487,8 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     }
 
     final question = currentQuestion;
-
-    final options = Map<String, dynamic>.from(
-      question['options'] as Map,
-    );
-
-    final correct = question['correct_option']
-        .toString()
-        .trim()
-        .toUpperCase();
+    final options = readOptions(question['options']);
+    final correct = getCorrectOptionKey(question);
 
     return Scaffold(
       appBar: AppBar(
@@ -504,21 +551,25 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
             const SizedBox(height: 20),
 
             ...['A', 'B', 'C', 'D'].map((key) {
-              final value = options[key]?.toString() ?? '';
+              final value = options[key] ?? '';
 
               if (value.isEmpty) {
                 return const SizedBox.shrink();
               }
 
-              final isCorrect = key == correct;
+              final isOptionCorrect = key == correct;
               final isSelected = key == selectedAnswer;
 
               Color? tileColor;
 
-              if (answered && isCorrect) {
-                tileColor = Colors.green.withValues(alpha: 0.25);
-              } else if (answered && isSelected && !isCorrect) {
-                tileColor = Colors.red.withValues(alpha: 0.25);
+              if (answered && isOptionCorrect) {
+                tileColor =
+                    Colors.green.withValues(alpha: 0.25);
+              } else if (answered &&
+                  isSelected &&
+                  !isOptionCorrect) {
+                tileColor =
+                    Colors.red.withValues(alpha: 0.25);
               }
 
               return Card(
@@ -528,7 +579,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                     child: Text(key),
                   ),
                   title: Text(value),
-                  trailing: answered && isCorrect
+                  trailing: answered && isOptionCorrect
                       ? const Icon(
                           Icons.check_circle,
                           color: Colors.green,
@@ -547,13 +598,13 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
               Text(
                 timedOut
                     ? 'সময় শেষ! উত্তর দেওয়া হয়নি।'
-                    : selectedAnswer == correct
+                    : isCorrectAnswer(selectedAnswer)
                         ? 'সঠিক উত্তর! +$correctPoints পয়েন্ট'
-                        : 'ভুল উত্তর! ${wrongPoints} পয়েন্ট',
+                        : 'ভুল উত্তর! $wrongPoints পয়েন্ট',
                 style: TextStyle(
                   color: timedOut
                       ? Colors.orange
-                      : selectedAnswer == correct
+                      : isCorrectAnswer(selectedAnswer)
                           ? Colors.green
                           : Colors.redAccent,
                   fontWeight: FontWeight.bold,
@@ -564,7 +615,8 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
               const SizedBox(height: 8),
 
               Text(
-                'সঠিক উত্তর: $correct',
+                'সঠিক উত্তর: $correct'
+                '${options[correct] != null ? ' — ${options[correct]}' : ''}',
                 style: const TextStyle(
                   color: Color(0xFF27D66B),
                   fontWeight: FontWeight.bold,
@@ -576,7 +628,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
               Text(
                 question['explanation_bn']?.toString() ??
                     'কোনো ব্যাখ্যা দেওয়া হয়নি।',
-                style: const TextStyle(color: Colors.white70),
+                style: const TextStyle(
+                  color: Colors.white70,
+                ),
               ),
 
               if (savingAttempt)
@@ -591,7 +645,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                 const SizedBox(height: 8),
                 Text(
                   saveError!,
-                  style: const TextStyle(color: Colors.redAccent),
+                  style: const TextStyle(
+                    color: Colors.redAccent,
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: retrySaveAttempt,
@@ -677,7 +733,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                 Text(
                   saveError!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.redAccent),
+                  style: const TextStyle(
+                    color: Colors.redAccent,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton(
@@ -686,7 +744,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                 ),
               ],
 
-              if (!summarySaved && !finishing && saveError == null)
+              if (!summarySaved &&
+                  !finishing &&
+                  saveError == null)
                 ElevatedButton(
                   onPressed: finishQuiz,
                   child: const Text('ফলাফল সংরক্ষণ করুন'),
