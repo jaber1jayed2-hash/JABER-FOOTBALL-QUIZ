@@ -14,6 +14,15 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final supabase = Supabase.instance.client;
 
+  static const int xpPerLevel = 100;
+  static const Color green = Color(0xFF27D66B);
+  static const Color cardColor = Color(0xFF151D18);
+
+  int _toInt(dynamic value, {int fallback = 0}) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
   Future<Map<String, dynamic>?> _loadProfile() async {
     final user = supabase.auth.currentUser;
     if (user == null) return null;
@@ -31,18 +40,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         .select('correct_count')
         .eq('user_id', user.id);
 
-    final playedQuizzes = attempts.length;
-
     int correctAnswers = 0;
 
     for (final attempt in attempts) {
-      correctAnswers +=
-          (attempt['correct_count'] as num?)?.toInt() ?? 0;
+      correctAnswers += _toInt(attempt['correct_count']);
     }
 
     final result = Map<String, dynamic>.from(profile);
 
-    result['played_quizzes'] = playedQuizzes;
+    result['played_quizzes'] = attempts.length;
     result['correct_answers'] = correctAnswers;
 
     return result;
@@ -71,6 +77,131 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildProgressCard(int xp, int level) {
+    final safeXp = xp < 0 ? 0 : xp;
+    final currentLevelXp = safeXp % xpPerLevel;
+    final remainingXp = xpPerLevel - currentLevelXp;
+    final progress = currentLevelXp / xpPerLevel;
+
+    return Card(
+      color: cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: Colors.white10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.military_tech,
+                  color: green,
+                  size: 30,
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Level Progress',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  'Level $level',
+                  style: const TextStyle(
+                    color: green,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '$currentLevelXp / $xpPerLevel XP',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: green,
+                  ),
+                ),
+                Text(
+                  '${(progress * 100).toInt()}%',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 12,
+                backgroundColor: Colors.white12,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  green,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            Text(
+              'পরবর্তী Level ${level + 1} এ যেতে আরও $remainingXp XP প্রয়োজন।',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return Card(
+      color: cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: const BorderSide(color: Colors.white10),
+      ),
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color: green,
+          size: 27,
+        ),
+        title: Text(title),
+        trailing: Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: green,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = supabase.auth.currentUser;
@@ -85,11 +216,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: FutureBuilder<Map<String, dynamic>?>(
         future: _loadProfile(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF27D66B),
+                color: green,
               ),
             );
           }
@@ -123,15 +253,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final nickname =
               profile['display_name']?.toString() ?? 'Player';
 
-          final xp = profile['xp'] ?? 0;
-          final level = profile['level'] ?? 1;
-          final points = profile['total_points'] ?? 0;
+          final xp = _toInt(profile['xp']);
+          final level = _toInt(
+            profile['level'],
+            fallback: 1,
+          );
+          final points = _toInt(profile['total_points']);
 
           final playedQuizzes =
-              profile['played_quizzes'] ?? 0;
+              _toInt(profile['played_quizzes']);
 
           final correctAnswers =
-              profile['correct_answers'] ?? 0;
+              _toInt(profile['correct_answers']);
 
           final avatarUrl =
               profile['avatar_url']?.toString();
@@ -154,18 +287,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   radius: 48,
                   backgroundColor: const Color(0xFF245D39),
                   backgroundImage:
-                      avatarUrl != null &&
-                              avatarUrl.isNotEmpty
+                      avatarUrl != null && avatarUrl.isNotEmpty
                           ? NetworkImage(avatarUrl)
                           : null,
-                  child:
-                      avatarUrl == null || avatarUrl.isEmpty
-                          ? const Icon(
-                              Icons.person,
-                              size: 50,
-                              color: Colors.white,
-                            )
-                          : null,
+                  child: avatarUrl == null || avatarUrl.isEmpty
+                      ? const Icon(
+                          Icons.person,
+                          size: 50,
+                          color: Colors.white,
+                        )
+                      : null,
                 ),
               ),
 
@@ -218,31 +349,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 12),
 
-              _StatCard(
+              _buildProgressCard(xp, level),
+
+              const SizedBox(height: 10),
+
+              _buildStatCard(
                 icon: Icons.star,
-                title: 'XP',
+                title: 'Total XP',
                 value: '$xp',
               ),
 
-              _StatCard(
+              _buildStatCard(
                 icon: Icons.military_tech,
-                title: 'Level',
+                title: 'Current Level',
                 value: '$level',
               ),
 
-              _StatCard(
+              _buildStatCard(
                 icon: Icons.emoji_events,
                 title: 'Total Points',
                 value: '$points',
               ),
 
-              _StatCard(
+              _buildStatCard(
                 icon: Icons.quiz,
                 title: 'Played Quizzes',
                 value: '$playedQuizzes',
               ),
 
-              _StatCard(
+              _buildStatCard(
                 icon: Icons.check_circle,
                 title: 'Correct Answers',
                 value: '$correctAnswers',
@@ -261,7 +396,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 12),
 
               Card(
-                color: const Color(0xFF151D18),
+                color: cardColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: const BorderSide(
@@ -276,13 +411,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(11),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF27D66B)
-                          .withOpacity(0.12),
+                      color: green.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       Icons.history,
-                      color: Color(0xFF27D66B),
+                      color: green,
                     ),
                   ),
                   title: const Text(
@@ -301,7 +435,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   trailing: const Icon(
                     Icons.arrow_forward_ios,
                     size: 17,
-                    color: Color(0xFF27D66B),
+                    color: green,
                   ),
                   onTap: _openQuizHistory,
                 ),
@@ -316,6 +450,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: const Icon(Icons.refresh),
                 label: const Text('পরিসংখ্যান রিফ্রেশ করুন'),
               ),
+
+              const SizedBox(height: 20),
             ],
           );
         },
@@ -324,40 +460,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String value;
-
-  const _StatCard({
-    required this.icon,
-    required this.title,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: const Color(0xFF27D66B),
-        ),
-        title: Text(title),
-        trailing: Text(
-          value,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF27D66B),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // Login এবং Register Dialog
+
 class AuthDialog extends StatefulWidget {
   const AuthDialog({super.key});
 
@@ -397,8 +501,7 @@ class _AuthDialogState extends State<AuthDialog> {
 
     if (password.length < 6) {
       setState(() {
-        errorMessage =
-            'Password কমপক্ষে ৬ অক্ষরের হতে হবে।';
+        errorMessage = 'Password কমপক্ষে ৬ অক্ষরের হতে হবে।';
       });
       return;
     }
@@ -449,8 +552,7 @@ class _AuthDialogState extends State<AuthDialog> {
       if (!mounted) return;
 
       setState(() {
-        errorMessage =
-            'সমস্যা হয়েছে। আবার চেষ্টা করুন।';
+        errorMessage = 'সমস্যা হয়েছে। আবার চেষ্টা করুন।';
         isLoading = false;
       });
     }
