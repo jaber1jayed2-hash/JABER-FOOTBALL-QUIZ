@@ -14,7 +14,10 @@ header{background:#101b15;padding:18px;border-bottom:2px solid #16c766}
 h2{color:#20e879}
 main{max-width:850px;margin:auto;padding:18px}
 .card{background:#14221a;padding:18px;border-radius:12px;margin-bottom:18px}
-input,select,button,textarea{width:100%;padding:12px;margin:7px 0;border:0;border-radius:7px;font-size:15px}
+input,select,button,textarea{
+ width:100%;padding:12px;margin:7px 0;border:0;
+ border-radius:7px;font-size:15px
+}
 input,select,textarea{background:#e8eee9;color:#111}
 textarea{min-height:220px;resize:vertical;font-family:monospace}
 button{background:#16c766;color:#06130a;font-weight:bold;cursor:pointer}
@@ -22,7 +25,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .delete{background:#b52d2d;color:white}
 .edit{background:#e5b93d;color:#111}
 .secondary{background:#496052;color:white}
-.question{background:#203528;padding:13px;border-radius:8px;margin:12px 0}
+.question{background:#203528;padding:13px;border-radius:8px;margin:12px 0;overflow-wrap:anywhere}
 small{color:#b7c8bd}
 label{display:block;margin-top:10px}
 .status{padding:10px;border-radius:7px;margin:10px 0;background:#203528;overflow-wrap:anywhere}
@@ -34,7 +37,17 @@ label{display:block;margin-top:10px}
 .preview{border:1px solid #398052;background:#172b20}
 .help{color:#b7c8bd;line-height:1.6;font-size:14px}
 .count{color:#20e879;font-weight:bold}
-.question-image{display:block;max-width:100%;max-height:190px;object-fit:contain;margin:12px 0;border-radius:8px;background:#101b15}
+.question-image{
+ display:block;max-width:100%;max-height:190px;
+ object-fit:contain;margin:12px 0;border-radius:8px;
+ background:#101b15
+}
+.image-error{color:#ff8c8c;font-size:13px;margin:5px 0}
+.published{color:#20e879}
+.unpublished{color:#ffc65c}
+.warning{background:#45351b;color:#ffe0a0}
+.success{background:#153b25;color:#a8f5c1}
+.error{background:#491f1f;color:#ffb2b2}
 hr{border:0;border-top:1px solid #35513e;margin:20px 0}
 </style>
 </head>
@@ -53,6 +66,7 @@ hr{border:0;border-top:1px solid #35513e;margin:20px 0}
 <div id="status" class="status">Admin যাচাই করা হচ্ছে...</div>
 
 <form id="questionForm">
+
 <label>প্রশ্নের ধরন</label>
 <select id="type" required>
 <option value="general_mcq">সাধারণ MCQ</option>
@@ -66,14 +80,17 @@ hr{border:0;border-top:1px solid #35513e;margin:20px 0}
 </select>
 
 <label>প্রশ্ন লিখুন</label>
-<input id="question" placeholder="প্রশ্ন লিখুন" required>
+<input id="question" placeholder="প্রশ্ন লিখুন" required maxlength="1000">
 
 <label>Option A</label>
 <input id="a" placeholder="প্রথম উত্তর" required>
+
 <label>Option B</label>
 <input id="b" placeholder="দ্বিতীয় উত্তর" required>
+
 <label>Option C</label>
 <input id="c" placeholder="তৃতীয় উত্তর" required>
+
 <label>Option D</label>
 <input id="d" placeholder="চতুর্থ উত্তর" required>
 
@@ -90,7 +107,8 @@ hr{border:0;border-top:1px solid #35513e;margin:20px 0}
 
 <label>ছবির URL (ঐচ্ছিক)</label>
 <input id="imageUrl" type="url" placeholder="https://example.com/image.jpg">
-<img id="singleImagePreview" class="question-image" style="display:none" alt="প্রশ্নের ছবি Preview">
+<img id="singleImagePreview" class="question-image" style="display:none" alt="প্রশ্নের ছবি">
+<div id="singleImageError" class="image-error"></div>
 
 <label class="checkbox">
 <input type="checkbox" id="published" checked>
@@ -98,19 +116,24 @@ hr{border:0;border-top:1px solid #35513e;margin:20px 0}
 </label>
 
 <button type="submit" id="saveButton">প্রশ্ন সংরক্ষণ করুন</button>
-<button type="button" id="cancelButton" class="delete" style="display:none">সম্পাদনা বাতিল করুন</button>
+<button type="button" id="cancelButton" class="delete" style="display:none">
+সম্পাদনা বাতিল করুন
+</button>
 </form>
 </div>
 
-<!-- BULK IMPORT -->
-
 <div class="card">
 <h2>📥 একসঙ্গে অনেক প্রশ্ন যোগ করুন</h2>
+
 <p class="help">
-একাধিক প্রশ্নের JSON কোড একসঙ্গে পেস্ট করুন। প্রতিটি প্রশ্নে image_url দিলে সেই ছবিও Preview-তে দেখা যাবে। image_url না দিলেও প্রশ্ন যোগ হবে।
+একাধিক প্রশ্নের JSON কোড একসঙ্গে পেস্ট করুন।
+প্রতিটি প্রশ্নে image_url দিলে ছবিও Preview-তে দেখা যাবে।
+ছবি ছাড়া প্রশ্নও যোগ করা যাবে।
+একই Mode-এ আগে থেকে থাকা একই প্রশ্ন আবার যোগ করার চেষ্টা শনাক্ত করা হবে।
 </p>
 
-<label>প্রশ্নের কোড পেস্ট করুন</label>
+<label>প্রশ্নের JSON কোড পেস্ট করুন</label>
+
 <textarea id="bulkCode" placeholder='[
   {
     "mode": "general_mcq",
@@ -127,13 +150,21 @@ hr{border:0;border-top:1px solid #35513e;margin:20px 0}
   }
 ]'></textarea>
 
-<button type="button" id="previewButton">প্রশ্ন যাচাই করুন ও Preview দেখুন</button>
-<div id="bulkStatus" class="status">এখনো কোনো কোড যাচাই করা হয়নি।</div>
+<button type="button" id="previewButton">
+প্রশ্ন যাচাই করুন ও Preview দেখুন
+</button>
+
+<div id="bulkStatus" class="status">
+এখনো কোনো কোড যাচাই করা হয়নি।
+</div>
 
 <div id="previewArea" style="display:none">
 <h3>Preview: <span id="previewCount" class="count">০</span>টি প্রশ্ন</h3>
 <div id="previewList"></div>
-<button type="button" id="publishAllButton">সব প্রশ্ন Publish করুন</button>
+
+<button type="button" id="publishAllButton">
+সব প্রশ্ন সংরক্ষণ করুন
+</button>
 </div>
 </div>
 
@@ -166,6 +197,7 @@ let editingId = null;
 let questions = [];
 let isAdmin = false;
 let bulkQuestions = [];
+let publishing = false;
 
 const allowedModes = [
   'general_mcq',
@@ -178,35 +210,79 @@ const allowedModes = [
   'guess_clues'
 ];
 
-function showStatus(message){
-  $('status').textContent = message;
+function setStatus(id,message,type=''){
+  const el = $(id);
+  el.textContent = message;
+  el.className = 'status ' + type;
 }
 
-function showBulkStatus(message){
-  $('bulkStatus').textContent = message;
+function normalizeQuestion(value){
+  return String(value || '')
+    .normalize('NFKC')
+    .trim()
+    .replace(/\s+/g,' ')
+    .toLocaleLowerCase();
 }
 
 function validImageUrl(value){
   if(!value)return true;
+
   try{
     const url = new URL(value);
-    return url.protocol === 'https:' || url.protocol === 'http:';
+    return (
+      (url.protocol === 'https:' || url.protocol === 'http:') &&
+      !!url.hostname
+    );
   }catch{
     return false;
   }
 }
 
 function makeImage(url,alt){
+  const wrapper = document.createElement('div');
+
   const img = document.createElement('img');
   img.className = 'question-image';
   img.src = url;
   img.alt = alt || 'Question image';
   img.loading = 'lazy';
+  img.referrerPolicy = 'no-referrer';
+
+  const error = document.createElement('div');
+  error.className = 'image-error';
+  error.textContent = 'ছবি লোড করা যায়নি। URL পরীক্ষা করুন।';
+  error.style.display = 'none';
+
   img.onerror = function(){
-    this.alt = 'ছবি লোড করা যায়নি';
     this.style.display = 'none';
+    error.style.display = 'block';
   };
-  return img;
+
+  wrapper.append(img,error);
+  return wrapper;
+}
+
+function isDuplicate(mode,question,ignoreId=null){
+  const normalized = normalizeQuestion(question);
+
+  return questions.some(q =>
+    String(q.mode) === String(mode) &&
+    normalizeQuestion(q.question_bn) === normalized &&
+    String(q.id) !== String(ignoreId)
+  );
+}
+
+function resetForm(){
+  editingId = null;
+  $('questionForm').reset();
+  $('published').checked = true;
+
+  $('formTitle').textContent = 'নতুন প্রশ্ন যোগ করুন';
+  $('saveButton').textContent = 'প্রশ্ন সংরক্ষণ করুন';
+  $('cancelButton').style.display = 'none';
+
+  $('singleImagePreview').style.display = 'none';
+  $('singleImageError').textContent = '';
 }
 
 // Admin যাচাই
@@ -231,7 +307,7 @@ async function checkAdmin(){
       .maybeSingle();
 
     if(adminError){
-      alert('Admin যাচাই করা যায়নি।');
+      alert('Admin যাচাই করা যায়নি: '+adminError.message);
       window.location.replace('index.html');
       return false;
     }
@@ -255,18 +331,6 @@ async function checkAdmin(){
   }
 }
 
-// ফর্ম রিসেট
-
-function resetForm(){
-  editingId = null;
-  $('questionForm').reset();
-  $('published').checked = true;
-  $('formTitle').textContent = 'নতুন প্রশ্ন যোগ করুন';
-  $('saveButton').textContent = 'প্রশ্ন সংরক্ষণ করুন';
-  $('cancelButton').style.display = 'none';
-  $('singleImagePreview').style.display = 'none';
-}
-
 // প্রশ্ন লোড
 
 async function loadQuestions(){
@@ -280,12 +344,14 @@ async function loadQuestions(){
     .order('id',{ascending:false});
 
   if(error){
-    $('questionList').textContent = 'প্রশ্ন লোড করা যায়নি: '+error.message;
-    return;
+    $('questionList').textContent =
+      'প্রশ্ন লোড করা যায়নি: '+error.message;
+    return false;
   }
 
   questions = data || [];
   renderQuestions();
+  return true;
 }
 
 // প্রশ্ন দেখানো
@@ -307,10 +373,14 @@ function renderQuestions(){
     title.textContent = (index+1)+'. '+q.question_bn;
 
     const info = document.createElement('p');
-    info.textContent = 'ধরন: '+q.mode+' | সঠিক উত্তর: '+q.correct_option;
+    info.textContent =
+      'ধরন: '+q.mode+' | সঠিক উত্তর: '+q.correct_option;
 
     const status = document.createElement('small');
-    status.textContent = q.is_published ? 'প্রকাশিত' : 'অপ্রকাশিত';
+    status.textContent =
+      q.is_published ? 'প্রকাশিত' : 'অপ্রকাশিত';
+    status.className =
+      q.is_published ? 'published' : 'unpublished';
 
     div.append(title);
 
@@ -350,6 +420,7 @@ function editQuestion(q){
   $('question').value = q.question_bn || '';
 
   const options = q.options || {};
+
   $('a').value = options.A || '';
   $('b').value = options.B || '';
   $('c').value = options.C || '';
@@ -373,9 +444,10 @@ function editQuestion(q){
 
 async function deleteQuestion(id){
   if(!isAdmin)return;
+
   if(!confirm('আপনি কি এই প্রশ্নটি মুছে ফেলতে চান?'))return;
 
-  showStatus('প্রশ্ন মুছে ফেলা হচ্ছে...');
+  setStatus('status','প্রশ্ন মুছে ফেলা হচ্ছে...');
 
   const {error} = await client
     .from('quiz_questions')
@@ -383,11 +455,15 @@ async function deleteQuestion(id){
     .eq('id',id);
 
   if(error){
-    showStatus('মুছে ফেলা যায়নি: '+error.message);
+    setStatus(
+      'status',
+      'মুছে ফেলা যায়নি: '+error.message,
+      'error'
+    );
     return;
   }
 
-  showStatus('প্রশ্ন সফলভাবে মুছে ফেলা হয়েছে।');
+  setStatus('status','প্রশ্ন সফলভাবে মুছে ফেলা হয়েছে।','success');
   await loadQuestions();
 }
 
@@ -396,16 +472,30 @@ async function deleteQuestion(id){
 function updateSingleImagePreview(){
   const url = $('imageUrl').value.trim();
   const img = $('singleImagePreview');
+  const error = $('singleImageError');
+
+  error.textContent = '';
 
   if(!url){
     img.style.display = 'none';
+    img.removeAttribute('src');
     return;
   }
 
   if(!validImageUrl(url)){
     img.style.display = 'none';
+    error.textContent = 'সঠিক HTTP/HTTPS ছবির URL দিন।';
     return;
   }
+
+  img.onerror = function(){
+    img.style.display = 'none';
+    error.textContent = 'ছবি লোড করা যায়নি। সরাসরি ছবির URL ব্যবহার করুন।';
+  };
+
+  img.onload = function(){
+    error.textContent = '';
+  };
 
   img.src = url;
   img.style.display = 'block';
@@ -424,16 +514,27 @@ $('questionForm').addEventListener('submit',async function(e){
   }
 
   const imageUrl = $('imageUrl').value.trim();
+  const mode = $('type').value;
+  const question = $('question').value.trim();
 
   if(!validImageUrl(imageUrl)){
-    showStatus('ছবির URL সঠিক নয়।');
+    setStatus('status','ছবির URL সঠিক নয়।','error');
+    return;
+  }
+
+  if(isDuplicate(mode,question,editingId)){
+    setStatus(
+      'status',
+      'এই Mode-এ একই প্রশ্ন আগে থেকেই আছে।',
+      'warning'
+    );
     return;
   }
 
   const payload = {
-    mode:$('type').value,
+    mode:mode,
     difficulty:'easy',
-    question_bn:$('question').value.trim(),
+    question_bn:question,
     options:{
       A:$('a').value.trim(),
       B:$('b').value.trim(),
@@ -446,8 +547,10 @@ $('questionForm').addEventListener('submit',async function(e){
     is_published:$('published').checked
   };
 
-  $('saveButton').disabled = true;
-  showStatus('সংরক্ষণ করা হচ্ছে...');
+  const button = $('saveButton');
+  button.disabled = true;
+
+  setStatus('status','প্রশ্ন সংরক্ষণ করা হচ্ছে...');
 
   try{
     let result;
@@ -464,21 +567,29 @@ $('questionForm').addEventListener('submit',async function(e){
     }
 
     if(result.error){
-      showStatus('সমস্যা হয়েছে: '+result.error.message);
+      setStatus(
+        'status',
+        'সমস্যা হয়েছে: '+result.error.message,
+        'error'
+      );
       return;
     }
 
-    showStatus(editingId!==null
-      ? 'প্রশ্নের পরিবর্তন সংরক্ষিত হয়েছে।'
-      : 'নতুন প্রশ্ন Supabase-এ সংরক্ষিত হয়েছে।');
+    setStatus(
+      'status',
+      editingId!==null
+        ? 'প্রশ্নের পরিবর্তন সংরক্ষিত হয়েছে।'
+        : 'নতুন প্রশ্ন Supabase-এ সংরক্ষিত হয়েছে।',
+      'success'
+    );
 
     resetForm();
     await loadQuestions();
 
   }catch(error){
-    showStatus('সমস্যা হয়েছে: '+error.message);
+    setStatus('status','সমস্যা হয়েছে: '+error.message,'error');
   }finally{
-    $('saveButton').disabled = false;
+    button.disabled = false;
   }
 });
 
@@ -505,7 +616,8 @@ function validateBulkQuestion(item,index){
     throw new Error('প্রশ্ন '+number+': question_bn খালি।');
   }
 
-  if(!item.options || typeof item.options!=='object'){
+  if(!item.options || typeof item.options!=='object' ||
+     Array.isArray(item.options)){
     throw new Error('প্রশ্ন '+number+': options দিতে হবে।');
   }
 
@@ -522,18 +634,24 @@ function validateBulkQuestion(item,index){
     }
   }
 
-  const answer = String(item.correct_option || '').trim().toUpperCase();
+  const answer = String(item.correct_option || '')
+    .trim().toUpperCase();
 
   if(!['A','B','C','D'].includes(answer)){
     throw new Error('প্রশ্ন '+number+': সঠিক উত্তর A/B/C/D হতে হবে।');
   }
 
-  const imageUrl = item.image_url
-    ? String(item.image_url).trim()
-    : '';
+  const imageUrl = item.image_url == null
+    ? ''
+    : String(item.image_url).trim();
 
   if(imageUrl && !validImageUrl(imageUrl)){
     throw new Error('প্রশ্ন '+number+': image_url সঠিক URL নয়।');
+  }
+
+  if(typeof item.is_published !== 'undefined' &&
+     typeof item.is_published !== 'boolean'){
+    throw new Error('প্রশ্ন '+number+': is_published true অথবা false হতে হবে।');
   }
 
   return {
@@ -544,7 +662,7 @@ function validateBulkQuestion(item,index){
     correct_option:answer,
     explanation_bn:String(item.explanation_bn || '').trim(),
     image_url:imageUrl || null,
-    is_published:item.is_published===false ? false : true
+    is_published:item.is_published === false ? false : true
   };
 }
 
@@ -564,10 +682,17 @@ function renderBulkPreview(){
     const mode = document.createElement('p');
     mode.textContent = 'ধরন: '+q.mode;
 
+    const status = document.createElement('small');
+    status.textContent =
+      q.is_published ? 'Publish হবে' : 'Unpublished থাকবে';
+    status.className =
+      q.is_published ? 'published' : 'unpublished';
+
+    div.append(title,mode,status);
+
     if(q.image_url){
-      div.append(title,mode,makeImage(q.image_url,'প্রশ্ন '+(index+1)+' এর ছবি'));
+      div.append(makeImage(q.image_url,'প্রশ্ন '+(index+1)+' এর ছবি'));
     }else{
-      div.append(title,mode);
       const noImage = document.createElement('small');
       noImage.textContent = 'এই প্রশ্নে কোনো ছবি নেই।';
       div.append(noImage);
@@ -593,73 +718,148 @@ function renderBulkPreview(){
 
 // Preview বাটন
 
-$('previewButton').addEventListener('click',function(){
-  if(!isAdmin)return;
+$('previewButton').addEventListener('click',async function(){
+  if(!isAdmin || publishing)return;
 
   $('previewArea').style.display = 'none';
   bulkQuestions = [];
 
+  const button = $('previewButton');
+  button.disabled = true;
+
   try{
+    // সর্বশেষ প্রশ্ন তালিকা নিয়ে Duplicate পরীক্ষা
+    const loaded = await loadQuestions();
+
+    if(!loaded){
+      throw new Error('বর্তমান প্রশ্নের তালিকা লোড করা যায়নি।');
+    }
+
     const raw = $('bulkCode').value.trim();
 
-    if(!raw)throw new Error('আগে JSON কোড পেস্ট করুন।');
+    if(!raw){
+      throw new Error('আগে JSON কোড পেস্ট করুন।');
+    }
 
     const parsed = JSON.parse(raw);
-    const source = Array.isArray(parsed) ? parsed : parsed.questions;
+    const source = Array.isArray(parsed)
+      ? parsed
+      : parsed.questions;
 
     if(!Array.isArray(source) || source.length===0){
       throw new Error('JSON Array অথবা questions Array দিতে হবে।');
     }
 
-    bulkQuestions = source.map((item,index)=>
-      validateBulkQuestion(item,index)
-    );
+    const validated = [];
+    const seen = new Set();
 
+    source.forEach((item,index)=>{
+      const q = validateBulkQuestion(item,index);
+      const key = q.mode+'::'+normalizeQuestion(q.question_bn);
+
+      if(seen.has(key)){
+        throw new Error(
+          'প্রশ্ন '+(index+1)+': এই Bulk কোডের মধ্যেই একই Mode-এ Duplicate প্রশ্ন আছে।'
+        );
+      }
+
+      seen.add(key);
+
+      if(isDuplicate(q.mode,q.question_bn)){
+        throw new Error(
+          'প্রশ্ন '+(index+1)+': এই প্রশ্নটি একই Mode-এ আগে থেকেই সংরক্ষিত আছে।'
+        );
+      }
+
+      validated.push(q);
+    });
+
+    bulkQuestions = validated;
     renderBulkPreview();
 
-    showBulkStatus(
+    setStatus(
+      'bulkStatus',
       bulkQuestions.length+
-      'টি প্রশ্ন যাচাই সফল হয়েছে। ছবিসহ Preview দেখে Publish করুন।'
+      'টি প্রশ্ন যাচাই সফল হয়েছে। Preview দেখে সংরক্ষণ করুন।',
+      'success'
     );
 
   }catch(error){
     bulkQuestions = [];
-    showBulkStatus('কোডে সমস্যা: '+error.message);
+    $('previewArea').style.display = 'none';
+
+    setStatus(
+      'bulkStatus',
+      'কোডে সমস্যা: '+error.message,
+      'error'
+    );
+  }finally{
+    button.disabled = false;
   }
 });
 
-// সব প্রশ্ন Publish
+// সব প্রশ্ন Publish / Save
 
 $('publishAllButton').addEventListener('click',async function(){
-  if(!isAdmin)return;
+  if(!isAdmin || publishing)return;
 
   if(bulkQuestions.length===0){
-    showBulkStatus('প্রথমে প্রশ্নের কোড যাচাই করুন।');
+    setStatus('bulkStatus','প্রথমে প্রশ্নের কোড যাচাই করুন।','warning');
     return;
   }
 
-  if(!confirm(bulkQuestions.length+'টি প্রশ্ন Supabase-এ Publish করবেন?'))return;
+  if(!confirm(
+    bulkQuestions.length+
+    'টি প্রশ্ন Supabase-এ সংরক্ষণ করবেন?'
+  ))return;
+
+  publishing = true;
 
   const button = $('publishAllButton');
-  button.disabled = true;
-  $('previewButton').disabled = true;
+  const previewButton = $('previewButton');
 
-  showBulkStatus('সব প্রশ্ন Supabase-এ সংরক্ষণ করা হচ্ছে...');
+  button.disabled = true;
+  previewButton.disabled = true;
+
+  setStatus(
+    'bulkStatus',
+    'সব প্রশ্ন Supabase-এ সংরক্ষণ করা হচ্ছে...'
+  );
 
   try{
+    // সংরক্ষণের ঠিক আগে সর্বশেষ Duplicate পরীক্ষা
+    const loaded = await loadQuestions();
+
+    if(!loaded){
+      throw new Error('প্রশ্নের তালিকা যাচাই করা যায়নি।');
+    }
+
+    for(let i=0;i<bulkQuestions.length;i++){
+      const q = bulkQuestions[i];
+
+      if(isDuplicate(q.mode,q.question_bn)){
+        throw new Error(
+          'প্রশ্ন '+(i+1)+' ইতিমধ্যে সংরক্ষিত হয়েছে। নতুন করে Preview করুন।'
+        );
+      }
+    }
+
     const {data,error} = await client
       .from('quiz_questions')
       .insert(bulkQuestions)
       .select('id');
 
     if(error){
-      showBulkStatus('প্রশ্ন সংরক্ষণ করা যায়নি: '+error.message);
-      return;
+      throw new Error(error.message);
     }
 
     const savedCount = data ? data.length : bulkQuestions.length;
 
-    showBulkStatus('সফল! '+savedCount+'টি প্রশ্ন সংরক্ষিত হয়েছে।');
+    setStatus(
+      'bulkStatus',
+      'সফল! '+savedCount+'টি প্রশ্ন সংরক্ষিত হয়েছে।',
+      'success'
+    );
 
     $('bulkCode').value = '';
     bulkQuestions = [];
@@ -668,10 +868,15 @@ $('publishAllButton').addEventListener('click',async function(){
     await loadQuestions();
 
   }catch(error){
-    showBulkStatus('সমস্যা হয়েছে: '+error.message);
+    setStatus(
+      'bulkStatus',
+      'সংরক্ষণ করা যায়নি: '+error.message,
+      'error'
+    );
   }finally{
+    publishing = false;
     button.disabled = false;
-    $('previewButton').disabled = false;
+    previewButton.disabled = false;
   }
 });
 
@@ -682,7 +887,12 @@ async function start(){
 
   if(!authorized)return;
 
-  showStatus('Admin যাচাই সফল হয়েছে। Supabase সংযুক্ত।');
+  setStatus(
+    'status',
+    'Admin যাচাই সফল হয়েছে। Supabase সংযুক্ত।',
+    'success'
+  );
+
   await loadQuestions();
 }
 
