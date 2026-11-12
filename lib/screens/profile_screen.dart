@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'quiz_history_screen.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -16,7 +18,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = supabase.auth.currentUser;
     if (user == null) return null;
 
-    // প্রোফাইল তথ্য
     final profile = await supabase
         .from('profiles')
         .select()
@@ -25,16 +26,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (profile == null) return null;
 
-    // ব্যবহারকারীর সম্পন্ন কুইজের তথ্য
     final attempts = await supabase
         .from('quiz_attempts')
         .select('correct_count')
         .eq('user_id', user.id);
 
-    // মোট সম্পন্ন কুইজ
     final playedQuizzes = attempts.length;
 
-    // সব কুইজের সঠিক উত্তর যোগ
     int correctAnswers = 0;
 
     for (final attempt in attempts) {
@@ -42,7 +40,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           (attempt['correct_count'] as num?)?.toInt() ?? 0;
     }
 
-    // Profile-এর সঙ্গে পরিসংখ্যান যুক্ত
     final result = Map<String, dynamic>.from(profile);
 
     result['played_quizzes'] = playedQuizzes;
@@ -63,6 +60,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
     }
+  }
+
+  void _openQuizHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const QuizHistoryScreen(),
+      ),
+    );
   }
 
   @override
@@ -240,6 +246,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.check_circle,
                 title: 'Correct Answers',
                 value: '$correctAnswers',
+              ),
+
+              const SizedBox(height: 25),
+
+              const Text(
+                'Quiz Activities',
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              Card(
+                color: const Color(0xFF151D18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: const BorderSide(
+                    color: Colors.white10,
+                  ),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 9,
+                  ),
+                  leading: Container(
+                    padding: const EdgeInsets.all(11),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF27D66B)
+                          .withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.history,
+                      color: Color(0xFF27D66B),
+                    ),
+                  ),
+                  title: const Text(
+                    'কুইজের ইতিহাস',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'আগের সব কুইজের ফলাফল দেখুন',
+                    style: TextStyle(
+                      color: Colors.white60,
+                      fontSize: 12,
+                    ),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 17,
+                    color: Color(0xFF27D66B),
+                  ),
+                  onTap: _openQuizHistory,
+                ),
               ),
 
               const SizedBox(height: 15),
