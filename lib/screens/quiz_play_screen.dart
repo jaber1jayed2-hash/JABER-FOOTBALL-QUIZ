@@ -40,6 +40,8 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   int correctXp = 5;
   int wrongXp = -2;
 
+  int? quizAttemptId;
+
   String? selectedAnswer;
 
   bool answered = false;
@@ -82,7 +84,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         fallback;
   }
 
-  // JSON Map অথবা JSON List—দুই ধরনের Options পড়বে।
   Map<String, String> readOptions(dynamic rawOptions) {
     final result = <String, String>{};
     const keys = ['A', 'B', 'C', 'D'];
@@ -109,7 +110,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     return result;
   }
 
-  // সঠিক উত্তর A/B/C/D অথবা সরাসরি উত্তর লেখা থাকলেও চিনবে।
   String getCorrectOptionKey(Map<String, dynamic> question) {
     final options = readOptions(question['options']);
 
@@ -203,7 +203,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
           .map((item) => item['question_id'].toString())
           .toSet();
 
-      // নির্বাচিত মোডের সব প্রকাশিত প্রশ্ন।
+      // নির্বাচিত মোডের প্রকাশিত প্রশ্ন।
       final questionData = await supabase
           .from('quiz_questions')
           .select()
@@ -218,7 +218,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         );
       }).toList();
 
-      // প্রশ্ন এলোমেলোভাবে সাজানো।
       availableQuestions.shuffle();
 
       final selectedQuestions = availableQuestions
@@ -243,6 +242,30 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         loading = false;
       });
     }
+  }
+
+  // কুইজের জন্য একটি History Record তৈরি।
+  // প্রথম প্রশ্নের উত্তর দেওয়ার সময় এটি তৈরি হবে।
+  Future<void> createQuizAttempt() async {
+    if (quizAttemptId != null) return;
+
+    final data = await supabase
+        .from('quiz_attempts')
+        .insert({
+          'user_id': userId,
+          'quiz_mode': widget.mode,
+          'question_count': questions.length,
+          'correct_count': 0,
+          'wrong_count': 0,
+          'points': 0,
+          'xp_earned': 0,
+          'completed_at':
+              DateTime.now().toUtc().toIso8601String(),
+        })
+        .select('id')
+        .single();
+
+    quizAttemptId = (data['id'] as num).toInt();
   }
 
   void startTimer() {
@@ -304,12 +327,16 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     await saveQuestionAttempt(isCorrect);
   }
 
+  // প্রতিটি প্রশ্নের উত্তর ও Quiz ID সংরক্ষণ।
   Future<void> saveQuestionAttempt(bool isCorrect) async {
     try {
+      await createQuizAttempt();
+
       await supabase.from('quiz_question_attempts').insert({
         'user_id': userId,
         'question_id': currentQuestion['id'],
-        'quiz_attempt_id': null,
+        'quiz_attempt_id': quizAttemptId,
+        'selected_option': selectedAnswer,
         'is_correct': isCorrect,
         'status': timedOut ? 'timed_out' : 'answered',
         'attempted_at':
@@ -375,11 +402,15 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     });
 
     try {
-      // কুইজের সারাংশ একবারই সংরক্ষণ।
+      // আগে তৈরি করা History Record আপডেট।
       if (!summarySaved) {
-        await supabase.from('quiz_attempts').insert({
-          'user_id': userId,
-          'quiz_mode': widget.mode,
+        if (quizAttemptId == null) {
+          throw Exception('কুইজের রেকর্ড পাওয়া যায়নি।');
+        }
+
+        await supabase
+            .from('quiz_attempts')
+            .update({
           'question_count': questions.length,
           'correct_count': correctCount,
           'wrong_count': wrongCount,
@@ -387,7 +418,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
           'xp_earned': xpEarned,
           'completed_at':
               DateTime.now().toUtc().toIso8601String(),
-        });
+        })
+            .eq('id', quizAttemptId!)
+            .eq('user_id', userId);
 
         summarySaved = true;
       }
