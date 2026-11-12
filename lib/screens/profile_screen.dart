@@ -16,11 +16,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = supabase.auth.currentUser;
     if (user == null) return null;
 
-    return await supabase
+    // প্রোফাইল তথ্য
+    final profile = await supabase
         .from('profiles')
         .select()
         .eq('id', user.id)
         .maybeSingle();
+
+    if (profile == null) return null;
+
+    // ব্যবহারকারীর সম্পন্ন কুইজের তথ্য
+    final attempts = await supabase
+        .from('quiz_attempts')
+        .select('correct_count')
+        .eq('user_id', user.id);
+
+    // মোট সম্পন্ন কুইজ
+    final playedQuizzes = attempts.length;
+
+    // সব কুইজের সঠিক উত্তর যোগ
+    int correctAnswers = 0;
+
+    for (final attempt in attempts) {
+      correctAnswers +=
+          (attempt['correct_count'] as num?)?.toInt() ?? 0;
+    }
+
+    // Profile-এর সঙ্গে পরিসংখ্যান যুক্ত
+    final result = Map<String, dynamic>.from(profile);
+
+    result['played_quizzes'] = playedQuizzes;
+    result['correct_answers'] = correctAnswers;
+
+    return result;
   }
 
   Future<void> _logout() async {
@@ -28,8 +56,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await supabase.auth.signOut();
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('লগআউট করতে সমস্যা হয়েছে।')),
+        const SnackBar(
+          content: Text('লগআউট করতে সমস্যা হয়েছে।'),
+        ),
       );
     }
   }
@@ -48,7 +79,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: FutureBuilder<Map<String, dynamic>?>(
         future: _loadProfile(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
                 color: Color(0xFF27D66B),
@@ -57,8 +89,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
 
           if (snapshot.hasError || snapshot.data == null) {
-            return const Center(
-              child: Text('Profile লোড করা যায়নি।'),
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Profile লোড করা যায়নি।',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {});
+                      },
+                      child: const Text('আবার চেষ্টা করুন'),
+                    ),
+                  ],
+                ),
+              ),
             );
           }
 
@@ -66,10 +116,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           final nickname =
               profile['display_name']?.toString() ?? 'Player';
+
           final xp = profile['xp'] ?? 0;
           final level = profile['level'] ?? 1;
           final points = profile['total_points'] ?? 0;
-          final avatarUrl = profile['avatar_url']?.toString();
+
+          final playedQuizzes =
+              profile['played_quizzes'] ?? 0;
+
+          final correctAnswers =
+              profile['correct_answers'] ?? 0;
+
+          final avatarUrl =
+              profile['avatar_url']?.toString();
 
           return ListView(
             padding: const EdgeInsets.all(18),
@@ -81,6 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+
               const SizedBox(height: 25),
 
               Center(
@@ -88,16 +148,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   radius: 48,
                   backgroundColor: const Color(0xFF245D39),
                   backgroundImage:
-                      avatarUrl != null && avatarUrl.isNotEmpty
+                      avatarUrl != null &&
+                              avatarUrl.isNotEmpty
                           ? NetworkImage(avatarUrl)
                           : null,
-                  child: avatarUrl == null || avatarUrl.isEmpty
-                      ? const Icon(
-                          Icons.person,
-                          size: 50,
-                          color: Colors.white,
-                        )
-                      : null,
+                  child:
+                      avatarUrl == null || avatarUrl.isEmpty
+                          ? const Icon(
+                              Icons.person,
+                              size: 50,
+                              color: Colors.white,
+                            )
+                          : null,
                 ),
               ),
 
@@ -118,7 +180,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Center(
                 child: Text(
                   'Football Quiz Player',
-                  style: TextStyle(color: Colors.white60),
+                  style: TextStyle(
+                    color: Colors.white60,
+                  ),
                 ),
               ),
 
@@ -166,16 +230,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 value: '$points',
               ),
 
-              const _StatCard(
+              _StatCard(
                 icon: Icons.quiz,
                 title: 'Played Quizzes',
-                value: 'পরবর্তী ধাপে যুক্ত হবে',
+                value: '$playedQuizzes',
               ),
 
-              const _StatCard(
+              _StatCard(
                 icon: Icons.check_circle,
                 title: 'Correct Answers',
-                value: 'পরবর্তী ধাপে যুক্ত হবে',
+                value: '$correctAnswers',
+              ),
+
+              const SizedBox(height: 15),
+
+              OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {});
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('পরিসংখ্যান রিফ্রেশ করুন'),
               ),
             ],
           );
@@ -220,7 +294,7 @@ class _StatCard extends StatelessWidget {
 
 // Login এবং Register Dialog
 class AuthDialog extends StatefulWidget {
-  AuthDialog({super.key});
+  const AuthDialog({super.key});
 
   @override
   State<AuthDialog> createState() => _AuthDialogState();
@@ -258,7 +332,8 @@ class _AuthDialogState extends State<AuthDialog> {
 
     if (password.length < 6) {
       setState(() {
-        errorMessage = 'Password কমপক্ষে ৬ অক্ষরের হতে হবে।';
+        errorMessage =
+            'Password কমপক্ষে ৬ অক্ষরের হতে হবে।';
       });
       return;
     }
@@ -277,14 +352,10 @@ class _AuthDialogState extends State<AuthDialog> {
 
         if (!mounted) return;
 
-        if (response.session != null) {
-          Navigator.of(context).pop();
-        } else {
-          Navigator.of(context).pop();
+        Navigator.of(context).pop();
 
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(
+        if (response.session == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
                 'অ্যাকাউন্ট তৈরি হয়েছে। Email যাচাই করে লগইন করুন।',
@@ -313,7 +384,8 @@ class _AuthDialogState extends State<AuthDialog> {
       if (!mounted) return;
 
       setState(() {
-        errorMessage = 'সমস্যা হয়েছে। আবার চেষ্টা করুন।';
+        errorMessage =
+            'সমস্যা হয়েছে। আবার চেষ্টা করুন।';
         isLoading = false;
       });
     }
