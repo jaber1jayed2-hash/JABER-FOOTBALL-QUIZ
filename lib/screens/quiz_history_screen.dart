@@ -31,6 +31,11 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
     loadHistory();
   }
 
+  int _number(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
   Future<void> loadHistory() async {
     final user = supabase.auth.currentUser;
 
@@ -96,11 +101,6 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
     }
   }
 
-  int _number(dynamic value) {
-    if (value is num) return value.toInt();
-    return int.tryParse(value?.toString() ?? '') ?? 0;
-  }
-
   String _modeName(dynamic mode) {
     const modes = {
       'general_mcq': 'সাধারণ MCQ',
@@ -121,7 +121,6 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
     if (value == null) return 'তারিখ পাওয়া যায়নি';
 
     final date = DateTime.tryParse(value.toString());
-
     if (date == null) return 'তারিখ পাওয়া যায়নি';
 
     final local = date.toLocal();
@@ -132,13 +131,68 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
         '${two(local.hour)}:${two(local.minute)}';
   }
 
-  void _showDetails(Map<String, dynamic> item) {
-    final questions = _number(item['question_count']);
-    final correct = _number(item['correct_count']);
-    final wrong = _number(item['wrong_count']);
-    final points = _number(item['points']);
-    final xp = _number(item['xp_earned']);
+  // একটি কুইজের সব প্রশ্ন ও উত্তর Supabase থেকে আনা
+  Future<List<Map<String, dynamic>>> _loadQuestionReviews(
+    dynamic attemptId,
+  ) async {
+    final response = await supabase
+        .from('quiz_question_attempts')
+        .select(
+          'id, question_id, selected_option, is_correct, '
+          'status, attempted_at, '
+          'quiz_questions('
+          'question_bn, options, correct_option, '
+          'explanation_bn, image_url'
+          ')',
+        )
+        .eq('quiz_attempt_id', attemptId)
+        .order('attempted_at', ascending: true);
 
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  // Supabase থেকে পাওয়া প্রশ্নের তথ্য বের করা
+  Map<String, dynamic> _questionData(dynamic value) {
+    if (value is Map) {
+      return Map<String, dynamic>.from(value);
+    }
+
+    if (value is List && value.isNotEmpty && value.first is Map) {
+      return Map<String, dynamic>.from(value.first);
+    }
+
+    return {};
+  }
+
+  String _answerText(dynamic value, dynamic options) {
+    if (value == null || value.toString().trim().isEmpty) {
+      return 'উত্তর দেওয়া হয়নি';
+    }
+
+    final answer = value.toString();
+
+    // উত্তরটি A/B/C/D হলে অপশন থেকে সম্পূর্ণ উত্তর দেখানোর চেষ্টা
+    if (options is List) {
+      const labels = ['A', 'B', 'C', 'D'];
+
+      final index = labels.indexOf(answer.toUpperCase());
+
+      if (index >= 0 && index < options.length) {
+        return '${labels[index]}. ${options[index]}';
+      }
+    }
+
+    if (options is Map) {
+      final option = options[answer] ?? options[answer.toUpperCase()];
+      if (option != null) {
+        return '$answer. $option';
+      }
+    }
+
+    return answer;
+  }
+
+  void _showDetails(Map<String, dynamic> item) {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF151D18),
@@ -148,80 +202,15 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
           top: Radius.circular(25),
         ),
       ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(22),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 45,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 22),
-                const Text(
-                  'কুইজের বিস্তারিত ফলাফল',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _modeName(item['quiz_mode']),
-                  style: const TextStyle(
-                    color: Color(0xFF27D66B),
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _dateTime(item['completed_at']),
-                  style: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _detailRow('মোট প্রশ্ন', '$questions'),
-                _detailRow('সঠিক উত্তর', '$correct'),
-                _detailRow('ভুল উত্তর', '$wrong'),
-                const Divider(color: Colors.white12, height: 25),
-                _detailRow(
-                  'মোট পয়েন্ট',
-                  '$points',
-                  color: const Color(0xFF27D66B),
-                ),
-                _detailRow(
-                  'অর্জিত XP',
-                  '${xp >= 0 ? '+' : ''}$xp XP',
-                  color: Colors.orangeAccent,
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF27D66B),
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                    ),
-                    child: const Text('বন্ধ করুন'),
-                  ),
-                ),
-              ],
-            ),
-          ),
+      builder: (sheetContext) {
+        return _QuizReviewSheet(
+          item: item,
+          loadReviews: () => _loadQuestionReviews(item['id']),
+          modeName: _modeName,
+          dateTime: _dateTime,
+          questionData: _questionData,
+          answerText: _answerText,
+          number: _number,
         );
       },
     );
@@ -386,6 +375,14 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+            const Text(
+              'বিস্তারিত প্রশ্ন ও উত্তর দেখতে চাপ দিন',
+              style: TextStyle(
+                color: Color(0xFF27D66B),
+                fontSize: 11,
+              ),
+            ),
           ],
         ),
       ),
@@ -453,7 +450,7 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
                 ? ListView(
                     children: [
                       const SizedBox(height: 150),
-                      Icon(
+                      const Icon(
                         Icons.error_outline,
                         color: Colors.redAccent,
                         size: 50,
@@ -494,36 +491,12 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
                         mainAxisSpacing: 12,
                         childAspectRatio: 1.55,
                         children: [
-                          _statCard(
-                            'মোট কুইজ',
-                            '$totalQuizzes',
-                            Icons.quiz,
-                          ),
-                          _statCard(
-                            'মোট প্রশ্ন',
-                            '$totalQuestions',
-                            Icons.help_outline,
-                          ),
-                          _statCard(
-                            'সঠিক উত্তর',
-                            '$totalCorrect',
-                            Icons.check_circle_outline,
-                          ),
-                          _statCard(
-                            'ভুল উত্তর',
-                            '$totalWrong',
-                            Icons.cancel_outlined,
-                          ),
-                          _statCard(
-                            'মোট Points',
-                            '$totalPoints',
-                            Icons.stars,
-                          ),
-                          _statCard(
-                            'মোট XP',
-                            '$totalXP',
-                            Icons.bolt,
-                          ),
+                          _statCard('মোট কুইজ', '$totalQuizzes', Icons.quiz),
+                          _statCard('মোট প্রশ্ন', '$totalQuestions', Icons.help_outline),
+                          _statCard('সঠিক উত্তর', '$totalCorrect', Icons.check_circle_outline),
+                          _statCard('ভুল উত্তর', '$totalWrong', Icons.cancel_outlined),
+                          _statCard('মোট Points', '$totalPoints', Icons.stars),
+                          _statCard('মোট XP', '$totalXP', Icons.bolt),
                         ],
                       ),
                       const SizedBox(height: 25),
@@ -565,9 +538,7 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
                               Text(
                                 'এখনো কোনো কুইজের ইতিহাস নেই',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                ),
+                                style: TextStyle(color: Colors.white70),
                               ),
                               SizedBox(height: 5),
                               Text(
@@ -585,6 +556,391 @@ class _QuizHistoryScreenState extends State<QuizHistoryScreen> {
                         ...history.map(_historyCard),
                     ],
                   ),
+      ),
+    );
+  }
+}
+
+// ==========================================
+// বিস্তারিত প্রশ্ন ও উত্তর দেখানোর স্ক্রিন
+// ==========================================
+
+class _QuizReviewSheet extends StatelessWidget {
+  final Map<String, dynamic> item;
+  final Future<List<Map<String, dynamic>>> Function() loadReviews;
+  final String Function(dynamic) modeName;
+  final String Function(dynamic) dateTime;
+  final Map<String, dynamic> Function(dynamic) questionData;
+  final String Function(dynamic, dynamic) answerText;
+  final int Function(dynamic) number;
+
+  const _QuizReviewSheet({
+    required this.item,
+    required this.loadReviews,
+    required this.modeName,
+    required this.dateTime,
+    required this.questionData,
+    required this.answerText,
+    required this.number,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final questions = number(item['question_count']);
+    final correct = number(item['correct_count']);
+    final wrong = number(item['wrong_count']);
+    final points = number(item['points']);
+    final xp = number(item['xp_earned']);
+
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.88,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 45,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'কুইজের বিস্তারিত ফলাফল',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    modeName(item['quiz_mode']),
+                    style: const TextStyle(
+                      color: Color(0xFF27D66B),
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    dateTime(item['completed_at']),
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _summaryRow('মোট প্রশ্ন', '$questions'),
+                  _summaryRow('সঠিক উত্তর', '$correct'),
+                  _summaryRow('ভুল উত্তর', '$wrong'),
+                  _summaryRow('মোট পয়েন্ট', '$points'),
+                  _summaryRow(
+                    'অর্জিত XP',
+                    '${xp >= 0 ? '+' : ''}$xp XP',
+                  ),
+                  const Divider(color: Colors.white12, height: 22),
+                  const Text(
+                    'প্রশ্নভিত্তিক রিভিউ',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: loadReviews(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF27D66B),
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text(
+                          'প্রশ্নের বিস্তারিত লোড করা যায়নি।\nআবার চেষ্টা করুন।',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                    );
+                  }
+
+                  final reviews = snapshot.data ?? [];
+
+                  if (reviews.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text(
+                          'এই কুইজের প্রশ্নভিত্তিক রেকর্ড পাওয়া যায়নি।\n'
+                          'পুরোনো কুইজে বিস্তারিত উত্তর সংরক্ষিত নাও থাকতে পারে।',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white60),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                    itemCount: reviews.length,
+                    itemBuilder: (context, index) {
+                      final review = reviews[index];
+                      final question = questionData(
+                        review['quiz_questions'],
+                      );
+
+                      final isCorrect = review['is_correct'] == true;
+                      final options = question['options'];
+                      final selected = answerText(
+                        review['selected_option'],
+                        options,
+                      );
+                      final answer = answerText(
+                        question['correct_option'],
+                        options,
+                      );
+                      final imageUrl =
+                          question['image_url']?.toString().trim() ?? '';
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 15),
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF090D0B),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isCorrect
+                                ? Colors.green.withOpacity(0.35)
+                                : Colors.redAccent.withOpacity(0.35),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'প্রশ্ন ${index + 1}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isCorrect
+                                        ? Colors.green.withOpacity(0.15)
+                                        : Colors.redAccent.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    isCorrect ? 'সঠিক' : 'ভুল',
+                                    style: TextStyle(
+                                      color: isCorrect
+                                          ? Colors.greenAccent
+                                          : Colors.redAccent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 13),
+                            Text(
+                              question['question_bn']?.toString() ??
+                                  'প্রশ্ন পাওয়া যায়নি',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                height: 1.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (imageUrl.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  imageUrl,
+                                  width: double.infinity,
+                                  height: 190,
+                                  fit: BoxFit.contain,
+                                  loadingBuilder: (context, child, progress) {
+                                    if (progress == null) return child;
+                                    return const SizedBox(
+                                      height: 130,
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          color: Color(0xFF27D66B),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const SizedBox(
+                                      height: 90,
+                                      child: Center(
+                                        child: Text(
+                                          'ছবিটি লোড করা যায়নি',
+                                          style: TextStyle(
+                                            color: Colors.white54,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 15),
+                            _answerBox(
+                              'আপনার উত্তর',
+                              selected,
+                              isCorrect
+                                  ? Colors.greenAccent
+                                  : Colors.redAccent,
+                            ),
+                            const SizedBox(height: 9),
+                            _answerBox(
+                              'সঠিক উত্তর',
+                              answer,
+                              Colors.greenAccent,
+                            ),
+                            if ((question['explanation_bn'] ?? '')
+                                .toString()
+                                .trim()
+                                .isNotEmpty) ...[
+                              const SizedBox(height: 13),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(11),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'ব্যাখ্যা',
+                                      style: TextStyle(
+                                        color: Colors.orangeAccent,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      question['explanation_bn'].toString(),
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        height: 1.5,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Widget _summaryRow(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white60,
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _answerBox(
+    String title,
+    String value,
+    Color color,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+        ],
       ),
     );
   }
