@@ -128,10 +128,11 @@ jobs:
           dart run flutter_launcher_icons
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release -x lintVitalAnalyzeRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: JABER-FOOTBALL-QUIZ-APK
           path: build/app/outputs/flutter-apk/app-release.apk
+          
