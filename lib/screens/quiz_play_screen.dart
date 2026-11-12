@@ -250,7 +250,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         settings,
         'quiz_timer_seconds',
         20,
-      ).clamp(1, 300);
+      ).clamp(1, 300).toInt();
 
       correctPoints = readSetting(
         settings,
