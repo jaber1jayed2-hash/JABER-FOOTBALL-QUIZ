@@ -546,14 +546,33 @@ function clearImport(){
 }
 
 async function start(){
- if(!window.supabase){
-  status('Supabase লাইব্রেরি লোড হয়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।','error');
-  return;
+ try{
+  status('১/৩: Supabase সংযোগ পরীক্ষা হচ্ছে...');
+
+  if(!window.supabase){
+   status('Supabase লাইব্রেরি লোড হয়নি।','error');
+   return;
+  }
+
+  status('২/৩: Admin যাচাই হচ্ছে...');
+
+  const isAdmin=await checkAdmin();
+
+  if(!isAdmin)return;
+
+  status('৩/৩: ৫০টি দেশের তালিকা লোড হচ্ছে...');
+
+  const loaded=await loadCountries();
+
+  if(loaded){
+   await loadQuestions();
+  }else{
+   $('questionList').textContent='দেশ লোড হয়নি। উপরের Error দেখুন।';
+  }
+
+ }catch(error){
+  status('JavaScript Error: '+error.message,'error');
  }
- if(!await checkAdmin())return;
- const loaded=await loadCountries();
- if(loaded)await loadQuestions();
- else $('questionList').textContent='দেশ লোড না হওয়ায় প্রশ্ন তালিকা দেখানো যাচ্ছে না।';
 }
 
 start();
