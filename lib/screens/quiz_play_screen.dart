@@ -8,8 +8,6 @@ class QuizPlayScreen extends StatefulWidget {
   final String mode;
   final int questionCount;
   final String quizName;
-
-  // Country Quiz-এর নির্বাচিত দেশের কোড, যেমন BRA, ARG।
   final String? subjectCode;
 
   const QuizPlayScreen({
@@ -40,9 +38,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   int remainingSeconds = 20;
 
   int correctPoints = 5;
-  int wrongPoints = -2;
+  int wrongPoints = 0;
   int correctXp = 5;
-  int wrongXp = -2;
+  int wrongXp = 0;
 
   int? quizAttemptId;
 
@@ -162,35 +160,14 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         width: double.infinity,
         height: 220,
         fit: BoxFit.contain,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
 
-          return SizedBox(
+          return const SizedBox(
             height: 180,
             child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircularProgressIndicator(
-                    color: Color(0xFF27D66B),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'ছবি লোড হচ্ছে...',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                  if (loadingProgress.expectedTotalBytes != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        '${(loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! * 100).toStringAsFixed(0)}%',
-                        style: const TextStyle(
-                          color: Colors.white54,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                ],
+              child: CircularProgressIndicator(
+                color: Color(0xFF27D66B),
               ),
             ),
           );
@@ -229,7 +206,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         throw Exception('প্রথমে লগইন করুন।');
       }
 
-      // Country Quiz চালাতে নির্বাচিত দেশের কোড আবশ্যক।
       if (isCountryQuiz &&
           (widget.subjectCode == null ||
               widget.subjectCode!.trim().isEmpty)) {
@@ -238,7 +214,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         );
       }
 
-      // Admin Panel থেকে কুইজের সেটিংস লোড।
+      // Admin Panel থেকে কুইজ সেটিংস।
       final settingsData = await supabase
           .from('app_settings')
           .select('key, value')
@@ -266,64 +242,51 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         settings,
         'quiz_correct_points',
         5,
-      );
+      ).clamp(0, 100000).toInt();
 
-      // ভুল উত্তরের ডিফল্ট পয়েন্ট -২।
+      // ভুল উত্তরে পয়েন্ট কখনো কমবে না।
       wrongPoints = readSetting(
         settings,
         'quiz_wrong_points',
-        -2,
-      );
+        0,
+      ).clamp(0, 100000).toInt();
 
       correctXp = readSetting(
         settings,
         'quiz_correct_xp',
         5,
-      );
+      ).clamp(0, 100000).toInt();
 
+      // ভুল উত্তরে XP কখনো কমবে না।
       wrongXp = readSetting(
         settings,
         'quiz_wrong_xp',
-        -2,
-      );
+        0,
+      ).clamp(0, 100000).toInt();
 
-      // আগে উত্তর দেওয়া প্রশ্নগুলোর ID।
-      final attemptedData = await supabase
-          .from('quiz_question_attempts')
-          .select('question_id')
-          .eq('user_id', user.id);
-
-      final attemptedIds = attemptedData
-          .map((item) => item['question_id'].toString())
-          .toSet();
-
-      // Country Quiz এবং সাধারণ কুইজের আলাদা Query।
+      // নির্বাচিত মোড অনুযায়ী প্রশ্ন লোড।
       dynamic questionQuery = supabase
           .from('quiz_questions')
           .select()
           .eq('is_published', true);
 
       if (isCountryQuiz) {
-        // শুধু নির্বাচিত দেশের প্রকাশিত প্রশ্ন।
-        // এখানে difficulty কোনোভাবেই Filter করা হচ্ছে না।
         questionQuery = questionQuery
             .eq('subject_type', 'country')
             .eq('mode', 'country_quiz')
-            .eq('subject_code', widget.subjectCode!.trim().toUpperCase());
+            .eq(
+              'subject_code',
+              widget.subjectCode!.trim().toUpperCase(),
+            );
       } else {
-        // আগের সাধারণ ৮টি কুইজের নিয়ম অপরিবর্তিত।
         questionQuery = questionQuery.eq('mode', widget.mode);
       }
 
       final questionData = await questionQuery;
 
+      // Replay-এর সুবিধার জন্য আগের উত্তর দেওয়া প্রশ্নও রাখা হচ্ছে।
       final availableQuestions =
-          List<Map<String, dynamic>>.from(questionData)
-              .where((question) {
-        return !attemptedIds.contains(
-          question['id'].toString(),
-        );
-      }).toList();
+          List<Map<String, dynamic>>.from(questionData);
 
       availableQuestions.shuffle();
 
@@ -581,7 +544,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     if (loading) {
       return const Scaffold(
         body: Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: Color(0xFF27D66B),
+          ),
         ),
       );
     }
@@ -608,8 +573,8 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
           child: Padding(
             padding: EdgeInsets.all(25),
             child: Text(
-              'এই কুইজের সব প্রশ্নের উত্তর আগে দেওয়া হয়েছে '
-              'অথবা এখনো কোনো প্রকাশিত প্রশ্ন নেই।',
+              'এই কুইজের জন্য এখনো কোনো প্রকাশিত প্রশ্ন নেই। '
+              'Admin Panel থেকে প্রশ্ন যোগ করুন।',
               textAlign: TextAlign.center,
             ),
           ),
@@ -705,13 +670,11 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                 Color? tileColor;
 
                 if (answered && isOptionCorrect) {
-                  tileColor =
-                      Colors.green.withOpacity(0.25);
+                  tileColor = Colors.green.withOpacity(0.25);
                 } else if (answered &&
                     isSelected &&
                     !isOptionCorrect) {
-                  tileColor =
-                      Colors.red.withOpacity(0.25);
+                  tileColor = Colors.red.withOpacity(0.25);
                 }
 
                 return Card(
@@ -739,7 +702,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
 
                 Text(
                   timedOut
-                      ? 'সময় শেষ! উত্তর দেওয়া হয়নি। $wrongPoints পয়েন্ট'
+                      ? 'সময় শেষ! উত্তর দেওয়া হয়নি।'
                       : isCorrectAnswer(selectedAnswer)
                           ? 'সঠিক উত্তর! +$correctPoints পয়েন্ট'
                           : 'ভুল উত্তর! $wrongPoints পয়েন্ট',
@@ -863,7 +826,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
               ),
 
               Text(
-                'XP পরিবর্তন: $xpEarned',
+                'XP অর্জন: $xpEarned',
                 style: const TextStyle(fontSize: 18),
               ),
 
