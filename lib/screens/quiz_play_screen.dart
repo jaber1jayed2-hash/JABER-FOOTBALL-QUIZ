@@ -9,11 +9,15 @@ class QuizPlayScreen extends StatefulWidget {
   final int questionCount;
   final String quizName;
 
+  // Country Quiz-এর নির্বাচিত দেশের কোড, যেমন BRA, ARG।
+  final String? subjectCode;
+
   const QuizPlayScreen({
     super.key,
     required this.mode,
     required this.questionCount,
     required this.quizName,
+    this.subjectCode,
   });
 
   @override
@@ -36,7 +40,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   int remainingSeconds = 20;
 
   int correctPoints = 5;
-  int wrongPoints = 0;
+  int wrongPoints = -2;
   int correctXp = 5;
   int wrongXp = -2;
 
@@ -59,6 +63,8 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   Timer? quizTimer;
 
   String get userId => supabase.auth.currentUser!.id;
+
+  bool get isCountryQuiz => widget.mode == 'country_quiz';
 
   Map<String, dynamic> get currentQuestion =>
       questions[currentIndex];
@@ -137,8 +143,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         answer == getCorrectOptionKey(currentQuestion);
   }
 
-  // ছবির URL থাকলে ছবি দেখাবে।
-  // URL ভুল হলে অ্যাপ ক্র্যাশ করবে না।
   Widget buildQuestionImage(String imageUrl) {
     return Container(
       width: double.infinity,
@@ -150,9 +154,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF151D18),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Colors.white12,
-        ),
+        border: Border.all(color: Colors.white12),
       ),
       clipBehavior: Clip.antiAlias,
       child: Image.network(
@@ -161,9 +163,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         height: 220,
         fit: BoxFit.contain,
         loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) {
-            return child;
-          }
+          if (loadingProgress == null) return child;
 
           return SizedBox(
             height: 180,
@@ -229,6 +229,16 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         throw Exception('প্রথমে লগইন করুন।');
       }
 
+      // Country Quiz চালাতে নির্বাচিত দেশের কোড আবশ্যক।
+      if (isCountryQuiz &&
+          (widget.subjectCode == null ||
+              widget.subjectCode!.trim().isEmpty)) {
+        throw Exception(
+          'কোনো দেশ নির্বাচন করা হয়নি। আবার দেশ নির্বাচন করুন।',
+        );
+      }
+
+      // Admin Panel থেকে কুইজের সেটিংস লোড।
       final settingsData = await supabase
           .from('app_settings')
           .select('key, value')
@@ -258,10 +268,11 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         5,
       );
 
+      // ভুল উত্তরের ডিফল্ট পয়েন্ট -২।
       wrongPoints = readSetting(
         settings,
         'quiz_wrong_points',
-        0,
+        -2,
       );
 
       correctXp = readSetting(
@@ -276,6 +287,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         -2,
       );
 
+      // আগে উত্তর দেওয়া প্রশ্নগুলোর ID।
       final attemptedData = await supabase
           .from('quiz_question_attempts')
           .select('question_id')
@@ -285,11 +297,25 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
           .map((item) => item['question_id'].toString())
           .toSet();
 
-      final questionData = await supabase
+      // Country Quiz এবং সাধারণ কুইজের আলাদা Query।
+      dynamic questionQuery = supabase
           .from('quiz_questions')
           .select()
-          .eq('mode', widget.mode)
           .eq('is_published', true);
+
+      if (isCountryQuiz) {
+        // শুধু নির্বাচিত দেশের প্রকাশিত প্রশ্ন।
+        // এখানে difficulty কোনোভাবেই Filter করা হচ্ছে না।
+        questionQuery = questionQuery
+            .eq('subject_type', 'country')
+            .eq('mode', 'country_quiz')
+            .eq('subject_code', widget.subjectCode!.trim().toUpperCase());
+      } else {
+        // আগের সাধারণ ৮টি কুইজের নিয়ম অপরিবর্তিত।
+        questionQuery = questionQuery.eq('mode', widget.mode);
+      }
+
+      final questionData = await questionQuery;
 
       final availableQuestions =
           List<Map<String, dynamic>>.from(questionData)
@@ -653,7 +679,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
 
               const SizedBox(height: 22),
 
-              // প্রশ্নের লেখা
               Text(
                 question['question_bn']?.toString() ?? '',
                 style: const TextStyle(
@@ -664,11 +689,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
 
               const SizedBox(height: 16),
 
-              // ছবির অবস্থান: প্রশ্নের নিচে, অপশনের উপরে
               if (imageUrl.isNotEmpty)
                 buildQuestionImage(imageUrl),
 
-              // চারটি MCQ অপশন
               ...['A', 'B', 'C', 'D'].map((key) {
                 final value = options[key] ?? '';
 
@@ -683,12 +706,12 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
 
                 if (answered && isOptionCorrect) {
                   tileColor =
-                      Colors.green.withValues(alpha: 0.25);
+                      Colors.green.withOpacity(0.25);
                 } else if (answered &&
                     isSelected &&
                     !isOptionCorrect) {
                   tileColor =
-                      Colors.red.withValues(alpha: 0.25);
+                      Colors.red.withOpacity(0.25);
                 }
 
                 return Card(
@@ -716,7 +739,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
 
                 Text(
                   timedOut
-                      ? 'সময় শেষ! উত্তর দেওয়া হয়নি।'
+                      ? 'সময় শেষ! উত্তর দেওয়া হয়নি। $wrongPoints পয়েন্ট'
                       : isCorrectAnswer(selectedAnswer)
                           ? 'সঠিক উত্তর! +$correctPoints পয়েন্ট'
                           : 'ভুল উত্তর! $wrongPoints পয়েন্ট',
