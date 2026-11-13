@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -23,6 +22,8 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .stat{background:#1a3022;padding:18px;border-radius:10px;text-align:center}
 .stat h2{color:#20e879}
 .menu button{background:#203d2a;color:white}
+.menu button:hover{background:#285638}
+.menu .country-button{background:#176b3b;border:1px solid #27d66b}
 .hidden{display:none!important}
 small{color:#b7c8bd}
 .preview{max-width:180px;max-height:120px;display:block;margin:10px 0;border-radius:8px}
@@ -69,7 +70,13 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 
 <div class="card menu">
 <h2>Admin Menu</h2>
+
 <button onclick="show('questions')">প্রশ্ন পরিচালনা</button>
+
+<button class="country-button" onclick="show('country_questions')">
+🌍 দেশভিত্তিক প্রশ্ন পরিচালনা
+</button>
+
 <button onclick="show('players')">খেলোয়াড় পরিচালনা</button>
 <button onclick="show('clubs')">ক্লাব পরিচালনা</button>
 <button onclick="show('countries')">দেশ পরিচালনা</button>
@@ -332,8 +339,15 @@ function show(name){
   return;
  }
 
+ // GENERAL QUESTION MANAGEMENT
  if(name==="questions"){
   window.location.href="questions.html";
+  return;
+ }
+
+ // COUNTRY QUESTION MANAGEMENT
+ if(name==="country_questions"){
+  window.location.href="country_questions.html";
   return;
  }
 
@@ -754,5 +768,6 @@ db.auth.onAuthStateChange((event,session)=>{
 restoreSession();
 
 </script>
+
 </body>
 </html>
