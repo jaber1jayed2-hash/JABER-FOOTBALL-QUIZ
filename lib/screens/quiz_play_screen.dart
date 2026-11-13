@@ -9,6 +9,7 @@ class QuizPlayScreen extends StatefulWidget {
   final int questionCount;
   final String quizName;
   final String? subjectCode;
+  final String? subjectType;
 
   const QuizPlayScreen({
     super.key,
@@ -16,6 +17,7 @@ class QuizPlayScreen extends StatefulWidget {
     required this.questionCount,
     required this.quizName,
     this.subjectCode,
+    this.subjectType,
   });
 
   @override
@@ -62,7 +64,23 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
 
   String get userId => supabase.auth.currentUser!.id;
 
-  bool get isCountryQuiz => widget.mode == 'country_quiz';
+  bool get isSubjectQuiz =>
+      widget.subjectType != null &&
+      widget.subjectCode != null &&
+      widget.subjectCode!.trim().isNotEmpty;
+
+  String get questionMode {
+    switch (widget.subjectType) {
+      case 'country':
+        return 'country_quiz';
+      case 'club':
+        return 'guess_club';
+      case 'player':
+        return 'guess_player';
+      default:
+        return widget.mode;
+    }
+  }
 
   Map<String, dynamic> get currentQuestion =>
       questions[currentIndex];
@@ -206,12 +224,18 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         throw Exception('প্রথমে লগইন করুন।');
       }
 
-      if (isCountryQuiz &&
+      if (widget.subjectType != null &&
           (widget.subjectCode == null ||
               widget.subjectCode!.trim().isEmpty)) {
         throw Exception(
-          'কোনো দেশ নির্বাচন করা হয়নি। আবার দেশ নির্বাচন করুন।',
+          'কোনো বিষয় নির্বাচন করা হয়নি। আবার নির্বাচন করুন।',
         );
+      }
+
+      if (widget.subjectType != null &&
+          !['country', 'club', 'player']
+              .contains(widget.subjectType)) {
+        throw Exception('কুইজের বিষয় সঠিক নয়।');
       }
 
       // Admin Panel থেকে কুইজ সেটিংস।
@@ -244,7 +268,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         5,
       ).clamp(0, 100000).toInt();
 
-      // ভুল উত্তরে পয়েন্ট কখনো কমবে না।
       wrongPoints = readSetting(
         settings,
         'quiz_wrong_points',
@@ -257,34 +280,30 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         5,
       ).clamp(0, 100000).toInt();
 
-      // ভুল উত্তরে XP কখনো কমবে না।
       wrongXp = readSetting(
         settings,
         'quiz_wrong_xp',
         0,
       ).clamp(0, 100000).toInt();
 
-      // নির্বাচিত মোড অনুযায়ী প্রশ্ন লোড।
+      // নির্বাচিত বিষয় ও মোড অনুযায়ী প্রশ্ন লোড।
       dynamic questionQuery = supabase
           .from('quiz_questions')
           .select()
-          .eq('is_published', true);
+          .eq('is_published', true)
+          .eq('mode', questionMode);
 
-      if (isCountryQuiz) {
+      if (isSubjectQuiz) {
         questionQuery = questionQuery
-            .eq('subject_type', 'country')
-            .eq('mode', 'country_quiz')
+            .eq('subject_type', widget.subjectType!)
             .eq(
               'subject_code',
               widget.subjectCode!.trim().toUpperCase(),
             );
-      } else {
-        questionQuery = questionQuery.eq('mode', widget.mode);
       }
 
       final questionData = await questionQuery;
 
-      // Replay-এর সুবিধার জন্য আগের উত্তর দেওয়া প্রশ্নও রাখা হচ্ছে।
       final availableQuestions =
           List<Map<String, dynamic>>.from(questionData);
 
