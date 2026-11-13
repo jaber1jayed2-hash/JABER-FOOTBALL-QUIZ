@@ -1,69 +1,90 @@
-<!DOCTYPE html>  <html lang="bn">  
-<head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
-<title>Question Management - JABER FOOTBALL QUIZ</title>  
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>  <style>  
-*{box-sizing:border-box}  
-body{margin:0;background:#080d0b;color:white;font-family:Arial,sans-serif}  
-header{background:#101b15;padding:18px;border-bottom:2px solid #16c766}  
-h2{color:#20e879}  
-main{max-width:850px;margin:auto;padding:18px}  
-.card{background:#14221a;padding:18px;border-radius:12px;margin-bottom:18px}  
-input,select,button,textarea{  
- width:100%;padding:12px;margin:7px 0;border:0;  
- border-radius:7px;font-size:15px  
-}  
-input,select,textarea{background:#e8eee9;color:#111}  
-textarea{min-height:220px;resize:vertical;font-family:monospace}  
-button{background:#16c766;color:#06130a;font-weight:bold;cursor:pointer}  
-button:disabled{opacity:.5;cursor:not-allowed}  
-.delete{background:#b52d2d;color:white}  
-.edit{background:#e5b93d;color:#111}  
-.secondary{background:#496052;color:white}  
-.question{background:#203528;padding:13px;border-radius:8px;margin:12px 0;overflow-wrap:anywhere}  
-small{color:#b7c8bd}  
-label{display:block;margin-top:10px}  
-.status{padding:10px;border-radius:7px;margin:10px 0;background:#203528;overflow-wrap:anywhere}  
-.actions{display:flex;gap:8px}  
-.actions button{flex:1}  
-.checkbox{display:flex;align-items:center;gap:10px}  
-.checkbox input{width:auto}  
-.back{display:inline-block;color:#20e879;margin-top:8px}  
-.preview{border:1px solid #398052;background:#172b20}  
-.help{color:#b7c8bd;line-height:1.6;font-size:14px}  
-.count{color:#20e879;font-weight:bold}  
-.question-image{  
- display:block;max-width:100%;max-height:190px;  
- object-fit:contain;margin:12px 0;border-radius:8px;  
- background:#101b15  
-}  
-.image-error{color:#ff8c8c;font-size:13px;margin:5px 0}  
-.published{color:#20e879}  
-.unpublished{color:#ffc65c}  
-.warning{background:#45351b;color:#ffe0a0}  
-.success{background:#153b25;color:#a8f5c1}  
-.error{background:#491f1f;color:#ffb2b2}  
-hr{border:0;border-top:1px solid #35513e;margin:20px 0}  
-</style>  </head>  <body>  
-<header>  
-<h2>⚽ JABER FOOTBALL QUIZ</h2>  
-<p>প্রশ্ন পরিচালনা | Admin Panel</p>  
-<a class="back" href="index.html">← Admin Dashboard</a>  
-</header>  <main id="adminContent" style="display:none">  <div class="card">  
-<h2 id="formTitle">নতুন প্রশ্ন যোগ করুন</h2>  
-<div id="status" class="status">Admin যাচাই করা হচ্ছে...</div>  <form id="questionForm">  <label>প্রশ্নের ধরন</label>
-<select id="type" required>
 
-<option value="general_mcq">সাধারণ MCQ</option>  
-<option value="guess_player">Guess the Player</option>  
-<option value="guess_club">Guess the Club</option>  
-<option value="guess_country">Guess the Country</option>  
-<option value="guess_jersey">Guess the Jersey</option>  
-<option value="guess_stadium">Guess the Stadium</option>  
-<option value="guess_silhouette">Guess the Silhouette</option>  
-<option value="guess_clues">Guess by Clues</option>  
-</select>  <label>প্রশ্ন লিখুন</label>
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Question Management - JABER FOOTBALL QUIZ</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080d0b;color:white;font-family:Arial,sans-serif}
+header{background:#101b15;padding:18px;border-bottom:2px solid #16c766}
+h2{color:#20e879}
+main{max-width:850px;margin:auto;padding:18px}
+.card{background:#14221a;padding:18px;border-radius:12px;margin-bottom:18px}
+input,select,button,textarea{
+width:100%;padding:12px;margin:7px 0;border:0;
+border-radius:7px;font-size:15px
+}
+input,select,textarea{background:#e8eee9;color:#111}
+textarea{min-height:220px;resize:vertical;font-family:monospace}
+button{background:#16c766;color:#06130a;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+.delete{background:#b52d2d;color:white}
+.edit{background:#e5b93d;color:#111}
+.secondary{background:#496052;color:white}
+.question{background:#203528;padding:13px;border-radius:8px;margin:12px 0;overflow-wrap:anywhere}
+small{color:#b7c8bd}
+label{display:block;margin-top:10px}
+.status{padding:10px;border-radius:7px;margin:10px 0;background:#203528;overflow-wrap:anywhere}
+.actions{display:flex;gap:8px}
+.actions button{flex:1}
+.checkbox{display:flex;align-items:center;gap:10px}
+.checkbox input{width:auto}
+.back{display:inline-block;color:#20e879;margin-top:8px}
+.preview{border:1px solid #398052;background:#172b20}
+.help{color:#b7c8bd;line-height:1.6;font-size:14px}
+.count{color:#20e879;font-weight:bold}
+.question-image{display:block;max-width:100%;max-height:190px;object-fit:contain;margin:12px 0;border-radius:8px;background:#101b15}
+.image-error{color:#ff8c8c;font-size:13px;margin:5px 0}
+.published{color:#20e879}
+.unpublished{color:#ffc65c}
+.warning{background:#45351b;color:#ffe0a0}
+.success{background:#153b25;color:#a8f5c1}
+.error{background:#491f1f;color:#ffb2b2}
+hr{border:0;border-top:1px solid #35513e;margin:20px 0}
+.subject-box{padding:12px;background:#203528;border-radius:8px;margin-top:10px}
+</style>
+</head>
+
+<body>
+<header>
+<h2>⚽ JABER FOOTBALL QUIZ</h2>
+<p>প্রশ্ন পরিচালনা | Admin Panel</p>
+<a class="back" href="index.html">← Admin Dashboard</a>
+</header>
+
+<main id="adminContent" style="display:none">
+
+<div class="card">
+<h2 id="formTitle">নতুন প্রশ্ন যোগ করুন</h2>
+<div id="status" class="status">Admin যাচাই করা হচ্ছে...</div>
+
+<form id="questionForm">
+
+<label>প্রশ্নের ধরন</label>
+<select id="type" required>
+<option value="general_mcq">সাধারণ MCQ</option>
+<option value="country_quiz">দেশভিত্তিক কুইজ</option>
+<option value="guess_club">Guess the Club</option>
+<option value="guess_player">Guess the Player</option>
+<option value="guess_jersey">Guess the Jersey</option>
+<option value="guess_stadium">Guess the Stadium</option>
+<option value="guess_silhouette">Guess the Silhouette</option>
+<option value="guess_clues">Guess by Clues</option>
+</select>
+
+<div id="subjectBox" class="subject-box" style="display:none">
+<label id="subjectLabel">বিষয় নির্বাচন করুন</label>
+<select id="subjectSelect">
+<option value="">প্রথমে বিষয় লোড করুন...</option>
+</select>
+<p class="help" id="subjectHelp">এই প্রশ্নটি নির্বাচিত বিষয়টির সঙ্গে যুক্ত হবে।</p>
+</div>
+
+<label>প্রশ্ন লিখুন</label>
 <input id="question" placeholder="প্রশ্ন লিখুন" required maxlength="1000">
 
 <label>Option A</label>
@@ -80,788 +101,847 @@ hr{border:0;border-top:1px solid #35513e;margin:20px 0}
 
 <label>সঠিক উত্তর</label>
 <select id="answer" required>
+<option value="A">Option A</option>
+<option value="B">Option B</option>
+<option value="C">Option C</option>
+<option value="D">Option D</option>
+</select>
 
-<option value="A">Option A</option>  
-<option value="B">Option B</option>  
-<option value="C">Option C</option>  
-<option value="D">Option D</option>  
-</select>  <label>ব্যাখ্যা</label>
+<label>ব্যাখ্যা</label>
 <input id="explanation" placeholder="সঠিক উত্তরের ব্যাখ্যা">
 
 <label>ছবির URL (ঐচ্ছিক)</label>
 <input id="imageUrl" type="url" placeholder="https://example.com/image.jpg">
 <img id="singleImagePreview" class="question-image" style="display:none" alt="প্রশ্নের ছবি">
+<div id="singleImageError" class="image-error"></div>
 
-<div id="singleImageError" class="image-error"></div>  <label class="checkbox">  
-<input type="checkbox" id="published" checked>  
-প্রশ্নটি প্রকাশ করুন  
-</label>  <button type="submit" id="saveButton">প্রশ্ন সংরক্ষণ করুন</button>
-<button type="button" id="cancelButton" class="delete" style="display:none">
-সম্পাদনা বাতিল করুন
-</button>
+<label class="checkbox">
+<input type="checkbox" id="published" checked>
+প্রশ্নটি প্রকাশ করুন
+</label>
 
-</form>  
-</div>  <div class="card">  
-<h2>📥 একসঙ্গে অনেক প্রশ্ন যোগ করুন</h2>  <p class="help">  
-একাধিক প্রশ্নের JSON কোড একসঙ্গে পেস্ট করুন।  
-প্রতিটি প্রশ্নে image_url দিলে ছবিও Preview-তে দেখা যাবে।  
-ছবি ছাড়া প্রশ্নও যোগ করা যাবে।  
-একই Mode-এ আগে থেকে থাকা একই প্রশ্ন আবার যোগ করার চেষ্টা শনাক্ত করা হবে।  
-</p>  <label>প্রশ্নের JSON কোড পেস্ট করুন</label>
+<button type="submit" id="saveButton">প্রশ্ন সংরক্ষণ করুন</button>
+<button type="button" id="cancelButton" class="delete" style="display:none">সম্পাদনা বাতিল করুন</button>
+</form>
+</div>
 
-<textarea id="bulkCode" placeholder='[  
-  {  
-    "mode": "general_mcq",  
-    "question_bn": "এই ছবির খেলোয়াড় কে?",  
-    "options": {  
-      "A": "Messi",  
-      "B": "Ronaldo",  
-      "C": "Neymar",  
-      "D": "Mbappe"  
-    },  
-    "correct_option": "A",  
-    "explanation_bn": "সঠিক উত্তর Messi।",  
-    "image_url": "https://example.com/player.jpg"  
-  }  
-]'></textarea>  <button type="button" id="previewButton">  
-প্রশ্ন যাচাই করুন ও Preview দেখুন  
-</button>  <div id="bulkStatus" class="status">  
-এখনো কোনো কোড যাচাই করা হয়নি।  
-</div>  <div id="previewArea" style="display:none">  
-<h3>Preview: <span id="previewCount" class="count">০</span>টি প্রশ্ন</h3>  
-<div id="previewList"></div>  <button type="button" id="publishAllButton">  
-সব প্রশ্ন সংরক্ষণ করুন  
-</button>  
-</div>  
-</div>  <div class="card">  
-<h2>সংরক্ষিত প্রশ্নসমূহ</h2>  
-<div id="questionList">প্রশ্ন লোড হচ্ছে...</div>  
-</div>  </main>  <script>  
-const SUPABASE_URL = 'https://cuvfoltgtopchiugrbuf.supabase.co';  
-const SUPABASE_KEY = 'sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D';  
-  
-const client = window.supabase.createClient(  
-  SUPABASE_URL,  
-  SUPABASE_KEY,  
-  {  
-    auth:{  
-      persistSession:true,  
-      autoRefreshToken:true,  
-      detectSessionInUrl:true  
-    }  
-  }  
-);  
-  
-const $ = id => document.getElementById(id);  
-  
-let editingId = null;  
-let questions = [];  
-let isAdmin = false;  
-let bulkQuestions = [];  
+<div class="card">
+<h2>📥 একসঙ্গে অনেক প্রশ্ন যোগ করুন</h2>
+<p class="help">
+একাধিক প্রশ্ন JSON আকারে যোগ করতে পারবেন।
+দেশ, ক্লাব অথবা খেলোয়াড়ের প্রশ্নের ক্ষেত্রে subject_type এবং subject_code দিতে হবে।
+</p>
+
+<label>প্রশ্নের JSON কোড পেস্ট করুন</label>
+<textarea id="bulkCode" placeholder='[
+  {
+    "mode": "country_quiz",
+    "subject_type": "country",
+    "subject_code": "ARG",
+    "question_bn": "আর্জেন্টিনা কতবার বিশ্বকাপ জিতেছে?",
+    "options": {
+      "A": "১ বার",
+      "B": "২ বার",
+      "C": "৩ বার",
+      "D": "৪ বার"
+    },
+    "correct_option": "C",
+    "explanation_bn": "আর্জেন্টিনা তিনবার বিশ্বকাপ জিতেছে।"
+  }
+]'></textarea>
+
+<button type="button" id="previewButton">প্রশ্ন যাচাই করুন ও Preview দেখুন</button>
+<div id="bulkStatus" class="status">এখনো কোনো কোড যাচাই করা হয়নি।</div>
+
+<div id="previewArea" style="display:none">
+<h3>Preview: <span id="previewCount" class="count">০</span>টি প্রশ্ন</h3>
+<div id="previewList"></div>
+<button type="button" id="publishAllButton">সব প্রশ্ন সংরক্ষণ করুন</button>
+</div>
+</div>
+
+<div class="card">
+<h2>সংরক্ষিত প্রশ্নসমূহ</h2>
+<div id="questionList">প্রশ্ন লোড হচ্ছে...</div>
+</div>
+
+</main>
+
+<script>
+const SUPABASE_URL = 'https://cuvfoltgtopchiugrbuf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D';
+
+const client = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY,
+  {
+    auth:{
+      persistSession:true,
+      autoRefreshToken:true,
+      detectSessionInUrl:true
+    }
+  }
+);
+
+const $ = id => document.getElementById(id);
+
+let editingId = null;
+let questions = [];
+let subjects = [];
+let isAdmin = false;
+let bulkQuestions = [];
 let publishing = false;
 
-  const allowedModes = [
-'general_mcq',
-'guess_player',
-'guess_club',
-'guess_country',
-'guess_jersey',
-'guess_stadium',
-'guess_silhouette',
-'guess_clues'
+const allowedModes = [
+  'general_mcq',
+  'country_quiz',
+  'guess_player',
+  'guess_club',
+  'guess_jersey',
+  'guess_stadium',
+  'guess_silhouette',
+  'guess_clues'
 ];
 
+const modeSubjectType = {
+  country_quiz:'country',
+  guess_club:'club',
+  guess_player:'player'
+};
+
 function setStatus(id,message,type=''){
-const el = $(id);
-el.textContent = message;
-el.className = 'status ' + type;
+  const el = $(id);
+  el.textContent = message;
+  el.className = 'status ' + type;
 }
 
 function normalizeQuestion(value){
-return String(value || '')
-.normalize('NFKC')
-.trim()
-.replace(/\s+/g,' ')
-.toLocaleLowerCase();
+  return String(value || '')
+    .normalize('NFKC')
+    .trim()
+    .replace(/\s+/g,' ')
+    .toLocaleLowerCase();
 }
 
 function validImageUrl(value){
-if(!value)return true;
-
-try{
-const url = new URL(value);
-return (
-(url.protocol === 'https:' || url.protocol === 'http:') &&
-!!url.hostname
-);
-}catch{
-return false;
-}
+  if(!value)return true;
+  try{
+    const url = new URL(value);
+    return (url.protocol === 'https:' || url.protocol === 'http:') && !!url.hostname;
+  }catch{
+    return false;
+  }
 }
 
 function makeImage(url,alt){
-const wrapper = document.createElement('div');
+  const wrapper = document.createElement('div');
+  const img = document.createElement('img');
+  img.className = 'question-image';
+  img.src = url;
+  img.alt = alt || 'Question image';
+  img.loading = 'lazy';
+  img.referrerPolicy = 'no-referrer';
 
-const img = document.createElement('img');
-img.className = 'question-image';
-img.src = url;
-img.alt = alt || 'Question image';
-img.loading = 'lazy';
-img.referrerPolicy = 'no-referrer';
+  const error = document.createElement('div');
+  error.className = 'image-error';
+  error.textContent = 'ছবি লোড করা যায়নি। URL পরীক্ষা করুন।';
+  error.style.display = 'none';
 
-const error = document.createElement('div');
-error.className = 'image-error';
-error.textContent = 'ছবি লোড করা যায়নি। URL পরীক্ষা করুন।';
-error.style.display = 'none';
+  img.onerror = function(){
+    this.style.display = 'none';
+    error.style.display = 'block';
+  };
 
-img.onerror = function(){
-this.style.display = 'none';
-error.style.display = 'block';
-};
-
-wrapper.append(img,error);
-return wrapper;
+  wrapper.append(img,error);
+  return wrapper;
 }
 
 function isDuplicate(mode,question,ignoreId=null){
-const normalized = normalizeQuestion(question);
-
-return questions.some(q =>
-String(q.mode) === String(mode) &&
-normalizeQuestion(q.question_bn) === normalized &&
-String(q.id) !== String(ignoreId)
-);
+  const normalized = normalizeQuestion(question);
+  return questions.some(q =>
+    String(q.mode) === String(mode) &&
+    normalizeQuestion(q.question_bn) === normalized &&
+    String(q.id) !== String(ignoreId)
+  );
 }
 
 function resetForm(){
-editingId = null;
-$('questionForm').reset();
-$('published').checked = true;
-
-$('formTitle').textContent = 'নতুন প্রশ্ন যোগ করুন';
-$('saveButton').textContent = 'প্রশ্ন সংরক্ষণ করুন';
-$('cancelButton').style.display = 'none';
-
-$('singleImagePreview').style.display = 'none';
-$('singleImageError').textContent = '';
+  editingId = null;
+  $('questionForm').reset();
+  $('published').checked = true;
+  $('formTitle').textContent = 'নতুন প্রশ্ন যোগ করুন';
+  $('saveButton').textContent = 'প্রশ্ন সংরক্ষণ করুন';
+  $('cancelButton').style.display = 'none';
+  $('singleImagePreview').style.display = 'none';
+  $('singleImageError').textContent = '';
+  updateSubjectBox();
 }
 
 // Admin যাচাই
-
 async function checkAdmin(){
-try{
-const {data:sessionData,error:sessionError} =
-await client.auth.getSession();
+  try{
+    const {data:sessionData,error:sessionError} = await client.auth.getSession();
 
-if(sessionError || !sessionData.session){  
-  alert('প্রথমে Admin Panel থেকে লগইন করুন।');  
-  window.location.replace('index.html');  
-  return false;  
-}  
+    if(sessionError || !sessionData.session){
+      alert('প্রথমে Admin Panel থেকে লগইন করুন।');
+      window.location.replace('index.html');
+      return false;
+    }
 
-const user = sessionData.session.user;  
+    const user = sessionData.session.user;
 
-const {data:adminData,error:adminError} = await client  
-  .from('admin_users')  
-  .select('user_id')  
-  .eq('user_id',user.id)  
-  .maybeSingle();  
+    const {data:adminData,error:adminError} = await client
+      .from('admin_users')
+      .select('user_id')
+      .eq('user_id',user.id)
+      .maybeSingle();
 
-if(adminError){  
-  alert('Admin যাচাই করা যায়নি: '+adminError.message);  
-  window.location.replace('index.html');  
-  return false;  
-}  
+    if(adminError){
+      alert('Admin যাচাই করা যায়নি: '+adminError.message);
+      window.location.replace('index.html');
+      return false;
+    }
 
-if(!adminData){  
-  await client.auth.signOut();  
-  alert('আপনার প্রবেশের অনুমতি নেই।');  
-  window.location.replace('index.html');  
-  return false;  
-}  
+    if(!adminData){
+      await client.auth.signOut();
+      alert('আপনার প্রবেশের অনুমতি নেই।');
+      window.location.replace('index.html');
+      return false;
+    }
 
-isAdmin = true;  
-$('adminContent').style.display = 'block';  
-return true;
-
-}catch(error){
-console.error(error);
-alert('নিরাপত্তা যাচাই করতে সমস্যা হয়েছে।');
-window.location.replace('index.html');
-return false;
+    isAdmin = true;
+    $('adminContent').style.display = 'block';
+    return true;
+  }catch(error){
+    console.error(error);
+    alert('নিরাপত্তা যাচাই করতে সমস্যা হয়েছে।');
+    window.location.replace('index.html');
+    return false;
+  }
 }
+
+// বিষয় তালিকা লোড
+async function loadSubjects(){
+  const {data,error} = await client
+    .from('quiz_subjects')
+    .select('subject_type, subject_code, name_bn, name_en, is_enabled, sort_order')
+    .eq('is_enabled',true)
+    .order('sort_order',{ascending:true});
+
+  if(error){
+    setStatus('status','বিষয় লোড করা যায়নি: '+error.message,'error');
+    return false;
+  }
+
+  subjects = data || [];
+  updateSubjectBox();
+  return true;
 }
+
+// Mode অনুযায়ী বিষয় নির্বাচন
+function updateSubjectBox(selectedCode=null){
+  const mode = $('type').value;
+  const subjectType = modeSubjectType[mode];
+  const box = $('subjectBox');
+  const select = $('subjectSelect');
+
+  if(!subjectType){
+    box.style.display = 'none';
+    select.innerHTML = '';
+    return;
+  }
+
+  box.style.display = 'block';
+
+  const labels = {
+    country:'দেশ নির্বাচন করুন',
+    club:'ক্লাব নির্বাচন করুন',
+    player:'খেলোয়াড় নির্বাচন করুন'
+  };
+
+  $('subjectLabel').textContent = labels[subjectType];
+  $('subjectHelp').textContent =
+    'নির্বাচিত '+labels[subjectType].replace(' নির্বাচন করুন','')+
+    ' সম্পর্কিত প্রশ্ন এখানে সংরক্ষিত হবে।';
+
+  const matching = subjects.filter(s => s.subject_type === subjectType);
+
+  select.innerHTML = '';
+
+  const first = document.createElement('option');
+  first.value = '';
+  first.textContent = matching.length
+    ? 'একটি বিষয় নির্বাচন করুন'
+    : 'কোনো বিষয় পাওয়া যায়নি';
+  select.append(first);
+
+  matching.forEach(s => {
+    const option = document.createElement('option');
+    option.value = s.subject_code;
+    option.textContent = s.name_bn || s.name_en || s.subject_code;
+    select.append(option);
+  });
+
+  if(selectedCode && matching.some(s => s.subject_code === selectedCode)){
+    select.value = selectedCode;
+  }
+}
+
+$('type').addEventListener('change',()=>{
+  updateSubjectBox();
+});
 
 // প্রশ্ন লোড
-
 async function loadQuestions(){
-if(!isAdmin)return;
+  if(!isAdmin)return false;
 
-$('questionList').textContent = 'প্রশ্ন লোড হচ্ছে...';
+  $('questionList').textContent = 'প্রশ্ন লোড হচ্ছে...';
 
-const {data,error} = await client
-.from('quiz_questions')
-.select('*')
-.order('id',{ascending:false});
+  const {data,error} = await client
+    .from('quiz_questions')
+    .select('*')
+    .order('id',{ascending:false});
 
-if(error){
-$('questionList').textContent =
-'প্রশ্ন লোড করা যায়নি: '+error.message;
-return false;
+  if(error){
+    $('questionList').textContent = 'প্রশ্ন লোড করা যায়নি: '+error.message;
+    return false;
+  }
+
+  questions = data || [];
+  renderQuestions();
+  return true;
 }
 
-questions = data || [];
-renderQuestions();
-return true;
+function getSubjectName(q){
+  if(!q.subject_type || !q.subject_code)return 'সাধারণ প্রশ্ন';
+
+  const found = subjects.find(s =>
+    s.subject_type === q.subject_type &&
+    s.subject_code === q.subject_code
+  );
+
+  return found
+    ? (found.name_bn || found.name_en || q.subject_code)
+    : q.subject_code;
 }
 
 // প্রশ্ন দেখানো
-
 function renderQuestions(){
-const list = $('questionList');
-list.innerHTML = '';
+  const list = $('questionList');
+  list.innerHTML = '';
 
-if(questions.length===0){
-list.textContent = 'এখনো কোনো প্রশ্ন যোগ করা হয়নি।';
-return;
-}
+  if(questions.length===0){
+    list.textContent = 'এখনো কোনো প্রশ্ন যোগ করা হয়নি।';
+    return;
+  }
 
-questions.forEach((q,index)=>{
-const div = document.createElement('div');
-div.className = 'question';
+  questions.forEach((q,index)=>{
+    const div = document.createElement('div');
+    div.className = 'question';
 
-const title = document.createElement('strong');  
-title.textContent = (index+1)+'. '+q.question_bn;  
+    const title = document.createElement('strong');
+    title.textContent = (index+1)+'. '+q.question_bn;
 
-const info = document.createElement('p');  
-info.textContent =  
-  'ধরন: '+q.mode+' | সঠিক উত্তর: '+q.correct_option;  
+    const info = document.createElement('p');
+    info.textContent =
+      'ধরন: '+q.mode+
+      ' | বিষয়: '+getSubjectName(q)+
+      ' | সঠিক উত্তর: '+q.correct_option;
 
-const status = document.createElement('small');  
-status.textContent =  
-  q.is_published ? 'প্রকাশিত' : 'অপ্রকাশিত';  
-status.className =  
-  q.is_published ? 'published' : 'unpublished';  
+    const status = document.createElement('small');
+    status.textContent = q.is_published ? 'প্রকাশিত' : 'অপ্রকাশিত';
+    status.className = q.is_published ? 'published' : 'unpublished';
 
-div.append(title);  
+    div.append(title);
 
-if(q.image_url){  
-  div.append(makeImage(q.image_url,'প্রশ্নের ছবি'));  
-}  
+    if(q.image_url){
+      div.append(makeImage(q.image_url,'প্রশ্নের ছবি'));
+    }
 
-div.append(info,status);  
+    div.append(info,status);
 
-const actions = document.createElement('div');  
-actions.className = 'actions';  
+    const actions = document.createElement('div');
+    actions.className = 'actions';
 
-const editButton = document.createElement('button');  
-editButton.className = 'edit';  
-editButton.textContent = 'সম্পাদনা';  
-editButton.onclick = ()=>editQuestion(q);  
+    const editButton = document.createElement('button');
+    editButton.className = 'edit';
+    editButton.textContent = 'সম্পাদনা';
+    editButton.onclick = ()=>editQuestion(q);
 
-const deleteButton = document.createElement('button');  
-deleteButton.className = 'delete';  
-deleteButton.textContent = 'মুছে ফেলুন';  
-deleteButton.onclick = ()=>deleteQuestion(q.id);  
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'delete';
+    deleteButton.textContent = 'মুছে ফেলুন';
+    deleteButton.onclick = ()=>deleteQuestion(q.id);
 
-actions.append(editButton,deleteButton);  
-div.append(actions);  
-list.append(div);
-
-});
+    actions.append(editButton,deleteButton);
+    div.append(actions);
+    list.append(div);
+  });
 }
 
 // প্রশ্ন সম্পাদনা
-
 function editQuestion(q){
-if(!isAdmin)return;
+  if(!isAdmin)return;
 
-editingId = q.id;
+  editingId = q.id;
+  $('type').value = q.mode;
+  updateSubjectBox(q.subject_code || null);
 
-$('type').value = q.mode;
-$('question').value = q.question_bn || '';
+  $('question').value = q.question_bn || '';
 
-const options = q.options || {};
+  const options = q.options || {};
+  $('a').value = options.A || '';
+  $('b').value = options.B || '';
+  $('c').value = options.C || '';
+  $('d').value = options.D || '';
 
-$('a').value = options.A || '';
-$('b').value = options.B || '';
-$('c').value = options.C || '';
-$('d').value = options.D || '';
+  $('answer').value = q.correct_option || 'A';
+  $('explanation').value = q.explanation_bn || '';
+  $('imageUrl').value = q.image_url || '';
+  $('published').checked = q.is_published === true;
 
-$('answer').value = q.correct_option || 'A';
-$('explanation').value = q.explanation_bn || '';
-$('imageUrl').value = q.image_url || '';
-$('published').checked = q.is_published === true;
+  updateSingleImagePreview();
 
-updateSingleImagePreview();
+  $('formTitle').textContent = 'প্রশ্ন সম্পাদনা করুন';
+  $('saveButton').textContent = 'পরিবর্তন সংরক্ষণ করুন';
+  $('cancelButton').style.display = 'block';
 
-$('formTitle').textContent = 'প্রশ্ন সম্পাদনা করুন';
-$('saveButton').textContent = 'পরিবর্তন সংরক্ষণ করুন';
-$('cancelButton').style.display = 'block';
-
-window.scrollTo({top:0,behavior:'smooth'});
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // প্রশ্ন মুছে ফেলা
-
 async function deleteQuestion(id){
-if(!isAdmin)return;
+  if(!isAdmin)return;
+  if(!confirm('আপনি কি এই প্রশ্নটি মুছে ফেলতে চান?'))return;
 
-if(!confirm('আপনি কি এই প্রশ্নটি মুছে ফেলতে চান?'))return;
+  setStatus('status','প্রশ্ন মুছে ফেলা হচ্ছে...');
 
-setStatus('status','প্রশ্ন মুছে ফেলা হচ্ছে...');
+  const {error} = await client
+    .from('quiz_questions')
+    .delete()
+    .eq('id',id);
 
-const {error} = await client
-.from('quiz_questions')
-.delete()
-.eq('id',id);
+  if(error){
+    setStatus('status','মুছে ফেলা যায়নি: '+error.message,'error');
+    return;
+  }
 
-if(error){
-setStatus(
-'status',
-'মুছে ফেলা যায়নি: '+error.message,
-'error'
-);
-return;
+  setStatus('status','প্রশ্ন সফলভাবে মুছে ফেলা হয়েছে।','success');
+  await loadQuestions();
 }
 
-setStatus('status','প্রশ্ন সফলভাবে মুছে ফেলা হয়েছে।','success');
-await loadQuestions();
-}
-
-// একক ছবির Preview
-
+// ছবির Preview
 function updateSingleImagePreview(){
-const url = $('imageUrl').value.trim();
-const img = $('singleImagePreview');
-const error = $('singleImageError');
+  const url = $('imageUrl').value.trim();
+  const img = $('singleImagePreview');
+  const error = $('singleImageError');
 
-error.textContent = '';
+  error.textContent = '';
 
-if(!url){
-img.style.display = 'none';
-img.removeAttribute('src');
-return;
-}
+  if(!url){
+    img.style.display = 'none';
+    img.removeAttribute('src');
+    return;
+  }
 
-if(!validImageUrl(url)){
-img.style.display = 'none';
-error.textContent = 'সঠিক HTTP/HTTPS ছবির URL দিন।';
-return;
-}
+  if(!validImageUrl(url)){
+    img.style.display = 'none';
+    error.textContent = 'সঠিক HTTP/HTTPS ছবির URL দিন।';
+    return;
+  }
 
-img.onerror = function(){
-img.style.display = 'none';
-error.textContent = 'ছবি লোড করা যায়নি। সরাসরি ছবির URL ব্যবহার করুন।';
-};
+  img.onerror = function(){
+    img.style.display = 'none';
+    error.textContent = 'ছবি লোড করা যায়নি। সরাসরি ছবির URL ব্যবহার করুন।';
+  };
 
-img.onload = function(){
-error.textContent = '';
-};
+  img.onload = function(){
+    error.textContent = '';
+  };
 
-img.src = url;
-
+  img.src = url;
   img.style.display = 'block';
 }
 
 $('imageUrl').addEventListener('input',updateSingleImagePreview);
 
 // একক প্রশ্ন সংরক্ষণ
-
 $('questionForm').addEventListener('submit',async function(e){
-e.preventDefault();
+  e.preventDefault();
 
-if(!isAdmin){
-alert('আপনার Admin অনুমতি নেই।');
-return;
-}
+  if(!isAdmin){
+    alert('আপনার Admin অনুমতি নেই।');
+    return;
+  }
 
-const imageUrl = $('imageUrl').value.trim();
-const mode = $('type').value;
-const question = $('question').value.trim();
+  const imageUrl = $('imageUrl').value.trim();
+  const mode = $('type').value;
+  const question = $('question').value.trim();
+  const subjectType = modeSubjectType[mode] || null;
+  const subjectCode = subjectType ? $('subjectSelect').value : null;
 
-if(!validImageUrl(imageUrl)){
-setStatus('status','ছবির URL সঠিক নয়।','error');
-return;
-}
+  if(!validImageUrl(imageUrl)){
+    setStatus('status','ছবির URL সঠিক নয়।','error');
+    return;
+  }
 
-if(isDuplicate(mode,question,editingId)){
-setStatus(
-'status',
-'এই Mode-এ একই প্রশ্ন আগে থেকেই আছে।',
-'warning'
-);
-return;
-}
+  if(subjectType && !subjectCode){
+    setStatus('status','প্রথমে দেশ, ক্লাব অথবা খেলোয়াড় নির্বাচন করুন।','warning');
+    return;
+  }
 
-const payload = {
-mode:mode,
-difficulty:'easy',
-question_bn:question,
-options:{
-A:$('a').value.trim(),
-B:$('b').value.trim(),
-C:$('c').value.trim(),
-D:$('d').value.trim()
-},
-correct_option:$('answer').value,
-explanation_bn:$('explanation').value.trim(),
-image_url:imageUrl || null,
-is_published:$('published').checked
-};
+  if(isDuplicate(mode,question,editingId)){
+    setStatus('status','এই Mode-এ একই প্রশ্ন আগে থেকেই আছে।','warning');
+    return;
+  }
 
-const button = $('saveButton');
-button.disabled = true;
+  const payload = {
+    mode:mode,
+    difficulty:'easy',
+    question_bn:question,
+    options:{
+      A:$('a').value.trim(),
+      B:$('b').value.trim(),
+      C:$('c').value.trim(),
+      D:$('d').value.trim()
+    },
+    correct_option:$('answer').value,
+    explanation_bn:$('explanation').value.trim(),
+    image_url:imageUrl || null,
+    is_published:$('published').checked,
+    subject_type:subjectType,
+    subject_code:subjectCode
+  };
 
-setStatus('status','প্রশ্ন সংরক্ষণ করা হচ্ছে...');
+  const button = $('saveButton');
+  button.disabled = true;
+  setStatus('status','প্রশ্ন সংরক্ষণ করা হচ্ছে...');
 
-try{
-let result;
+  try{
+    let result;
 
-if(editingId!==null){  
-  result = await client  
-    .from('quiz_questions')  
-    .update(payload)  
-    .eq('id',editingId);  
-}else{  
-  result = await client  
-    .from('quiz_questions')  
-    .insert(payload);  
-}  
+    if(editingId!==null){
+      result = await client
+        .from('quiz_questions')
+        .update(payload)
+        .eq('id',editingId);
+    }else{
+      result = await client
+        .from('quiz_questions')
+        .insert(payload);
+    }
 
-if(result.error){  
-  setStatus(  
-    'status',  
-    'সমস্যা হয়েছে: '+result.error.message,  
-    'error'  
-  );  
-  return;  
-}  
+    if(result.error){
+      setStatus('status','সমস্যা হয়েছে: '+result.error.message,'error');
+      return;
+    }
 
-setStatus(  
-  'status',  
-  editingId!==null  
-    ? 'প্রশ্নের পরিবর্তন সংরক্ষিত হয়েছে।'  
-    : 'নতুন প্রশ্ন Supabase-এ সংরক্ষিত হয়েছে।',  
-  'success'  
-);  
+    setStatus(
+      'status',
+      editingId!==null
+        ? 'প্রশ্নের পরিবর্তন সংরক্ষিত হয়েছে।'
+        : 'নতুন প্রশ্ন Supabase-এ সংরক্ষিত হয়েছে।',
+      'success'
+    );
 
-resetForm();  
-await loadQuestions();
+    resetForm();
+    await loadQuestions();
 
-}catch(error){
-setStatus('status','সমস্যা হয়েছে: '+error.message,'error');
-}finally{
-button.disabled = false;
-}
+  }catch(error){
+    setStatus('status','সমস্যা হয়েছে: '+error.message,'error');
+  }finally{
+    button.disabled = false;
+  }
 });
 
 $('cancelButton').addEventListener('click',resetForm);
 
-// Bulk Question Validation
-
+// Bulk প্রশ্ন যাচাই
 function validateBulkQuestion(item,index){
-const number = index+1;
+  const number = index+1;
 
-if(!item || typeof item!=='object' || Array.isArray(item)){
-throw new Error('প্রশ্ন '+number+': সঠিক Object নয়।');
-}
+  if(!item || typeof item!=='object' || Array.isArray(item)){
+    throw new Error('প্রশ্ন '+number+': সঠিক Object নয়।');
+  }
 
-const mode = String(item.mode || '').trim();
+  const mode = String(item.mode || '').trim();
 
-if(!allowedModes.includes(mode)){
-throw new Error('প্রশ্ন '+number+': mode সঠিক নয়।');
-}
+  if(!allowedModes.includes(mode)){
+    throw new Error('প্রশ্ন '+number+': mode সঠিক নয়।');
+  }
 
-const question = String(item.question_bn || '').trim();
+  const question = String(item.question_bn || '').trim();
 
-if(!question){
-throw new Error('প্রশ্ন '+number+': question_bn খালি।');
-}
+  if(!question){
+    throw new Error('প্রশ্ন '+number+': question_bn খালি।');
+  }
 
-if(!item.options || typeof item.options!=='object' ||
-Array.isArray(item.options)){
-throw new Error('প্রশ্ন '+number+': options দিতে হবে।');
-}
+  if(!item.options || typeof item.options!=='object' || Array.isArray(item.options)){
+    throw new Error('প্রশ্ন '+number+': options দিতে হবে।');
+  }
 
-const options = {
-A:String(item.options.A || '').trim(),
-B:String(item.options.B || '').trim(),
-C:String(item.options.C || '').trim(),
-D:String(item.options.D || '').trim()
-};
+  const options = {
+    A:String(item.options.A || '').trim(),
+    B:String(item.options.B || '').trim(),
+    C:String(item.options.C || '').trim(),
+    D:String(item.options.D || '').trim()
+  };
 
-for(const key of ['A','B','C','D']){
-if(!options[key]){
-throw new Error('প্রশ্ন '+number+': Option '+key+' খালি।');
-}
-}
+  for(const key of ['A','B','C','D']){
+    if(!options[key]){
+      throw new Error('প্রশ্ন '+number+': Option '+key+' খালি।');
+    }
+  }
 
-const answer = String(item.correct_option || '')
-.trim().toUpperCase();
+  const answer = String(item.correct_option || '').trim().toUpperCase();
 
-if(!['A','B','C','D'].includes(answer)){
-throw new Error('প্রশ্ন '+number+': সঠিক উত্তর A/B/C/D হতে হবে।');
-}
+  if(!['A','B','C','D'].includes(answer)){
+    throw new Error('প্রশ্ন '+number+': সঠিক উত্তর A/B/C/D হতে হবে।');
+  }
 
-const imageUrl = item.image_url == null
-? ''
-: String(item.image_url).trim();
+  const subjectType = modeSubjectType[mode] || null;
+  const subjectCode = item.subject_code == null
+    ? ''
+    : String(item.subject_code).trim();
 
-if(imageUrl && !validImageUrl(imageUrl)){
-throw new Error('প্রশ্ন '+number+': image_url সঠিক URL নয়।');
-}
+  if(subjectType){
+    if(item.subject_type !== subjectType){
+      throw new Error(
+        'প্রশ্ন '+number+': subject_type হবে '+subjectType
+      );
+    }
 
-if(typeof item.is_published !== 'undefined' &&
-typeof item.is_published !== 'boolean'){
-throw new Error('প্রশ্ন '+number+': is_published true অথবা false হতে হবে।');
-}
+    if(!subjectCode){
+      throw new Error(
+        'প্রশ্ন '+number+': subject_code দিতে হবে।'
+      );
+    }
 
-return {
-mode:mode,
-difficulty:'easy',
-question_bn:question,
-options:options,
-correct_option:answer,
-explanation_bn:String(item.explanation_bn || '').trim(),
-image_url:imageUrl || null,
-is_published:item.is_published === false ? false : true
-};
+    const found = subjects.some(s =>
+      s.subject_type === subjectType &&
+      s.subject_code === subjectCode
+    );
+
+    if(!found){
+      throw new Error(
+        'প্রশ্ন '+number+': subject_code quiz_subjects তালিকায় পাওয়া যায়নি।'
+      );
+    }
+  }
+
+  const imageUrl = item.image_url == null ? '' : String(item.image_url).trim();
+
+  if(imageUrl && !validImageUrl(imageUrl)){
+    throw new Error('প্রশ্ন '+number+': image_url সঠিক URL নয়।');
+  }
+
+  if(typeof item.is_published !== 'undefined' &&
+     typeof item.is_published !== 'boolean'){
+    throw new Error('প্রশ্ন '+number+': is_published true অথবা false হতে হবে।');
+  }
+
+  return {
+    mode:mode,
+    difficulty:'easy',
+    question_bn:question,
+    options:options,
+    correct_option:answer,
+    explanation_bn:String(item.explanation_bn || '').trim(),
+    image_url:imageUrl || null,
+    is_published:item.is_published === false ? false : true,
+    subject_type:subjectType,
+    subject_code:subjectType ? subjectCode : null
+  };
 }
 
 // Bulk Preview
-
 function renderBulkPreview(){
-const list = $('previewList');
-list.innerHTML = '';
+  const list = $('previewList');
+  list.innerHTML = '';
 
-bulkQuestions.forEach((q,index)=>{
-const div = document.createElement('div');
-div.className = 'question preview';
+  bulkQuestions.forEach((q,index)=>{
+    const div = document.createElement('div');
+    div.className = 'question preview';
 
-const title = document.createElement('strong');  
-title.textContent = (index+1)+'. '+q.question_bn;  
+    const title = document.createElement('strong');
+    title.textContent = (index+1)+'. '+q.question_bn;
 
-const mode = document.createElement('p');  
-mode.textContent = 'ধরন: '+q.mode;  
+    const mode = document.createElement('p');
+    mode.textContent =
+      'ধরন: '+q.mode+' | বিষয়: '+getSubjectName(q);
 
-const status = document.createElement('small');  
-status.textContent =  
-  q.is_published ? 'Publish হবে' : 'Unpublished থাকবে';  
-status.className =  
-  q.is_published ? 'published' : 'unpublished';  
+    const status = document.createElement('small');
+    status.textContent = q.is_published ? 'Publish হবে' : 'Unpublished থাকবে';
+    status.className = q.is_published ? 'published' : 'unpublished';
 
-div.append(title,mode,status);  
+    div.append(title,mode,status);
 
-if(q.image_url){  
-  div.append(makeImage(q.image_url,'প্রশ্ন '+(index+1)+' এর ছবি'));  
-}else{  
-  const noImage = document.createElement('small');  
-  noImage.textContent = 'এই প্রশ্নে কোনো ছবি নেই।';  
-  div.append(noImage);  
-}  
+    if(q.image_url){
+      div.append(makeImage(q.image_url,'প্রশ্ন '+(index+1)+' এর ছবি'));
+    }
 
-const options = document.createElement('p');  
-options.textContent =  
-  'A. '+q.options.A+  
-  ' | B. '+q.options.B+  
-  ' | C. '+q.options.C+  
-  ' | D. '+q.options.D;  
+    const options = document.createElement('p');
+    options.textContent =
+      'A. '+q.options.A+
+      ' | B. '+q.options.B+
+      ' | C. '+q.options.C+
+      ' | D. '+q.options.D;
 
-const answer = document.createElement('small');  
-answer.textContent = 'সঠিক উত্তর: '+q.correct_option;  
+    const answer = document.createElement('small');
+    answer.textContent = 'সঠিক উত্তর: '+q.correct_option;
 
-div.append(options,answer);  
-list.append(div);
+    div.append(options,answer);
+    list.append(div);
+  });
 
-});
-
-$('previewCount').textContent = bulkQuestions.length;
-$('previewArea').style.display = 'block';
+  $('previewCount').textContent = bulkQuestions.length;
+  $('previewArea').style.display = 'block';
 }
 
 // Preview বাটন
-
 $('previewButton').addEventListener('click',async function(){
-if(!isAdmin || publishing)return;
+  if(!isAdmin || publishing)return;
 
-$('previewArea').style.display = 'none';
-bulkQuestions = [];
+  $('previewArea').style.display = 'none';
+  bulkQuestions = [];
 
-const button = $('previewButton');
-button.disabled = true;
+  const button = $('previewButton');
+  button.disabled = true;
 
-try{
-// সর্বশেষ প্রশ্ন তালিকা নিয়ে Duplicate পরীক্ষা
-const loaded = await loadQuestions();
+  try{
+    const loaded = await loadQuestions();
 
-if(!loaded){  
-  throw new Error('বর্তমান প্রশ্নের তালিকা লোড করা যায়নি।');  
-}  
+    if(!loaded){
+      throw new Error('বর্তমান প্রশ্নের তালিকা লোড করা যায়নি।');
+    }
 
-const raw = $('bulkCode').value.trim();  
+    const raw = $('bulkCode').value.trim();
 
-if(!raw){  
-  throw new Error('আগে JSON কোড পেস্ট করুন।');  
-}  
+    if(!raw){
+      throw new Error('আগে JSON কোড পেস্ট করুন।');
+    }
 
-const parsed = JSON.parse(raw);  
-const source = Array.isArray(parsed)  
-  ? parsed  
-  : parsed.questions;  
+    const parsed = JSON.parse(raw);
+    const source = Array.isArray(parsed) ? parsed : parsed.questions;
 
-if(!Array.isArray(source) || source.length===0){  
-  throw new Error('JSON Array অথবা questions Array দিতে হবে।');  
-}  
+    if(!Array.isArray(source) || source.length===0){
+      throw new Error('JSON Array অথবা questions Array দিতে হবে।');
+    }
 
-const validated = [];  
-const seen = new Set();  
+    const validated = [];
+    const seen = new Set();
 
-source.forEach((item,index)=>{  
-  const q = validateBulkQuestion(item,index);  
-  const key = q.mode+'::'+normalizeQuestion(q.question_bn);  
+    source.forEach((item,index)=>{
+      const q = validateBulkQuestion(item,index);
+      const key = q.mode+'::'+(q.subject_code || '')+'::'+normalizeQuestion(q.question_bn);
 
-  if(seen.has(key)){  
-    throw new Error(  
-      'প্রশ্ন '+(index+1)+': এই Bulk কোডের মধ্যেই একই Mode-এ Duplicate প্রশ্ন আছে।'  
-    );  
-  }  
+      if(seen.has(key)){
+        throw new Error('প্রশ্ন '+(index+1)+': Bulk কোডের মধ্যে Duplicate প্রশ্ন আছে।');
+      }
 
-  seen.add(key);  
+      seen.add(key);
 
-  if(isDuplicate(q.mode,q.question_bn)){  
-    throw new Error(  
-      'প্রশ্ন '+(index+1)+': এই প্রশ্নটি একই Mode-এ আগে থেকেই সংরক্ষিত আছে।'  
-    );  
-  }  
+      if(isDuplicate(q.mode,q.question_bn)){
+        throw new Error('প্রশ্ন '+(index+1)+': এই প্রশ্নটি আগে থেকেই সংরক্ষিত আছে।');
+      }
 
-  validated.push(q);  
-});  
+      validated.push(q);
+    });
 
-bulkQuestions = validated;  
-renderBulkPreview();  
+    bulkQuestions = validated;
+    renderBulkPreview();
 
-setStatus(  
-  'bulkStatus',  
-  bulkQuestions.length+  
-  'টি প্রশ্ন যাচাই সফল হয়েছে। Preview দেখে সংরক্ষণ করুন।',  
-  'success'  
-);
+    setStatus(
+      'bulkStatus',
+      bulkQuestions.length+'টি প্রশ্ন যাচাই সফল হয়েছে। Preview দেখে সংরক্ষণ করুন।',
+      'success'
+    );
 
-}catch(error){
-bulkQuestions = [];
-$('previewArea').style.display = 'none';
-
-setStatus(  
-  'bulkStatus',  
-  'কোডে সমস্যা: '+error.message,  
-  'error'  
-);
-
-}finally{
-button.disabled = false;
-}
+  }catch(error){
+    bulkQuestions = [];
+    $('previewArea').style.display = 'none';
+    setStatus('bulkStatus','কোডে সমস্যা: '+error.message,'error');
+  }finally{
+    button.disabled = false;
+  }
 });
 
-// সব প্রশ্ন Publish / Save
-  $('publishAllButton').addEventListener('click',async function(){
-if(!isAdmin || publishing)return;
+// সব প্রশ্ন সংরক্ষণ
+$('publishAllButton').addEventListener('click',async function(){
+  if(!isAdmin || publishing)return;
 
-if(bulkQuestions.length===0){
-setStatus('bulkStatus','প্রথমে প্রশ্নের কোড যাচাই করুন।','warning');
-return;
-}
+  if(bulkQuestions.length===0){
+    setStatus('bulkStatus','প্রথমে প্রশ্নের কোড যাচাই করুন।','warning');
+    return;
+  }
 
-if(!confirm(
-bulkQuestions.length+
-'টি প্রশ্ন Supabase-এ সংরক্ষণ করবেন?'
-))return;
+  if(!confirm(bulkQuestions.length+'টি প্রশ্ন Supabase-এ সংরক্ষণ করবেন?'))return;
 
-publishing = true;
+  publishing = true;
 
-const button = $('publishAllButton');
-const previewButton = $('previewButton');
+  const button = $('publishAllButton');
+  const previewButton = $('previewButton');
 
-button.disabled = true;
-previewButton.disabled = true;
+  button.disabled = true;
+  previewButton.disabled = true;
 
-setStatus(
-'bulkStatus',
-'সব প্রশ্ন Supabase-এ সংরক্ষণ করা হচ্ছে...'
-);
+  setStatus('bulkStatus','সব প্রশ্ন Supabase-এ সংরক্ষণ করা হচ্ছে...');
 
-try{
-// সংরক্ষণের ঠিক আগে সর্বশেষ Duplicate পরীক্ষা
-const loaded = await loadQuestions();
+  try{
+    const loaded = await loadQuestions();
 
-if(!loaded){  
-  throw new Error('প্রশ্নের তালিকা যাচাই করা যায়নি।');  
-}  
+    if(!loaded){
+      throw new Error('প্রশ্নের তালিকা যাচাই করা যায়নি।');
+    }
 
-for(let i=0;i<bulkQuestions.length;i++){  
-  const q = bulkQuestions[i];  
+    for(let i=0;i<bulkQuestions.length;i++){
+      const q = bulkQuestions[i];
 
-  if(isDuplicate(q.mode,q.question_bn)){  
-    throw new Error(  
-      'প্রশ্ন '+(i+1)+' ইতিমধ্যে সংরক্ষিত হয়েছে। নতুন করে Preview করুন।'  
-    );  
-  }  
-}  
+      if(isDuplicate(q.mode,q.question_bn)){
+        throw new Error('প্রশ্ন '+(i+1)+' ইতিমধ্যে সংরক্ষিত হয়েছে। নতুন করে Preview করুন।');
+      }
+    }
 
-const {data,error} = await client  
-  .from('quiz_questions')  
-  .insert(bulkQuestions)  
-  .select('id');  
+    const {data,error} = await client
+      .from('quiz_questions')
+      .insert(bulkQuestions)
+      .select('id');
 
-if(error){  
-  throw new Error(error.message);  
-}  
+    if(error){
+      throw new Error(error.message);
+    }
 
-const savedCount = data ? data.length : bulkQuestions.length;  
+    const savedCount = data ? data.length : bulkQuestions.length;
 
-setStatus(  
-  'bulkStatus',  
-  'সফল! '+savedCount+'টি প্রশ্ন সংরক্ষিত হয়েছে।',  
-  'success'  
-);  
+    setStatus('bulkStatus','সফল! '+savedCount+'টি প্রশ্ন সংরক্ষিত হয়েছে।','success');
 
-$('bulkCode').value = '';  
-bulkQuestions = [];  
-$('previewArea').style.display = 'none';  
+    $('bulkCode').value = '';
+    bulkQuestions = [];
+    $('previewArea').style.display = 'none';
 
-await loadQuestions();
+    await loadQuestions();
 
-}catch(error){
-setStatus(
-'bulkStatus',
-'সংরক্ষণ করা যায়নি: '+error.message,
-'error'
-);
-}finally{
-publishing = false;
-button.disabled = false;
-previewButton.disabled = false;
-}
+  }catch(error){
+    setStatus('bulkStatus','সংরক্ষণ করা যায়নি: '+error.message,'error');
+  }finally{
+    publishing = false;
+    button.disabled = false;
+    previewButton.disabled = false;
+  }
 });
 
 // শুরু
-
 async function start(){
-const authorized = await checkAdmin();
+  const authorized = await checkAdmin();
+  if(!authorized)return;
 
-if(!authorized)return;
+  setStatus('status','Admin যাচাই সফল হয়েছে। Supabase সংযুক্ত।','success');
 
-setStatus(
-'status',
-'Admin যাচাই সফল হয়েছে। Supabase সংযুক্ত।',
-'success'
-);
-
-await loadQuestions();
+  await loadSubjects();
+  await loadQuestions();
 }
 
 start();
 </script>
-
-</body>  
+</body>
 </html>
