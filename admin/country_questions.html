@@ -89,6 +89,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 <p class="muted">
 JSON কোড পেস্ট করুন অথবা JSON ফাইল নির্বাচন করুন।
 প্রতিটি প্রশ্নে subject_code থাকতে হবে।
+Country Quiz-এ Difficulty ব্যবহার করা হয় না।
 </p>
 
 <label>JSON ফাইল Upload</label>
@@ -174,19 +175,22 @@ function keyOf(code,q){
 
 function errorText(error){
  if(!error)return 'অজানা Error';
+
+ if(typeof error==='string')return error;
+
  return [
   error.message,
   error.details,
   error.hint,
   error.code
- ].filter(Boolean).join(' | ');
+ ].filter(Boolean).join(' | ')||JSON.stringify(error);
 }
 
 async function checkAdmin(){
  const {data,error}=await db.auth.getSession();
 
  if(error){
-  status('Session Error: '+error.message,'error');
+  status('Session Error: '+errorText(error),'error');
   return false;
  }
 
@@ -284,14 +288,8 @@ async function loadExistingKeys(){
 
 function resetForm(){
  [
-  'editId',
-  'question',
-  'optionA',
-  'optionB',
-  'optionC',
-  'optionD',
-  'explanation',
-  'imageUrl'
+  'editId','question','optionA','optionB',
+  'optionC','optionD','explanation','imageUrl'
  ].forEach(id=>$(id).value='');
 
  $('countrySelect').value='';
@@ -324,7 +322,7 @@ async function saveOne(){
   subject_type:'country',
   subject_code:code,
   mode:'country_quiz',
-  difficulty:'none',
+  difficulty:null,
   question_bn:q,
   options:{A,B,C,D},
   correct_option:$('correct').value,
@@ -377,7 +375,6 @@ function editQuestion(id){
  $('published').checked=!!q.is_published;
 
  $('saveBtn').textContent='পরিবর্তন সংরক্ষণ';
-
  window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -415,7 +412,6 @@ async function loadQuestions(){
   }
 
   const {data,error}=await query;
-
   if(error)throw error;
 
   questionCache=data||[];
@@ -477,7 +473,6 @@ $('jsonFile').addEventListener('change',async e=>{
  try{
   $('jsonInput').value=await file.text();
   status('JSON ফাইল পড়া হয়েছে। এখন যাচাই ও Preview চাপুন।');
-
  }catch(error){
   status('ফাইল পড়া যায়নি: '+errorText(error),'error');
  }
@@ -519,7 +514,7 @@ function normalizeRow(row){
   subject_type:'country',
   subject_code:code,
   mode:'country_quiz',
-  difficulty:'none',
+  difficulty:null,
   question_bn:q,
   options:{
    A:String(options.A).trim(),
@@ -542,7 +537,6 @@ async function validateImport(){
 
  validRows=[];
  failedRows=[];
-
  $('preview').innerHTML='';
  $('importReport').innerHTML='';
 
@@ -550,7 +544,6 @@ async function validateImport(){
 
  try{
   parsed=JSON.parse($('jsonInput').value);
-
  }catch(error){
   status('JSON ফরম্যাট ভুল: '+error.message,'error');
   return;
@@ -568,14 +561,12 @@ async function validateImport(){
 
  try{
   await loadExistingKeys();
-
  }catch(error){
   status('আগের প্রশ্ন যাচাই করা যায়নি: '+errorText(error),'error');
   return;
  }
 
  const seen=new Set();
-
  let invalid=0;
  let duplicates=0;
 
@@ -594,7 +585,6 @@ async function validateImport(){
 
   }catch(error){
    invalid++;
-
    failedRows.push({
     row:row,
     index:index+1,
@@ -610,16 +600,12 @@ async function validateImport(){
    <br>ডুপ্লিকেট: ${duplicates}
    <br>ভুল প্রশ্ন: ${invalid}
   </div>
-
   <p class="muted">প্রথম ৫টি বৈধ প্রশ্নের Preview:</p>
-
   ${validRows.slice(0,5).map(q=>`
    <div class="question">
     <b>${esc(q.subject_code)}</b>
     <p>${esc(q.question_bn)}</p>
-    <span class="muted">
-     সঠিক উত্তর: ${esc(q.correct_option)}
-    </span>
+    <span class="muted">সঠিক উত্তর: ${esc(q.correct_option)}</span>
    </div>
   `).join('')}
  `;
@@ -628,7 +614,6 @@ async function validateImport(){
  $('importBtn').textContent='বৈধ '+validRows.length+'টি প্রশ্ন Import করুন';
 
  status('যাচাই শেষ। Preview দেখে Import করুন।');
-
 }
 
 async function importRows(rows){
@@ -649,7 +634,6 @@ async function importRows(rows){
  $('progressText').textContent='Import শুরু হচ্ছে...';
 
  for(let start=0;start<total;start+=100){
-
   const batch=rows.slice(start,start+100);
 
   const {error:batchError}=await db
@@ -657,9 +641,7 @@ async function importRows(rows){
    .insert(batch);
 
   if(batchError){
-
    for(let i=0;i<batch.length;i++){
-
     const row=batch[i];
 
     const {error:oneError}=await db
@@ -667,18 +649,15 @@ async function importRows(rows){
      .insert(row);
 
     if(oneError){
-
      failed.push({
       row:row,
       error:errorText(oneError),
       batchError:errorText(batchError)
      });
-
     }else{
      success++;
     }
    }
-
   }else{
    success+=batch.length;
   }
@@ -686,7 +665,6 @@ async function importRows(rows){
   const done=Math.min(start+100,total);
 
   $('progressBar').style.width=(done/total*100)+'%';
-
   $('progressText').textContent=
    'প্রক্রিয়া: '+done+'/'+total+
    ' | সফল: '+success+
@@ -715,11 +693,9 @@ async function importRows(rows){
  `;
 
  if(failed.length){
-
   $('retryBtn').style.display='inline-block';
 
   const dl=document.createElement('button');
-
   dl.className='secondary';
   dl.textContent='ব্যর্থ প্রশ্ন JSON ডাউনলোড';
   dl.onclick=downloadFailed;
@@ -742,9 +718,7 @@ async function importRows(rows){
 async function startImport(){
  if(!validRows.length)return;
 
- if(!confirm(validRows.length+'টি প্রশ্ন Import করবেন?')){
-  return;
- }
+ if(!confirm(validRows.length+'টি প্রশ্ন Import করবেন?'))return;
 
  await importRows(validRows);
 }
@@ -753,7 +727,6 @@ async function retryFailed(){
  if(!failedRows.length)return;
 
  const rows=failedRows.map(x=>x.row);
-
  await importRows(rows);
 }
 
@@ -828,7 +801,6 @@ async function start(){
   status('Admin যাচাই হচ্ছে...');
 
   const isAdmin=await checkAdmin();
-
   if(!isAdmin)return;
 
   status('দেশের তালিকা লোড হচ্ছে...');
