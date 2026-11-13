@@ -71,13 +71,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void openFeature(String title) {
-    if (title == 'দেশভিত্তিক কুইজ' ||
-        title == 'ক্লাব কুইজ' ||
-        title == 'খেলোয়াড় কুইজ') {
+    String? category;
+
+    if (title == 'দেশভিত্তিক কুইজ') {
+      category = 'country';
+    } else if (title == 'ক্লাব কুইজ') {
+      category = 'club';
+    } else if (title == 'খেলোয়াড় কুইজ') {
+      category = 'player';
+    }
+
+    if (category != null) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const QuizScreen(),
+          builder: (context) => QuizScreen(
+            initialCategory: category,
+          ),
         ),
       );
       return;
