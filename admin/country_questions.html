@@ -1,0 +1,498 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Country Question Manager - JABER FOOTBALL QUIZ</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:14px;background:#080d0b;color:white;font-family:Arial,sans-serif}
+.container{max-width:1000px;margin:auto}
+h2,h3{color:#27d66b}
+.card{background:#151d18;border:1px solid #293c30;border-radius:13px;padding:16px;margin:15px 0}
+label{display:block;margin:12px 0 6px;color:#b9c8bd}
+input,select,textarea{width:100%;padding:12px;border-radius:8px;border:1px solid #34483a;background:#090f0b;color:white;font-size:15px}
+textarea{min-height:85px;resize:vertical}
+#jsonInput{min-height:260px;font-family:monospace}
+button{padding:11px 15px;border:0;border-radius:8px;background:#27d66b;color:#06150b;font-weight:bold;margin:5px 3px;cursor:pointer}
+button.secondary{background:#34483a;color:white}
+button.danger{background:#d94343;color:white}
+button:disabled{opacity:.5;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.status{padding:11px;border-radius:8px;margin:10px 0;white-space:pre-wrap}
+.success{background:#123c25;color:#9bffb8}
+.error{background:#4a1919;color:#ffb2b2}
+.question{background:#0b130e;border:1px solid #293c30;padding:13px;border-radius:10px;margin:10px 0}
+.muted{color:#9eafa3;font-size:13px}
+.actions{display:flex;flex-wrap:wrap;gap:5px}
+.progress{height:12px;background:#34483a;border-radius:20px;overflow:hidden}
+.bar{height:100%;width:0;background:#27d66b;transition:width .2s}
+@media(max-width:600px){.grid{grid-template-columns:1fr}body{padding:9px}}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>🌍 Country Quiz Management</h2>
+<p class="muted">JABER FOOTBALL QUIZ — Country Question Manager</p>
+<div id="status"></div>
+
+<div class="card">
+<h3>১. একটি প্রশ্ন যোগ / সম্পাদনা</h3>
+<input type="hidden" id="editId">
+
+<label>দেশ নির্বাচন</label>
+<select id="countrySelect"><option value="">লোড হচ্ছে...</option></select>
+
+<label>প্রশ্ন</label>
+<textarea id="question" placeholder="প্রশ্ন লিখুন"></textarea>
+
+<div class="grid">
+<div><label>Option A</label><input id="optionA"></div>
+<div><label>Option B</label><input id="optionB"></div>
+<div><label>Option C</label><input id="optionC"></div>
+<div><label>Option D</label><input id="optionD"></div>
+</div>
+
+<label>সঠিক উত্তর</label>
+<select id="correct">
+<option value="A">A</option><option value="B">B</option>
+<option value="C">C</option><option value="D">D</option>
+</select>
+
+<label>ব্যাখ্যা</label>
+<textarea id="explanation"></textarea>
+
+<label>ছবির URL (ঐচ্ছিক)</label>
+<input id="imageUrl" placeholder="https://...">
+
+<label><input type="checkbox" id="published" checked style="width:auto"> প্রকাশ করুন</label>
+
+<button id="saveBtn" onclick="saveOne()">প্রশ্ন সংরক্ষণ</button>
+<button class="secondary" onclick="resetForm()">ফর্ম পরিষ্কার</button>
+</div>
+
+<div class="card">
+<h3>২. Bulk Import — একসঙ্গে ১,০০০–২,০০০ প্রশ্ন</h3>
+<p class="muted">JSON কোড পেস্ট করুন অথবা JSON ফাইল নির্বাচন করুন। প্রতিটি প্রশ্নে subject_code থাকতে হবে।</p>
+
+<label>JSON ফাইল Upload</label>
+<input type="file" id="jsonFile" accept=".json,application/json">
+
+<label>অথবা JSON কোড Paste</label>
+<textarea id="jsonInput" placeholder='[
+  {
+    "subject_code": "ARG",
+    "question_bn": "প্রশ্ন লিখুন",
+    "options": {
+      "A": "উত্তর A",
+      "B": "উত্তর B",
+      "C": "উত্তর C",
+      "D": "উত্তর D"
+    },
+    "correct_option": "A",
+    "explanation_bn": "ব্যাখ্যা"
+  }
+]'></textarea>
+
+<div class="actions">
+<button class="secondary" onclick="validateImport()">প্রশ্ন যাচাই ও Preview</button>
+<button class="secondary" onclick="downloadTemplate()">JSON নমুনা ডাউনলোড</button>
+<button class="secondary" onclick="clearImport()">পরিষ্কার</button>
+</div>
+
+<div id="preview"></div>
+
+<div class="progress"><div class="bar" id="progressBar"></div></div>
+<p id="progressText" class="muted"></p>
+
+<button id="importBtn" onclick="startImport()" disabled>সব বৈধ প্রশ্ন Import করুন</button>
+<button id="retryBtn" class="secondary" onclick="retryFailed()" style="display:none">ব্যর্থ প্রশ্ন আবার Import</button>
+<div id="importReport"></div>
+</div>
+
+<div class="card">
+<h3>৩. সংরক্ষিত প্রশ্ন</h3>
+<label>দেশ অনুযায়ী দেখুন</label>
+<select id="filterCountry" onchange="loadQuestions()">
+<option value="">সব দেশ</option>
+</select>
+<div id="questionList">প্রশ্ন লোড হচ্ছে...</div>
+</div>
+</div>
+
+<script>
+const URL='https://cuvfoltgtopchiugrbuf.supabase.co';
+const KEY='sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D';
+const db=window.supabase.createClient(URL,KEY);
+
+let countries=[];
+let questionCache=[];
+let validRows=[];
+let failedRows=[];
+let existingKeys=new Set();
+
+const $=id=>document.getElementById(id);
+
+function status(message,type='success'){
+ $('status').className='status '+type;
+ $('status').textContent=message;
+}
+
+function esc(v){
+ return String(v??'').replace(/[&<>"']/g,c=>({
+ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+ }[c]));
+}
+
+function keyOf(code,q){
+ return String(code).trim().toUpperCase()+'|'+String(q).trim().toLowerCase().replace(/\s+/g,' ');
+}
+
+async function checkAdmin(){
+ const {data,error}=await db.auth.getSession();
+ if(error||!data.session){
+  location.href='index.html';return false;
+ }
+ const {data:admin,error:ae}=await db.from('admin_users')
+ .select('user_id').eq('user_id',data.session.user.id).maybeSingle();
+ if(ae||!admin){
+  document.body.innerHTML='<h2>Admin Access নেই</h2>';return false;
+ }
+ return true;
+}
+
+async function loadCountries(){
+ const {data,error}=await db.from('quiz_subjects')
+ .select('subject_code,name_en,name_bn,flag_emoji,is_enabled,sort_order')
+ .eq('subject_type','country').eq('is_enabled',true)
+ .order('sort_order');
+
+ if(error){status('দেশ লোড হয়নি: '+error.message,'error');return;}
+
+ countries=data||[];
+ $('countrySelect').innerHTML='<option value="">দেশ নির্বাচন করুন</option>';
+ $('filterCountry').innerHTML='<option value="">সব দেশ</option>';
+
+ countries.forEach(c=>{
+  const label=(c.flag_emoji||'🌍')+' '+(c.name_bn||c.name_en)+' ('+c.subject_code+')';
+  $('countrySelect').add(new Option(label,c.subject_code));
+  $('filterCountry').add(new Option(label,c.subject_code));
+ });
+}
+
+async function loadExistingKeys(){
+ existingKeys=new Set();
+ let from=0;
+ const size=500;
+ while(true){
+  const {data,error}=await db.from('quiz_questions')
+   .select('subject_code,question_bn')
+   .eq('subject_type','country')
+   .range(from,from+size-1);
+  if(error)throw error;
+  (data||[]).forEach(q=>existingKeys.add(keyOf(q.subject_code,q.question_bn)));
+  if(!data||data.length<size)break;
+  from+=size;
+ }
+}
+
+function resetForm(){
+ ['editId','question','optionA','optionB','optionC','optionD','explanation','imageUrl']
+ .forEach(id=>$(id).value='');
+ $('countrySelect').value='';
+ $('correct').value='A';
+ $('published').checked=true;
+ $('saveBtn').textContent='প্রশ্ন সংরক্ষণ';
+}
+
+async function saveOne(){
+ const id=$('editId').value;
+ const code=$('countrySelect').value;
+ const q=$('question').value.trim();
+ const A=$('optionA').value.trim(),B=$('optionB').value.trim();
+ const C=$('optionC').value.trim(),D=$('optionD').value.trim();
+ const image=$('imageUrl').value.trim();
+
+ if(!code||!q||!A||!B||!C||!D){
+  status('দেশ, প্রশ্ন ও চারটি অপশন পূরণ করুন।','error');return;
+ }
+ if(image&&!/^https?:\/\/\S+$/i.test(image)){
+  status('ছবির URL সঠিক নয়।','error');return;
+ }
+
+ const payload={
+  subject_type:'country',subject_code:code,mode:'country_quiz',
+  difficulty:'none',question_bn:q,options:{A,B,C,D},
+  correct_option:$('correct').value,
+  explanation_bn:$('explanation').value.trim(),
+  image_url:image||null,is_published:$('published').checked
+ };
+
+ $('saveBtn').disabled=true;
+ let result=id
+  ? await db.from('quiz_questions').update(payload).eq('id',id).eq('subject_type','country')
+  : await db.from('quiz_questions').insert(payload);
+ $('saveBtn').disabled=false;
+
+ if(result.error){status('সংরক্ষণ ব্যর্থ: '+result.error.message,'error');return;}
+ status(id?'প্রশ্ন আপডেট হয়েছে।':'প্রশ্ন যোগ হয়েছে।');
+ resetForm();await loadQuestions();
+}
+
+function editQuestion(id){
+ const q=questionCache.find(x=>String(x.id)===String(id));
+ if(!q)return;
+ const o=q.options||{};
+ $('editId').value=q.id;$('countrySelect').value=q.subject_code;
+ $('question').value=q.question_bn||'';
+ $('optionA').value=o.A||'';$('optionB').value=o.B||'';
+ $('optionC').value=o.C||'';$('optionD').value=o.D||'';
+ $('correct').value=q.correct_option||'A';
+ $('explanation').value=q.explanation_bn||'';
+ $('imageUrl').value=q.image_url||'';
+ $('published').checked=!!q.is_published;
+ $('saveBtn').textContent='পরিবর্তন সংরক্ষণ';
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function deleteQuestion(id){
+ if(!confirm('প্রশ্নটি মুছে ফেলবেন?'))return;
+ const {error}=await db.from('quiz_questions').delete()
+ .eq('id',id).eq('subject_type','country');
+ if(error){status(error.message,'error');return;}
+ status('প্রশ্ন মুছে ফেলা হয়েছে।');await loadQuestions();
+}
+
+async function loadQuestions(){
+ $('questionList').textContent='লোড হচ্ছে...';
+ let query=db.from('quiz_questions').select('*')
+ .eq('subject_type','country').order('created_at',{ascending:false}).limit(200);
+ if($('filterCountry').value)query=query.eq('subject_code',$('filterCountry').value);
+ const {data,error}=await query;
+ if(error){$('questionList').textContent=error.message;return;}
+ questionCache=data||[];
+ if(!questionCache.length){$('questionList').textContent='এখনো প্রশ্ন নেই।';return;}
+
+ $('questionList').innerHTML='';
+ questionCache.forEach(q=>{
+  const c=countries.find(x=>x.subject_code===q.subject_code);
+  const name=c?(c.flag_emoji||'🌍')+' '+(c.name_bn||c.name_en):q.subject_code;
+  const o=q.options||{};
+  const div=document.createElement('div');
+  div.className='question';
+  div.innerHTML=`<b>${esc(name)}</b><p>${esc(q.question_bn)}</p>
+   <div class="muted">A. ${esc(o.A)}<br>B. ${esc(o.B)}<br>C. ${esc(o.C)}<br>D. ${esc(o.D)}</div>
+   <p>সঠিক উত্তর: ${esc(q.correct_option)} | ${q.is_published?'প্রকাশিত':'অপ্রকাশিত'}</p>
+   <button class="secondary" data-edit="${esc(q.id)}">সম্পাদনা</button>
+   <button class="danger" data-delete="${esc(q.id)}">মুছুন</button>`;
+  $('questionList').appendChild(div);
+ });
+}
+
+$('questionList').addEventListener('click',e=>{
+ const edit=e.target.closest('[data-edit]');
+ const del=e.target.closest('[data-delete]');
+ if(edit)editQuestion(edit.dataset.edit);
+ if(del)deleteQuestion(del.dataset.delete);
+});
+
+$('jsonFile').addEventListener('change',async e=>{
+ const file=e.target.files[0];if(!file)return;
+ try{
+  $('jsonInput').value=await file.text();
+  status('JSON ফাইল পড়া হয়েছে। এখন যাচাই ও Preview চাপুন।');
+ }catch(err){status('ফাইল পড়া যায়নি: '+err.message,'error');}
+});
+
+function normalizeRow(row){
+ const code=String(row.subject_code||'').trim().toUpperCase();
+ const options=row.options||{};
+ const correct=String(row.correct_option||'').trim().toUpperCase();
+ const q=String(row.question_bn||'').trim();
+
+ if(!countries.some(c=>c.subject_code===code))throw Error('অচেনা বা নিষ্ক্রিয় দেশের কোড: '+code);
+ if(!q)throw Error('প্রশ্ন খালি');
+ for(const k of ['A','B','C','D']){
+  if(!String(options[k]||'').trim())throw Error('Option '+k+' খালি');
+ }
+ if(!['A','B','C','D'].includes(correct))throw Error('সঠিক উত্তর A/B/C/D হতে হবে');
+ const image=String(row.image_url||'').trim();
+ if(image&&!/^https?:\/\/\S+$/i.test(image))throw Error('Image URL ভুল');
+
+ return {
+  subject_type:'country',
+  subject_code:code,
+  mode:'country_quiz',
+  difficulty:'none',
+  question_bn:q,
+  options:{
+   A:String(options.A).trim(),B:String(options.B).trim(),
+   C:String(options.C).trim(),D:String(options.D).trim()
+  },
+  correct_option:correct,
+  explanation_bn:String(row.explanation_bn||'').trim(),
+  image_url:image||null,
+  is_published:row.is_published===undefined?true:!!row.is_published
+ };
+}
+
+async function validateImport(){
+ $('importBtn').disabled=true;
+ $('retryBtn').style.display='none';
+ validRows=[];failedRows=[];
+ $('preview').innerHTML='';
+ let parsed;
+ try{parsed=JSON.parse($('jsonInput').value);}
+ catch(e){status('JSON ফরম্যাট ভুল: '+e.message,'error');return;}
+ if(!Array.isArray(parsed)||parsed.length===0){
+  status('JSON-এর মূল অংশ একটি প্রশ্নের Array হতে হবে।','error');return;
+ }
+ if(parsed.length>2000){
+  status('একবারে সর্বোচ্চ ২০০০টি প্রশ্ন Import করুন।','error');return;
+ }
+
+ try{await loadExistingKeys();}
+ catch(e){status('আগের প্রশ্ন যাচাই করা যায়নি: '+e.message,'error');return;}
+
+ const seen=new Set();
+ let invalid=0,duplicates=0;
+ parsed.forEach((row,index)=>{
+  try{
+   const clean=normalizeRow(row);
+   const key=keyOf(clean.subject_code,clean.question_bn);
+   if(seen.has(key)||existingKeys.has(key)){
+    duplicates++;return;
+   }
+   seen.add(key);validRows.push(clean);
+  }catch(e){
+   invalid++;
+   failedRows.push({row,index:index+1,error:e.message});
+  }
+ });
+
+ $('preview').innerHTML=`
+  <div class="status success">
+   মোট: ${parsed.length}
+   <br>বৈধ নতুন প্রশ্ন: ${validRows.length}
+   <br>ডুপ্লিকেট: ${duplicates}
+   <br>ভুল প্রশ্ন: ${invalid}
+  </div>
+  <p class="muted">প্রথম ৫টি বৈধ প্রশ্নের Preview:</p>
+  ${validRows.slice(0,5).map(q=>`<div class="question">
+   <b>${esc(q.subject_code)}</b><p>${esc(q.question_bn)}</p>
+   <span class="muted">সঠিক উত্তর: ${esc(q.correct_option)}</span>
+  </div>`).join('')}
+ `;
+ $('importBtn').disabled=validRows.length===0;
+ $('importBtn').textContent='বৈধ '+validRows.length+'টি প্রশ্ন Import করুন';
+ status('যাচাই শেষ। Import করার আগে Preview দেখে নিন।');
+}
+
+async function importRows(rows){
+ let success=0;
+ let failed=[];
+ const btn=$('importBtn');
+ btn.disabled=true;$('retryBtn').style.display='none';
+ $('importReport').textContent='';
+ const total=rows.length;
+
+ for(let start=0;start<total;start+=100){
+  const batch=rows.slice(start,start+100);
+  const {error}=await db.from('quiz_questions').insert(batch);
+
+  if(error){
+   // Batch ব্যর্থ হলে একেকটি করে চেষ্টা; সফল ও ব্যর্থ আলাদা রাখা হবে।
+   for(const row of batch){
+    const one=await db.from('quiz_questions').insert(row);
+    if(one.error)failed.push({row,error:one.error.message});
+    else success++;
+   }
+  }else{
+   success+=batch.length;
+  }
+
+  const done=Math.min(start+100,total);
+  $('progressBar').style.width=(done/total*100)+'%';
+  $('progressText').textContent='প্রক্রিয়া: '+done+'/'+total+
+   ' | সফল: '+success+' | ব্যর্থ: '+failed.length;
+ }
+
+ failedRows=failed;
+ $('importReport').innerHTML=`
+  <div class="status success">
+   Import শেষ
+   <br>সফল: ${success}
+   <br>ব্যর্থ: ${failed.length}
+  </div>
+ `;
+ if(failed.length){
+  $('retryBtn').style.display='inline-block';
+  $('importReport').innerHTML+=`<p class="muted">ব্যর্থ প্রশ্নগুলো নিচে ডাউনলোড করতে পারবেন।</p>`;
+  const dl=document.createElement('button');
+  dl.className='secondary';dl.textContent='ব্যর্থ প্রশ্ন JSON ডাউনলোড';
+  dl.onclick=downloadFailed;
+  $('importReport').appendChild(dl);
+ }
+ $('importBtn').disabled=false;
+ $('importBtn').textContent='Import সম্পন্ন';
+ await loadQuestions();
+ try{await loadExistingKeys();}catch(e){}
+}
+
+async function startImport(){
+ if(!validRows.length)return;
+ if(!confirm(validRows.length+'টি প্রশ্ন Import করবেন?'))return;
+ await importRows(validRows);
+}
+
+async function retryFailed(){
+ if(!failedRows.length)return;
+ const rows=failedRows.map(x=>x.row);
+ await importRows(rows);
+}
+
+function downloadFailed(){
+ const rows=failedRows.map(x=>x.row);
+ downloadJSON(rows,'failed-country-questions.json');
+}
+
+function downloadJSON(data,name){
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const a=document.createElement('a');
+ const url=URL.createObjectURL(blob);
+ a.href=url;a.download=name;a.click();
+ URL.revokeObjectURL(url);
+}
+
+function downloadTemplate(){
+ const sample=[{
+  subject_code:'ARG',
+  question_bn:'আর্জেন্টিনা কতবার FIFA World Cup জিতেছে?',
+  options:{A:'২ বার',B:'৩ বার',C:'৪ বার',D:'৫ বার'},
+  correct_option:'B',
+  explanation_bn:'আর্জেন্টিনা তিনবার বিশ্বকাপ জিতেছে।',
+  is_published:true
+ }];
+ downloadJSON(sample,'country-questions-template.json');
+}
+
+function clearImport(){
+ $('jsonInput').value='';$('jsonFile').value='';
+ $('preview').innerHTML='';$('importReport').innerHTML='';
+ $('importBtn').disabled=true;$('retryBtn').style.display='none';
+ $('progressBar').style.width='0%';$('progressText').textContent='';
+ validRows=[];failedRows=[];
+}
+
+async function start(){
+ if(!await checkAdmin())return;
+ await loadCountries();
+ await loadQuestions();
+}
+
+start();
+</script>
+</body>
+</html>
