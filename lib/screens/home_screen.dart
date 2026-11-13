@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'quiz_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -67,6 +68,46 @@ class _HomeScreenState extends State<HomeScreen> {
         loadError = e.toString();
       });
     }
+  }
+
+  void openFeature(String title) {
+    if (title == 'দেশভিত্তিক কুইজ' ||
+        title == 'ক্লাব কুইজ' ||
+        title == 'খেলোয়াড় কুইজ') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const QuizScreen(),
+        ),
+      );
+      return;
+    }
+
+    String message;
+
+    switch (title) {
+      case 'লিডারবোর্ড':
+        message = 'লিডারবোর্ড পেজ পরবর্তী ধাপে চালু করা হবে।';
+        break;
+      case 'বন্ধুদের সঙ্গে':
+        message = 'বন্ধুদের ফিচার পরবর্তী ধাপে চালু করা হবে।';
+        break;
+      case 'টুর্নামেন্ট':
+        message = 'টুর্নামেন্ট পেজ পরবর্তী ধাপে চালু করা হবে।';
+        break;
+      case 'মাল্টিপ্লেয়ার':
+        message = 'মাল্টিপ্লেয়ার পেজ পরবর্তী ধাপে চালু করা হবে।';
+        break;
+      default:
+        message = 'ফিচারটি শিগগিরই চালু হবে।';
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFF164B2C),
+      ),
+    );
   }
 
   Widget buildLogo() {
@@ -229,33 +270,44 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 12),
 
-            const Wrap(
+            Wrap(
               spacing: 10,
               runSpacing: 10,
               children: [
                 _HomeTile(
                   icon: Icons.flag,
                   title: 'দেশভিত্তিক কুইজ',
+                  onTap: () => openFeature('দেশভিত্তিক কুইজ'),
                 ),
                 _HomeTile(
                   icon: Icons.shield,
                   title: 'ক্লাব কুইজ',
+                  onTap: () => openFeature('ক্লাব কুইজ'),
                 ),
                 _HomeTile(
                   icon: Icons.person,
                   title: 'খেলোয়াড় কুইজ',
+                  onTap: () => openFeature('খেলোয়াড় কুইজ'),
                 ),
                 _HomeTile(
                   icon: Icons.leaderboard,
                   title: 'লিডারবোর্ড',
+                  onTap: () => openFeature('লিডারবোর্ড'),
                 ),
                 _HomeTile(
                   icon: Icons.groups,
                   title: 'বন্ধুদের সঙ্গে',
+                  onTap: () => openFeature('বন্ধুদের সঙ্গে'),
                 ),
                 _HomeTile(
                   icon: Icons.emoji_events,
                   title: 'টুর্নামেন্ট',
+                  onTap: () => openFeature('টুর্নামেন্ট'),
+                ),
+                _HomeTile(
+                  icon: Icons.sports_esports,
+                  title: 'মাল্টিপ্লেয়ার',
+                  onTap: () => openFeature('মাল্টিপ্লেয়ার'),
                 ),
               ],
             ),
@@ -279,10 +331,12 @@ class _HomeScreenState extends State<HomeScreen> {
 class _HomeTile extends StatelessWidget {
   final IconData icon;
   final String title;
+  final VoidCallback onTap;
 
   const _HomeTile({
     required this.icon,
     required this.title,
+    required this.onTap,
   });
 
   @override
@@ -290,21 +344,25 @@ class _HomeTile extends StatelessWidget {
     return SizedBox(
       width: 155,
       child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(15),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                color: const Color(0xFF27D66B),
-                size: 28,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-              ),
-            ],
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+            child: Column(
+              children: [
+                Icon(
+                  icon,
+                  color: const Color(0xFF27D66B),
+                  size: 28,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ),
       ),
