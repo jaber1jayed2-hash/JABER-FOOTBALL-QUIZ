@@ -5,7 +5,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'quiz_play_screen.dart';
 
 class QuizScreen extends StatefulWidget {
-  const QuizScreen({super.key});
+  final String? initialCategory;
+
+  const QuizScreen({
+    super.key,
+    this.initialCategory,
+  });
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -70,7 +75,7 @@ class _QuizScreenState extends State<QuizScreen> {
     ),
   ];
 
-  List<Map<String, dynamic>> countries = [];
+  List<Map<String, dynamic>> subjects = [];
 
   int minQuestions = 5;
   int maxQuestions = 50;
@@ -78,33 +83,30 @@ class _QuizScreenState extends State<QuizScreen> {
 
   bool loadingSettings = true;
   bool settingsLoaded = false;
-  bool loadingCountries = true;
+  bool loadingSubjects = false;
 
-  String? countryError;
-
-  String? selectedCountryCode;
+  String? subjectError;
+  String? activeCategory;
 
   @override
   void initState() {
     super.initState();
-    loadAllData();
+
+    activeCategory = widget.initialCategory;
+
+    loadQuizSettings();
+
+    if (activeCategory != null) {
+      loadSubjects(activeCategory!);
+    }
   }
 
   int parseSetting(dynamic value, int fallback) {
     if (value == null) return fallback;
-
     if (value is int) return value;
-
     if (value is num) return value.toInt();
 
     return int.tryParse(value.toString()) ?? fallback;
-  }
-
-  Future<void> loadAllData() async {
-    await Future.wait([
-      loadQuizSettings(),
-      loadCountries(),
-    ]);
   }
 
   Future<void> loadQuizSettings() async {
@@ -127,29 +129,25 @@ class _QuizScreenState extends State<QuizScreen> {
       int minimum = parseSetting(
         settings['quiz_min_questions'],
         5,
-      );
+      ).clamp(1, 100).toInt();
 
       int maximum = parseSetting(
         settings['quiz_max_questions'],
         50,
-      );
+      ).clamp(1, 100).toInt();
+
+      if (maximum < minimum) {
+        maximum = minimum;
+      }
 
       int defaultCount = parseSetting(
         settings['quiz_default_questions'],
         10,
       );
 
-      minimum = minimum.clamp(1, 100);
-      maximum = maximum.clamp(1, 100);
-
-      if (maximum < minimum) {
-        maximum = minimum;
-      }
-
-      defaultCount = defaultCount.clamp(
-        minimum,
-        maximum,
-      );
+      defaultCount = defaultCount
+          .clamp(minimum, maximum)
+          .toInt();
 
       if (!mounted) return;
 
@@ -173,49 +171,68 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  Future<void> loadCountries() async {
+  Future<void> loadSubjects(String category) async {
+    setState(() {
+      activeCategory = category;
+      loadingSubjects = true;
+      subjectError = null;
+      subjects = [];
+    });
+
     try {
       final data = await supabase
           .from('quiz_subjects')
           .select(
-            'subject_code,name_en,name_bn,flag_emoji,is_enabled,sort_order',
+            'subject_code,name_en,name_bn,image_url,is_enabled,sort_order,flag_emoji',
           )
-          .eq('subject_type', 'country')
+          .eq('subject_type', category)
           .eq('is_enabled', true)
           .order('sort_order', ascending: true);
 
       if (!mounted) return;
 
       setState(() {
-        countries = List<Map<String, dynamic>>.from(data);
-        loadingCountries = false;
-        countryError = null;
+        subjects = List<Map<String, dynamic>>.from(data);
+        loadingSubjects = false;
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        loadingCountries = false;
-        countryError = e.toString();
+        loadingSubjects = false;
+        subjectError = e.toString();
       });
     }
   }
 
-  Future<void> refreshAll() async {
-    await loadAllData();
+  String getSubjectName(Map<String, dynamic> subject) {
+    final bn = subject['name_bn']?.toString().trim() ?? '';
+    final en = subject['name_en']?.toString().trim() ?? '';
+    final code = subject['subject_code']?.toString() ?? '';
+
+    if (bn.isNotEmpty) return bn;
+    if (en.isNotEmpty) return en;
+
+    return code;
   }
 
-  String countryName(Map<String, dynamic> country) {
-    return country['name_bn']?.toString().trim().isNotEmpty == true
-        ? country['name_bn'].toString()
-        : country['name_en']?.toString() ??
-            country['subject_code'].toString();
+  String getSubjectCode(Map<String, dynamic> subject) {
+    return subject['subject_code']
+            ?.toString()
+            .trim()
+            .toUpperCase() ??
+        '';
   }
 
-  String countryFlag(Map<String, dynamic> country) {
-    final flag = country['flag_emoji']?.toString().trim() ?? '';
-
-    return flag.isEmpty ? '🌍' : flag;
+  void openCategory(String category) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => QuizScreen(
+          initialCategory: category,
+        ),
+      ),
+    );
   }
 
   void showMessage(String message) {
@@ -224,39 +241,48 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  void selectQuiz(String quizName, String mode) {
-    openQuestionCountSheet(
-      quizName: quizName,
-      mode: mode,
-    );
-  }
-
-  void selectCountry(Map<String, dynamic> country) {
-    final code =
-        country['subject_code']?.toString().trim().toUpperCase() ?? '';
+  void selectSubject(Map<String, dynamic> subject) {
+    final code = getSubjectCode(subject);
 
     if (code.isEmpty) {
-      showMessage('এই দেশের কোড পাওয়া যায়নি।');
+      showMessage('এই বিষয়ের কোড পাওয়া যায়নি।');
       return;
     }
 
-    setState(() {
-      selectedCountryCode = code;
-    });
+    final category = activeCategory;
+
+    if (category == null) return;
+
+    final name = getSubjectName(subject);
 
     openQuestionCountSheet(
-      quizName: countryName(country),
-      mode: 'country_quiz',
+      quizName: name,
+      mode: category == 'country'
+          ? 'country_quiz'
+          : category == 'club'
+              ? 'club_quiz'
+              : 'player_quiz',
+      subjectType: category,
       subjectCode: code,
-      countryFlag: countryFlag(country),
+      flag: category == 'country'
+          ? subject['flag_emoji']?.toString()
+          : null,
+    );
+  }
+
+  void selectGeneralMode(String name, String mode) {
+    openQuestionCountSheet(
+      quizName: name,
+      mode: mode,
     );
   }
 
   void openQuestionCountSheet({
     required String quizName,
     required String mode,
+    String? subjectType,
     String? subjectCode,
-    String? countryFlag,
+    String? flag,
   }) {
     if (loadingSettings) {
       showMessage('কুইজ সেটিংস লোড হচ্ছে। একটু অপেক্ষা করুন।');
@@ -268,7 +294,7 @@ class _QuizScreenState extends State<QuizScreen> {
       return;
     }
 
-    int selectedQuestionCount = defaultQuestions;
+    int selectedCount = defaultQuestions;
 
     showModalBottomSheet(
       context: context,
@@ -282,7 +308,7 @@ class _QuizScreenState extends State<QuizScreen> {
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            final questionCounts = List<int>.generate(
+            final counts = List<int>.generate(
               maxQuestions - minQuestions + 1,
               (index) => minQuestions + index,
             );
@@ -301,9 +327,9 @@ class _QuizScreenState extends State<QuizScreen> {
                   children: [
                     Row(
                       children: [
-                        if (countryFlag != null)
+                        if (flag != null && flag.trim().isNotEmpty)
                           Text(
-                            countryFlag,
+                            flag,
                             style: const TextStyle(fontSize: 32),
                           )
                         else
@@ -312,9 +338,7 @@ class _QuizScreenState extends State<QuizScreen> {
                             color: Color(0xFF27D66B),
                             size: 28,
                           ),
-
                         const SizedBox(width: 12),
-
                         Expanded(
                           child: Text(
                             quizName,
@@ -341,7 +365,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     const SizedBox(height: 10),
 
                     DropdownButtonFormField<int>(
-                      value: selectedQuestionCount,
+                      value: selectedCount,
                       isExpanded: true,
                       dropdownColor: const Color(0xFF151D18),
                       decoration: InputDecoration(
@@ -359,7 +383,7 @@ class _QuizScreenState extends State<QuizScreen> {
                           color: Color(0xFF27D66B),
                         ),
                       ),
-                      items: questionCounts.map((count) {
+                      items: counts.map((count) {
                         return DropdownMenuItem<int>(
                           value: count,
                           child: Text(
@@ -374,7 +398,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         if (value == null) return;
 
                         setSheetState(() {
-                          selectedQuestionCount = value;
+                          selectedCount = value;
                         });
                       },
                     ),
@@ -403,15 +427,13 @@ class _QuizScreenState extends State<QuizScreen> {
                           ),
                         ),
                         onPressed: () {
-                          final user = supabase.auth.currentUser;
-
-                          if (user == null) {
+                          if (supabase.auth.currentUser == null) {
                             Navigator.pop(sheetContext);
                             showMessage('আপনার লগইন সেশন পাওয়া যায়নি।');
                             return;
                           }
 
-                          final count = selectedQuestionCount;
+                          final count = selectedCount;
 
                           Navigator.pop(sheetContext);
 
@@ -423,6 +445,7 @@ class _QuizScreenState extends State<QuizScreen> {
                                 questionCount: count,
                                 quizName: quizName,
                                 subjectCode: subjectCode,
+                                subjectType: subjectType,
                               ),
                             ),
                           );
@@ -447,53 +470,80 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Widget buildCountryCard(Map<String, dynamic> country) {
-    final code = country['subject_code']?.toString() ?? '';
-    final isSelected = selectedCountryCode == code;
+  Widget buildSubjectCard(Map<String, dynamic> subject) {
+    final category = activeCategory;
+    final code = getSubjectCode(subject);
+    final name = getSubjectName(subject);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
+    final imageUrl =
+        subject['image_url']?.toString().trim() ?? '';
+
+    final flag = subject['flag_emoji']?.toString().trim() ?? '';
+
+    return Card(
+      color: const Color(0xFF151D18),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        onTap: () => selectCountry(country),
-        child: Container(
+        side: BorderSide(
+          color: Colors.white.withOpacity(0.06),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => selectSubject(subject),
+        child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: 5,
-            vertical: 13,
-          ),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? const Color(0xFF164B2C)
-                : const Color(0xFF151D18),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isSelected
-                  ? const Color(0xFF27D66B)
-                  : Colors.white.withOpacity(0.07),
-              width: isSelected ? 2 : 1,
-            ),
+            horizontal: 8,
+            vertical: 14,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                countryFlag(country),
-                style: const TextStyle(
-                  fontSize: 39,
+              if (category == 'country' && flag.isNotEmpty)
+                Text(
+                  flag,
+                  style: const TextStyle(fontSize: 38),
+                )
+              else if (imageUrl.isNotEmpty)
+                SizedBox(
+                  height: 48,
+                  width: 48,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) {
+                      return Icon(
+                        category == 'club'
+                            ? Icons.shield
+                            : Icons.person,
+                        color: const Color(0xFF27D66B),
+                        size: 35,
+                      );
+                    },
+                  ),
+                )
+              else
+                Icon(
+                  category == 'club'
+                      ? Icons.shield
+                      : category == 'player'
+                          ? Icons.person
+                          : Icons.flag,
+                  color: const Color(0xFF27D66B),
+                  size: 38,
                 ),
-              ),
 
-              const SizedBox(height: 9),
+              const SizedBox(height: 10),
 
               Text(
-                countryName(country),
+                name,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
                   fontWeight: FontWeight.bold,
+                  fontSize: 12,
                 ),
               ),
 
@@ -504,7 +554,6 @@ class _QuizScreenState extends State<QuizScreen> {
                 style: const TextStyle(
                   color: Color(0xFF27D66B),
                   fontSize: 10,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -514,111 +563,116 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Widget buildCountrySection() {
+  Widget buildSubjectSection() {
+    final category = activeCategory;
+
+    if (category == null) {
+      return const SizedBox.shrink();
+    }
+
+    final title = category == 'country'
+        ? 'দেশ নির্বাচন করুন'
+        : category == 'club'
+            ? 'ক্লাব নির্বাচন করুন'
+            : 'খেলোয়াড় নির্বাচন করুন';
+
+    final subtitle = category == 'country'
+        ? 'আপনার পছন্দের দেশের পতাকায় ক্লিক করুন।'
+        : category == 'club'
+            ? 'আপনার পছন্দের ক্লাব নির্বাচন করুন।'
+            : 'আপনার পছন্দের খেলোয়াড় নির্বাচন করুন।';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
-            const Icon(
-              Icons.public,
-              color: Color(0xFF27D66B),
-              size: 25,
+            Icon(
+              category == 'country'
+                  ? Icons.flag
+                  : category == 'club'
+                      ? Icons.shield
+                      : Icons.person,
+              color: const Color(0xFF27D66B),
+              size: 27,
             ),
-
-            const SizedBox(width: 9),
-
-            const Expanded(
+            const SizedBox(width: 10),
+            Expanded(
               child: Text(
-                'Country Quiz',
-                style: TextStyle(
+                title,
+                style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 21,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-
             Text(
-              '${countries.length} দেশ',
+              '${subjects.length} টি',
               style: const TextStyle(
                 color: Color(0xFF27D66B),
-                fontSize: 13,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
 
-        const SizedBox(height: 7),
+        const SizedBox(height: 8),
 
-        const Text(
-          'আপনার পছন্দের দেশের পতাকায় ক্লিক করুন। শুধু সেই দেশের প্রশ্ন আসবে।',
-          style: TextStyle(
+        Text(
+          subtitle,
+          style: const TextStyle(
             color: Colors.white70,
             fontSize: 13,
           ),
         ),
 
-        const SizedBox(height: 15),
+        const SizedBox(height: 18),
 
-        if (loadingCountries)
+        if (loadingSubjects)
           const Center(
             child: Padding(
-              padding: EdgeInsets.all(22),
+              padding: EdgeInsets.all(25),
               child: CircularProgressIndicator(
                 color: Color(0xFF27D66B),
               ),
             ),
           ),
 
-        if (!loadingCountries && countryError != null)
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.10),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                const Text(
-                  'দেশের তালিকা লোড করা যায়নি।',
-                  style: TextStyle(color: Colors.redAccent),
+        if (!loadingSubjects && subjectError != null)
+          Column(
+            children: [
+              Text(
+                'তালিকা লোড করা যায়নি:\n$subjectError',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.redAccent,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  countryError!,
-                  style: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 11,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                TextButton(
-                  onPressed: loadCountries,
-                  child: const Text('আবার চেষ্টা করুন'),
-                ),
-              ],
-            ),
+              ),
+              TextButton(
+                onPressed: () => loadSubjects(category),
+                child: const Text('আবার চেষ্টা করুন'),
+              ),
+            ],
           ),
 
-        if (!loadingCountries &&
-            countryError == null &&
-            countries.isEmpty)
+        if (!loadingSubjects &&
+            subjectError == null &&
+            subjects.isEmpty)
           const Padding(
-            padding: EdgeInsets.all(18),
+            padding: EdgeInsets.all(24),
             child: Text(
-              'কোনো সক্রিয় দেশ পাওয়া যায়নি। Admin Panel থেকে দেশ সক্রিয় করুন।',
+              'এখনো কোনো বিষয় যোগ করা হয়নি। Admin Panel থেকে বিষয় যোগ করুন।',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white70),
             ),
           ),
 
-        if (!loadingCountries && countries.isNotEmpty)
+        if (!loadingSubjects && subjects.isNotEmpty)
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: countries.length,
+            itemCount: subjects.length,
             gridDelegate:
                 const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
@@ -627,7 +681,7 @@ class _QuizScreenState extends State<QuizScreen> {
               childAspectRatio: 0.88,
             ),
             itemBuilder: (context, index) {
-              return buildCountryCard(countries[index]);
+              return buildSubjectCard(subjects[index]);
             },
           ),
       ],
@@ -685,17 +739,44 @@ class _QuizScreenState extends State<QuizScreen> {
           Icons.chevron_right,
           color: Color(0xFF27D66B),
         ),
-        onTap: () => selectQuiz(title, mode),
+        onTap: () => selectGeneralMode(title, mode),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (activeCategory != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            activeCategory == 'country'
+                ? 'দেশভিত্তিক কুইজ'
+                : activeCategory == 'club'
+                    ? 'ক্লাব কুইজ'
+                    : 'খেলোয়াড় কুইজ',
+          ),
+        ),
+        body: SafeArea(
+          child: RefreshIndicator(
+            color: const Color(0xFF27D66B),
+            onRefresh: () => loadSubjects(activeCategory!),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(18),
+              children: [
+                buildSubjectSection(),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return SafeArea(
       child: RefreshIndicator(
         color: const Color(0xFF27D66B),
-        onRefresh: refreshAll,
+        onRefresh: loadQuizSettings,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(18),
@@ -728,18 +809,10 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
 
             if (!loadingSettings && !settingsLoaded)
-              Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.10),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: Colors.orange.withOpacity(0.35),
-                  ),
-                ),
-                child: const Text(
-                  'সার্ভারের Quiz Settings লোড করা যায়নি। Default সেটিংস ব্যবহার করা হচ্ছে।',
+              const Padding(
+                padding: EdgeInsets.only(bottom: 14),
+                child: Text(
+                  'Default কুইজ সেটিংস ব্যবহার করা হচ্ছে।',
                   style: TextStyle(
                     color: Colors.orangeAccent,
                     fontSize: 12,
@@ -765,9 +838,94 @@ class _QuizScreenState extends State<QuizScreen> {
                 ),
               ),
 
-            buildCountrySection(),
+            Card(
+              color: const Color(0xFF151D18),
+              child: ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFF164B2C),
+                  child: Icon(
+                    Icons.flag,
+                    color: Color(0xFF27D66B),
+                  ),
+                ),
+                title: const Text(
+                  'দেশভিত্তিক কুইজ',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: const Text(
+                  '৫০টি দেশের মধ্যে পছন্দের দেশ বেছে নিন',
+                  style: TextStyle(color: Colors.white60),
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFF27D66B),
+                ),
+                onTap: () => openCategory('country'),
+              ),
+            ),
 
-            const SizedBox(height: 28),
+            Card(
+              color: const Color(0xFF151D18),
+              child: ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFF164B2C),
+                  child: Icon(
+                    Icons.shield,
+                    color: Color(0xFF27D66B),
+                  ),
+                ),
+                title: const Text(
+                  'ক্লাব কুইজ',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: const Text(
+                  'পছন্দের ফুটবল ক্লাব বেছে নিন',
+                  style: TextStyle(color: Colors.white60),
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFF27D66B),
+                ),
+                onTap: () => openCategory('club'),
+              ),
+            ),
+
+            Card(
+              color: const Color(0xFF151D18),
+              child: ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFF164B2C),
+                  child: Icon(
+                    Icons.person,
+                    color: Color(0xFF27D66B),
+                  ),
+                ),
+                title: const Text(
+                  'খেলোয়াড় কুইজ',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: const Text(
+                  'পছন্দের খেলোয়াড় বেছে নিন',
+                  style: TextStyle(color: Colors.white60),
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFF27D66B),
+                ),
+                onTap: () => openCategory('player'),
+              ),
+            ),
+
+            const SizedBox(height: 25),
 
             const Divider(color: Colors.white24),
 
@@ -779,16 +937,6 @@ class _QuizScreenState extends State<QuizScreen> {
                 color: Colors.white,
                 fontSize: 21,
                 fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 7),
-
-            const Text(
-              'এখানে আগের ৮টি কুইজ পদ্ধতি রয়েছে।',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
               ),
             ),
 
