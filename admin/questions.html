@@ -1,707 +1,306 @@
-
 <!DOCTYPE html>
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#080d0b">
 <title>Question Management - JABER FOOTBALL QUIZ</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
+* {
+  box-sizing: border-box;
 }
 
-:root{
-  --bg:#080d0b;
-  --panel:#111a15;
-  --green:#27d66b;
-  --text:#f3fff6;
-  --muted:#9aada0;
-  --border:#293a2e;
-  --red:#ff5d68;
-  --yellow:#ffc857;
-  --blue:#55b8ff;
+body {
+  margin: 0;
+  padding: 0;
+  background: #080d0b;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
 }
 
-body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:Arial,"Noto Sans Bengali",sans-serif;
-  min-height:100vh;
-  line-height:1.5;
+header {
+  background: #101a14;
+  border-bottom: 1px solid #263b2d;
+  padding: 18px 15px;
+  text-align: center;
 }
 
-button,input,select,textarea{
-  font:inherit;
+header h1 {
+  margin: 0;
+  color: #27d66b;
+  font-size: 21px;
 }
 
-button{
-  cursor:pointer;
+header p {
+  margin: 7px 0 0;
+  color: #aab8ae;
+  font-size: 13px;
 }
 
-.topbar{
-  position:sticky;
-  top:0;
-  z-index:50;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  padding:14px 18px;
-  background:#101912;
-  border-bottom:1px solid var(--border);
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin: auto;
+  padding: 15px;
 }
 
-.brand{
-  display:flex;
-  align-items:center;
-  gap:10px;
+.panel {
+  background: #111a14;
+  border: 1px solid #263b2d;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
 }
 
-.brand-logo{
-  width:42px;
-  height:42px;
-  display:grid;
-  place-items:center;
-  border-radius:12px;
-  background:#173b25;
-  color:var(--green);
-  font-size:23px;
-  font-weight:bold;
+h2 {
+  color: #27d66b;
+  font-size: 18px;
+  margin: 0 0 15px;
 }
 
-.brand h1{
-  font-size:17px;
-  line-height:1.3;
+h3 {
+  color: #d9e8dd;
+  font-size: 15px;
+  margin: 15px 0 10px;
 }
 
-.brand small{
-  color:var(--muted);
-  font-size:11px;
+label {
+  display: block;
+  color: #dce8df;
+  font-size: 13px;
+  margin: 12px 0 6px;
 }
 
-.top-actions{
-  display:flex;
-  align-items:center;
-  gap:8px;
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px;
+  background: #080f0b;
+  color: white;
+  border: 1px solid #344b3a;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
 }
 
-.container{
-  width:min(1200px,100%);
-  margin:auto;
-  padding:18px;
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #27d66b;
 }
 
-.panel{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:15px;
-  padding:18px;
-  margin-bottom:18px;
+textarea {
+  min-height: 90px;
+  resize: vertical;
 }
 
-.section-title{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-bottom:15px;
+button {
+  border: none;
+  border-radius: 8px;
+  padding: 11px 15px;
+  background: #27d66b;
+  color: #061009;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 5px 3px 5px 0;
 }
 
-.section-title h2{
-  font-size:19px;
+button.secondary {
+  background: #263b2d;
+  color: white;
 }
 
-.section-title p{
-  color:var(--muted);
-  font-size:12px;
-  margin-top:3px;
+button.danger {
+  background: #d94343;
+  color: white;
 }
 
-.muted{
-  color:var(--muted);
+button.warning {
+  background: #d69a27;
+  color: #160f03;
 }
 
-.small{
-  font-size:12px;
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.btn{
-  border:0;
-  border-radius:9px;
-  padding:10px 15px;
-  font-weight:bold;
-  color:#06140a;
-  background:var(--green);
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.btn:hover{
-  filter:brightness(1.08);
+.full {
+  grid-column: 1 / -1;
 }
 
-.btn:disabled{
-  opacity:.5;
-  cursor:not-allowed;
+.hidden {
+  display: none !important;
 }
 
-.btn-secondary{
-  color:var(--text);
-  background:#26372b;
-  border:1px solid #3a5140;
+.status {
+  padding: 11px;
+  margin: 10px 0;
+  border-radius: 8px;
+  background: #17271c;
+  color: #b8f5ca;
+  font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
-.btn-danger{
-  color:white;
-  background:#a92d38;
+.error {
+  background: #351717;
+  color: #ffb5b5;
 }
 
-.btn-warning{
-  color:#211600;
-  background:var(--yellow);
+.subject-card,
+.question-card {
+  background: #0b130e;
+  border: 1px solid #2b4031;
+  padding: 12px;
+  border-radius: 9px;
+  margin: 9px 0;
+  overflow-wrap: anywhere;
 }
 
-.btn-blue{
-  color:#06131d;
-  background:var(--blue);
+.subject-card strong,
+.question-card strong {
+  color: #27d66b;
 }
 
-.btn-small{
-  padding:7px 10px;
-  font-size:12px;
+.small {
+  color: #aab8ae;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
-input,select,textarea{
-  width:100%;
-  color:var(--text);
-  background:#0b120e;
-  border:1px solid var(--border);
-  border-radius:9px;
-  padding:11px 12px;
-  outline:none;
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
 }
 
-input:focus,select:focus,textarea:focus{
-  border-color:var(--green);
+.toolbar input,
+.toolbar select {
+  flex: 1;
+  min-width: 130px;
 }
 
-select option{
-  background:#101912;
-  color:white;
+hr {
+  border: 0;
+  border-top: 1px solid #263b2d;
+  margin: 17px 0;
 }
 
-textarea{
-  min-height:95px;
-  resize:vertical;
-}
-
-label{
-  display:block;
-  font-size:13px;
-  font-weight:bold;
-  margin-bottom:6px;
-}
-
-.form-group{
-  margin-bottom:14px;
-}
-
-.form-grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:13px;
-}
-
-.full{
-  grid-column:1/-1;
-}
-
-.hidden{
-  display:none!important;
-}
-
-.status-message{
-  padding:11px 13px;
-  border-radius:9px;
-  margin:12px 0;
-  font-size:13px;
-  display:none;
-  overflow-wrap:anywhere;
-}
-
-.status-success{
-  display:block;
-  background:#123b23;
-  border:1px solid #267b43;
-  color:#a8ffc0;
-}
-
-.status-error{
-  display:block;
-  background:#42191e;
-  border:1px solid #a93643;
-  color:#ffc1c5;
-}
-
-.status-info{
-  display:block;
-  background:#142b3b;
-  border:1px solid #28618b;
-  color:#b9e3ff;
-}
-
-.login-wrap{
-  width:min(430px,calc(100% - 28px));
-  margin:55px auto;
-}
-
-.login-card{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:17px;
-  padding:24px;
-}
-
-.login-card h2{
-  font-size:22px;
-  margin-bottom:6px;
-}
-
-.login-card .muted{
-  font-size:13px;
-  margin-bottom:20px;
-}
-
-.login-card .btn{
-  width:100%;
-}
-
-.admin-info{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-bottom:15px;
-}
-
-.admin-email{
-  font-size:12px;
-  color:var(--muted);
-  overflow-wrap:anywhere;
-}
-
-.country-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(145px,1fr));
-  gap:10px;
-}
-
-.country-card{
-  position:relative;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  min-height:70px;
-  padding:11px;
-  border:1px solid var(--border);
-  border-radius:11px;
-  background:#0c140f;
-  cursor:pointer;
-  transition:.15s;
-}
-
-.country-card:hover{
-  border-color:var(--green);
-  background:#122219;
-}
-
-.country-card.selected{
-  border:2px solid var(--green);
-  background:#15321f;
-}
-
-.country-flag{
-  width:38px;
-  height:30px;
-  object-fit:cover;
-  border-radius:5px;
-  font-size:27px;
-  display:grid;
-  place-items:center;
-  flex-shrink:0;
-}
-
-.country-name{
-  min-width:0;
-}
-
-.country-name strong{
-  display:block;
-  font-size:13px;
-  overflow-wrap:anywhere;
-}
-
-.country-name small{
-  display:block;
-  font-size:10px;
-  color:var(--muted);
-}
-
-.country-check{
-  position:absolute;
-  right:8px;
-  top:6px;
-  color:var(--green);
-  font-weight:bold;
-  display:none;
-}
-
-.country-card.selected .country-check{
-  display:block;
-}
-
-.selected-country-bar{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  flex-wrap:wrap;
-  padding:13px;
-  margin-top:15px;
-  background:#14271a;
-  border:1px solid #285b36;
-  border-radius:10px;
-}
-
-.selected-country-bar strong{
-  color:var(--green);
-}
-
-.toolbar{
-  display:flex;
-  align-items:center;
-  gap:9px;
-  flex-wrap:wrap;
-  margin-bottom:14px;
-}
-
-.toolbar>*{
-  flex:1 1 150px;
-}
-
-.toolbar button{
-  flex:0 0 auto;
-}
-
-.table-wrap{
-  width:100%;
-  overflow-x:auto;
-  border:1px solid var(--border);
-  border-radius:10px;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  min-width:700px;
-}
-
-th,td{
-  text-align:left;
-  padding:11px 10px;
-  border-bottom:1px solid var(--border);
-  font-size:12px;
-  vertical-align:middle;
-}
-
-th{
-  color:var(--green);
-  background:#17231b;
-  white-space:nowrap;
-}
-
-td{
-  color:#e6f1e9;
-}
-
-tr:last-child td{
-  border-bottom:0;
-}
-
-.badge{
-  display:inline-block;
-  padding:4px 8px;
-  border-radius:20px;
-  font-size:10px;
-  font-weight:bold;
-  background:#26372b;
-}
-
-.badge-green{
-  background:#174b2a;
-  color:#aaffbd;
-}
-
-.badge-red{
-  background:#4a2025;
-  color:#ffb7bd;
-}
-
-.badge-yellow{
-  background:#493916;
-  color:#ffe19a;
-}
-
-.question-image{
-  width:48px;
-  height:38px;
-  object-fit:cover;
-  border-radius:5px;
-}
-
-.pagination{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  margin-top:15px;
-  flex-wrap:wrap;
-}
-
-.empty-state{
-  text-align:center;
-  color:var(--muted);
-  padding:30px 12px;
-  font-size:13px;
-}
-
-.help-text{
-  color:var(--muted);
-  font-size:11px;
-  margin-top:5px;
-}
-
-.divider{
-  height:1px;
-  background:var(--border);
-  margin:16px 0;
-}
-
-@media(max-width:600px){
-  .topbar{
-    padding:11px;
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
   }
 
-  .brand h1{
-    font-size:14px;
+  header h1 {
+    font-size: 18px;
   }
 
-  .brand-logo{
-    width:36px;
-    height:36px;
+  .container {
+    padding: 10px;
   }
 
-  .container{
-    padding:11px;
+  .panel {
+    padding: 12px;
   }
 
-  .panel{
-    padding:13px;
-  }
-
-  .form-grid{
-    grid-template-columns:1fr;
-  }
-
-  .full{
-    grid-column:auto;
-  }
-
-  .country-grid{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:8px;
-  }
-
-  .country-card{
-    padding:8px;
-    min-height:65px;
-  }
-
-  .country-flag{
-    width:30px;
-    font-size:23px;
-  }
-
-  .country-name strong{
-    font-size:11px;
-  }
-
-  .section-title h2{
-    font-size:16px;
+  button {
+    padding: 10px 12px;
   }
 }
-</style>
-</head>
-
+  </style>
+  </head>
 <body>
 
-<header class="topbar">
-  <div class="brand">
-    <div class="brand-logo">⚽</div>
-    <div>
-      <h1>JABER FOOTBALL QUIZ</h1>
-      <small>Question Management Panel</small>
-    </div>
-  </div>
-
-  <div class="top-actions">
-    <button class="btn btn-secondary btn-small"
-      id="logoutTopBtn"
-      onclick="logoutAdmin()"
-      style="display:none">
-      Logout
-    </button>
-  </div>
+<header>
+  <h1>⚽ JABER FOOTBALL QUIZ</h1>
+  <p>Question & Subject Management Admin Panel</p>
 </header>
 
-<section id="loginSection" class="login-wrap">
-  <div class="login-card">
-    <h2>Admin Login</h2>
-    <p class="muted">
-      প্রশ্ন ম্যানেজমেন্ট প্যানেলে প্রবেশ করতে আপনার Admin account দিয়ে Login করুন।
-    </p>
+<div class="container">
 
-    <div class="form-group">
-      <label for="adminEmail">Email Address</label>
-      <input id="adminEmail" type="email"
-        placeholder="আপনার Admin email">
-    </div>
-
-    <div class="form-group">
-      <label for="adminPassword">Password</label>
-      <input id="adminPassword" type="password"
-        placeholder="আপনার Password">
-    </div>
-
-    <button class="btn" id="loginBtn" onclick="loginAdmin()">
-      Login
-    </button>
-
-    <div id="loginMessage" class="status-message"></div>
-  </div>
-</section>
-
-<main id="adminPanel" class="container hidden">
-
-  <div class="admin-info">
-    <div>
-      <strong>প্রশ্ন ব্যবস্থাপনা</strong>
-      <div class="admin-email" id="adminEmailDisplay"></div>
-    </div>
-
-    <button class="btn btn-secondary btn-small"
-      onclick="logoutAdmin()">
-      Logout
-    </button>
+  <div id="loginStatus" class="panel">
+    <h2>Admin Verification</h2>
+    <p id="connectionMessage" class="small">Supabase সংযোগ যাচাই হচ্ছে...</p>
   </div>
 
-  <section class="panel" id="countrySection">
+  <div id="adminPanel" class="hidden">
 
-    <div class="section-title">
-      <div>
-        <h2>🌍 দেশ নির্বাচন করুন</h2>
-        <p>
-          যে দেশের প্রশ্ন যোগ বা পরিচালনা করতে চান,
-          সেই দেশের পতাকায় ক্লিক করুন।
-        </p>
+    <div class="panel">
+      <h2>📚 Subject Management</h2>
+
+      <div class="grid">
+        <div>
+          <label>Subject Type</label>
+          <select id="subjectType">
+            <option value="country">Country</option>
+            <option value="club">Club</option>
+            <option value="player">Player</option>
+            <option value="category">Category</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Subject Code</label>
+          <input id="subjectCode" placeholder="যেমন: ARG">
+        </div>
+
+        <div>
+          <label>English Name</label>
+          <input id="subjectNameEn" placeholder="Argentina">
+        </div>
+
+        <div>
+          <label>বাংলা নাম</label>
+          <input id="subjectNameBn" placeholder="আর্জেন্টিনা">
+        </div>
+
+        <div>
+          <label>Flag / Emoji</label>
+          <input id="subjectFlag" placeholder="🇦🇷">
+        </div>
+
+        <div>
+          <label>Image URL</label>
+          <input id="subjectImage" placeholder="https://example.com/image.png">
+        </div>
+
+        <div>
+          <label>Sort Order</label>
+          <input id="subjectOrder" type="number" value="0">
+        </div>
       </div>
 
-      <span class="badge badge-green" id="countryCountBadge">
-        লোড হচ্ছে...
-      </span>
+      <button id="addSubjectBtn" onclick="addSubject()">➕ Add Subject</button>
+      <button class="secondary" onclick="loadSubjects()">Refresh Subjects</button>
+
+      <div id="subjectMessage"></div>
+      <hr>
+
+      <h3>All Subjects</h3>
+      <div id="subjectList">Loading...</div>
     </div>
 
-    <div class="toolbar">
-      <input id="countrySearch"
-        type="search"
-        placeholder="দেশের নাম বা কোড দিয়ে খুঁজুন..."
-        oninput="filterCountryCards()">
-
-      <select id="countryStatusFilter"
-        onchange="filterCountryCards()">
-        <option value="all">সব দেশ</option>
-        <option value="enabled">সক্রিয় দেশ</option>
-        <option value="disabled">নিষ্ক্রিয় দেশ</option>
-      </select>
-
-      <button class="btn btn-secondary"
-        onclick="loadCountries()">
-        ↻ Refresh
-      </button>
-    </div>
-
-    <div id="countryMessage" class="status-message"></div>
-
-    <div id="countryGrid" class="country-grid">
-      <div class="empty-state">
-        দেশের তালিকা লোড হচ্ছে...
-      </div>
-    </div>
-
-    <div class="selected-country-bar">
-      <span style="font-size:25px" id="selectedCountryFlag">
-        🌍
-      </span>
-
-      <div>
-        <div class="small muted">বর্তমানে নির্বাচিত দেশ</div>
-        <strong id="selectedCountryName">
-          এখনো কোনো দেশ নির্বাচন করা হয়নি
-        </strong>
-      </div>
-
-      <span class="badge badge-green" id="selectedCountryCode">
-        ---
-      </span>
-    </div>
-
- </section>
- 
-  <!-- QUESTION MANAGEMENT -->
-  <section class="panel" id="questionSection">
-
-    <div class="section-title">
-      <div>
-        <h2>⚽ প্রশ্ন যোগ ও পরিচালনা</h2>
-        <p>নির্বাচিত দেশের জন্য প্রশ্ন তৈরি, সম্পাদনা ও প্রকাশ করুন।</p>
-      </div>
-      <span class="badge badge-green" id="questionCountBadge">০টি প্রশ্ন</span>
-    </div>
-
-    <div id="questionMessage" class="status-message"></div>
-
-    <div class="selected-country-bar">
-      <strong>নির্বাচিত দেশ:</strong>
-      <span id="questionCountryName">আগে একটি দেশ নির্বাচন করুন</span>
-      <span class="badge badge-green" id="questionCountryCode">---</span>
-    </div>
-
-    <div class="divider"></div>
-
-    <form id="questionForm" onsubmit="saveQuestion(event)">
+    <div class="panel">
+      <h2>✍️ Add / Edit Question</h2>
 
       <input type="hidden" id="editQuestionId">
 
-      <div class="form-grid">
+      <div class="grid">
 
-        <div class="form-group">
-          <label for="questionMode">কুইজের ধরন</label>
-          <select id="questionMode" required>
+        <div>
+          <label>Quiz Mode</label>
+          <select id="questionMode">
             <option value="general_mcq">General MCQ</option>
             <option value="guess_player">Guess the Player</option>
             <option value="guess_club">Guess the Club</option>
@@ -709,262 +308,187 @@ tr:last-child td{
             <option value="guess_jersey">Guess the Jersey</option>
             <option value="guess_stadium">Guess the Stadium</option>
             <option value="guess_silhouette">Guess the Silhouette</option>
-            <option value="guess_clues">Guess from Clues</option>
+            <option value="guess_clues">Guess by Clues</option>
           </select>
         </div>
 
-        <div class="form-group">
-          <label for="questionDifficulty">কঠিনতার স্তর</label>
-          <select id="questionDifficulty" required>
+        <div>
+          <label>Difficulty</label>
+          <select id="questionDifficulty">
             <option value="easy">Easy</option>
             <option value="medium">Medium</option>
             <option value="hard">Hard</option>
           </select>
         </div>
 
-        <div class="form-group full">
-          <label for="questionText">প্রশ্ন লিখুন</label>
-          <textarea id="questionText"
-            placeholder="এখানে প্রশ্ন লিখুন..."
-            required></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="optionA">Option A</label>
-          <input id="optionA" type="text" placeholder="প্রথম উত্তর">
-        </div>
-
-        <div class="form-group">
-          <label for="optionB">Option B</label>
-          <input id="optionB" type="text" placeholder="দ্বিতীয় উত্তর">
-        </div>
-
-        <div class="form-group">
-          <label for="optionC">Option C</label>
-          <input id="optionC" type="text" placeholder="তৃতীয় উত্তর">
-        </div>
-
-        <div class="form-group">
-          <label for="optionD">Option D</label>
-          <input id="optionD" type="text" placeholder="চতুর্থ উত্তর">
-        </div>
-
-        <div class="form-group">
-          <label for="correctOption">সঠিক উত্তর</label>
-          <select id="correctOption" required>
-            <option value="">সঠিক উত্তর নির্বাচন করুন</option>
-            <option value="A">Option A</option>
-            <option value="B">Option B</option>
-            <option value="C">Option C</option>
-            <option value="D">Option D</option>
+        <div>
+          <label>Subject Type</label>
+          <select id="questionSubjectType" onchange="updateSubjectOptions()">
+            <option value="">কোনো বিষয় নয়</option>
+            <option value="country">Country</option>
+            <option value="club">Club</option>
+            <option value="player">Player</option>
+            <option value="category">Category</option>
           </select>
         </div>
 
-        <div class="form-group">
-          <label for="questionImage">ছবির URL (ঐচ্ছিক)</label>
-          <input id="questionImage" type="url"
-            placeholder="https://example.com/image.jpg">
+        <div>
+          <label>Subject</label>
+          <select id="questionSubjectCode">
+            <option value="">প্রথমে Subject Type নির্বাচন করুন</option>
+          </select>
         </div>
 
-        <div class="form-group full">
-          <label for="questionExplanation">উত্তরের ব্যাখ্যা</label>
-          <textarea id="questionExplanation"
-            placeholder="সঠিক উত্তরের ব্যাখ্যা লিখুন..."></textarea>
+        <div class="full">
+          <label>প্রশ্ন</label>
+          <textarea id="questionText" placeholder="এখানে প্রশ্ন লিখুন"></textarea>
         </div>
 
-        <div class="form-group full">
+        <div>
+          <label>Option A</label>
+          <input id="optionA">
+        </div>
+
+        <div>
+          <label>Option B</label>
+          <input id="optionB">
+        </div>
+
+        <div>
+          <label>Option C</label>
+          <input id="optionC">
+        </div>
+
+        <div>
+          <label>Option D</label>
+          <input id="optionD">
+        </div>
+
+        <div>
+          <label>Correct Answer</label>
+          <select id="correctOption">
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Image URL (Optional)</label>
+          <input id="questionImage" placeholder="https://example.com/image.jpg">
+        </div>
+
+        <div class="full">
+          <label>উত্তরের ব্যাখ্যা</label>
+          <textarea id="questionExplanation" placeholder="সঠিক উত্তরের ব্যাখ্যা লিখুন"></textarea>
+        </div>
+
+        <div class="full">
           <label>
-            <input id="questionPublished" type="checkbox"
-              style="width:auto;margin-right:7px">
+            <input type="checkbox" id="questionPublished" checked style="width:auto">
             প্রশ্নটি প্রকাশ করুন
           </label>
-          <p class="help-text">
-            প্রকাশিত প্রশ্ন ব্যবহারকারীরা অ্যাপে দেখতে পারবে।
-          </p>
         </div>
 
       </div>
 
-      <div class="toolbar">
-        <button type="submit" class="btn" id="saveQuestionBtn">
-          প্রশ্ন সংরক্ষণ করুন
-        </button>
+      <button id="saveQuestionBtn" onclick="saveQuestion()">💾 Save Question</button>
+      <button class="secondary" onclick="resetQuestionForm()">Clear Form</button>
 
-        <button type="button" class="btn btn-secondary"
-          onclick="resetQuestionForm()">
-          নতুন প্রশ্ন
-        </button>
-
-        <button type="button" class="btn btn-secondary"
-          onclick="cancelQuestionEdit()">
-          সম্পাদনা বাতিল
-        </button>
-      </div>
-
-    </form>
-  </section>
-
-  <!-- BULK IMPORT -->
-  <section class="panel" id="bulkImportSection">
-
-    <div class="section-title">
-      <div>
-        <h2>📥 একসঙ্গে অনেক প্রশ্ন যোগ করুন</h2>
-        <p>JSON ফরম্যাটে একাধিক প্রশ্ন একবারে Import করতে পারবেন।</p>
-      </div>
+      <div id="questionMessage"></div>
     </div>
 
-    <div id="bulkMessage" class="status-message"></div>
+  </div>
+  </div>
+  <div id="adminPanelExtra" class="hidden">
 
-    <div class="form-group">
-      <label for="bulkQuestions">JSON প্রশ্নের তথ্য</label>
-      <textarea id="bulkQuestions"
-        style="min-height:220px"
-        placeholder='[
+  <div class="panel">
+    <h2>📦 Bulk Question Import</h2>
+
+    <p class="small">
+      JSON ফরম্যাটে একসঙ্গে অনেক প্রশ্ন যোগ করতে পারবেন।
+      প্রতিটি প্রশ্নে mode, difficulty, subject_type, subject_code,
+      question_bn, options, correct_option এবং explanation_bn ব্যবহার করুন।
+    </p>
+
+    <label>JSON Questions</label>
+    <textarea id="bulkJson" style="min-height:220px"
+      placeholder='[
   {
     "mode": "general_mcq",
     "difficulty": "easy",
+    "subject_type": "country",
+    "subject_code": "ARG",
     "question_bn": "আর্জেন্টিনার রাজধানী কোনটি?",
     "options": {
-      "A": "বুয়েনস আয়ার্স",
-      "B": "রিও ডি জেনেইরো",
+      "A": "বুয়েনস আইরেস",
+      "B": "রিও",
       "C": "লিমা",
       "D": "সান্তিয়াগো"
     },
     "correct_option": "A",
-    "explanation_bn": "বুয়েনস আয়ার্স আর্জেন্টিনার রাজধানী।"
+    "explanation_bn": "বুয়েনস আইরেস আর্জেন্টিনার রাজধানী।",
+    "is_published": true
   }
 ]'></textarea>
 
-      <p class="help-text">
-        প্রতিটি প্রশ্নে mode, difficulty, question_bn, options,
-        correct_option এবং explanation_bn ব্যবহার করুন।
-        নির্বাচিত দেশের কোড স্বয়ংক্রিয়ভাবে যুক্ত হবে।
-      </p>
-    </div>
+    <button onclick="previewBulk()">🔍 Preview Questions</button>
+    <button class="secondary" onclick="clearBulk()">Clear JSON</button>
+
+    <div id="bulkMessage"></div>
+    <div id="bulkPreview"></div>
+
+    <button id="bulkSaveBtn" class="hidden" onclick="publishBulk()">
+      🚀 Import Questions
+    </button>
+  </div>
+
+  <div class="panel">
+    <h2>📋 Question Management</h2>
 
     <div class="toolbar">
-      <button class="btn" onclick="importBulkQuestions()">
-        সব প্রশ্ন Import করুন
-      </button>
+      <input id="searchQuestions" placeholder="প্রশ্ন খুঁজুন..."
+        oninput="searchQuestionList()">
 
-      <button class="btn btn-secondary"
-        onclick="document.getElementById('bulkQuestions').value=''">
-        লেখা মুছুন
-      </button>
-
-      <button class="btn btn-blue"
-        onclick="downloadBulkTemplate()">
-        JSON Template
-      </button>
-    </div>
-
-  </section>
-
-  <!-- QUESTION LIST -->
-  <section class="panel" id="questionListSection">
-
-    <div class="section-title">
-      <div>
-        <h2>📋 প্রশ্নের তালিকা</h2>
-        <p>শুধু নির্বাচিত দেশের প্রশ্ন এখানে দেখা যাবে।</p>
-      </div>
-    </div>
-
-    <div id="listMessage" class="status-message"></div>
-
-    <div class="toolbar">
-
-      <input id="questionSearch"
-        type="search"
-        placeholder="প্রশ্ন লিখে খুঁজুন..."
-        oninput="scheduleQuestionSearch()">
-
-      <select id="filterMode" onchange="loadQuestions()">
-        <option value="">সব কুইজের ধরন</option>
+      <select id="filterMode" onchange="loadQuestions(1)">
+        <option value="">All Modes</option>
         <option value="general_mcq">General MCQ</option>
-        <option value="guess_player">Guess the Player</option>
-        <option value="guess_club">Guess the Club</option>
-        <option value="guess_country">Guess the Country</option>
-        <option value="guess_jersey">Guess the Jersey</option>
-        <option value="guess_stadium">Guess the Stadium</option>
-        <option value="guess_silhouette">Guess the Silhouette</option>
-        <option value="guess_clues">Guess from Clues</option>
+        <option value="guess_player">Guess Player</option>
+        <option value="guess_club">Guess Club</option>
+        <option value="guess_country">Guess Country</option>
+        <option value="guess_jersey">Guess Jersey</option>
+        <option value="guess_stadium">Guess Stadium</option>
+        <option value="guess_silhouette">Guess Silhouette</option>
+        <option value="guess_clues">Guess Clues</option>
       </select>
 
-      <select id="filterDifficulty" onchange="loadQuestions()">
-        <option value="">সব লেভেল</option>
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
+      <select id="filterPublished" onchange="loadQuestions(1)">
+        <option value="">All Status</option>
+        <option value="true">Published</option>
+        <option value="false">Unpublished</option>
       </select>
-
-      <select id="filterPublished" onchange="loadQuestions()">
-        <option value="">প্রকাশিত ও অপ্রকাশিত</option>
-        <option value="true">শুধু প্রকাশিত</option>
-        <option value="false">শুধু অপ্রকাশিত</option>
-      </select>
-
-      <button class="btn btn-secondary"
-        onclick="loadQuestions()">
-        ↻ Refresh
-      </button>
-
     </div>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>প্রশ্ন</th>
-            <th>কুইজের ধরন</th>
-            <th>লেভেল</th>
-            <th>অবস্থা</th>
-            <th>কার্যক্রম</th>
-          </tr>
-        </thead>
+    <div id="questionListMessage" class="small"></div>
+    <div id="questionList">Loading...</div>
 
-        <tbody id="questionTableBody">
-          <tr>
-            <td colspan="6" class="empty-state">
-              প্রথমে একটি দেশ নির্বাচন করুন।
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="pagination">
-      <button class="btn btn-secondary btn-small"
-        id="previousPageBtn"
-        onclick="changeQuestionPage(-1)"
-        disabled>
-        ← আগের পৃষ্ঠা
+    <div class="toolbar">
+      <button class="secondary" onclick="loadQuestions(currentPage - 1)">
+        ◀ Previous
       </button>
 
-      <span id="pageInfo" class="small muted">
-        পৃষ্ঠা ১
-      </span>
+      <span id="pageInfo" class="small">Page 1</span>
 
-      <button class="btn btn-secondary btn-small"
-        id="nextPageBtn"
-        onclick="changeQuestionPage(1)"
-        disabled>
-        পরের পৃষ্ঠা →
+      <button class="secondary" onclick="loadQuestions(currentPage + 1)">
+        Next ▶
       </button>
     </div>
+  </div>
 
-  </section>
-           </main>
-           
+</div>
+
 <script>
-"use strict";
-
-/* ================================
-   SUPABASE CONFIGURATION
-================================ */
-
 const SUPABASE_URL = "https://cuvfoltgtopchiugrbuf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D";
 
@@ -973,722 +497,467 @@ const db = window.supabase.createClient(
   SUPABASE_KEY
 );
 
-/* ================================
-   GLOBAL STATE
-================================ */
+let subjects = [];
+let currentPage = 1;
+let totalPages = 1;
+let bulkQuestions = [];
+let questionCache = [];
+const PAGE_SIZE = 25;
 
-let currentAdmin = null;
-let countries = [];
-let selectedCountry = null;
+function showMessage(id, message, error = false) {
+  const el = document.getElementById(id);
+  if (!el) return;
 
-let questionPage = 1;
-const PAGE_SIZE = 20;
-
-let totalQuestionCount = 0;
-let searchTimer = null;
-
-/* ================================
-   HELPER FUNCTIONS
-================================ */
-
-function escapeHTML(value){
-  return String(value ?? "").replace(/[&<>"']/g, function(char){
-    return {
-      "&":"&amp;",
-      "<":"&lt;",
-      ">":"&gt;",
-      '"':"&quot;",
-      "'":"&#039;"
-    }[char];
-  });
+  el.innerHTML = "";
+  const box = document.createElement("div");
+  box.className = error ? "status error" : "status";
+  box.textContent = message;
+  el.appendChild(box);
 }
 
-function showMessage(elementId,message,type="info"){
-  const element = document.getElementById(elementId);
-  if(!element) return;
-
-  element.textContent = message;
-  element.className = "status-message status-" + type;
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[char]);
 }
 
-function hideMessage(elementId){
-  const element = document.getElementById(elementId);
-  if(!element) return;
-
-  element.textContent = "";
-  element.className = "status-message";
+function normalizeText(value) {
+  return String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
 }
 
-function setButtonLoading(buttonId,loading,text){
-  const button = document.getElementById(buttonId);
-  if(!button) return;
-
-  button.disabled = loading;
-
-  if(loading){
-    button.dataset.oldText = button.textContent;
-    button.textContent = text || "অপেক্ষা করুন...";
-  }else{
-    button.textContent = button.dataset.oldText || text || "সংরক্ষণ করুন";
-  }
+function getSession() {
+  return db.auth.getSession();
 }
 
-function getFlagEmoji(code){
-  if(!code || code.length !== 3) return "🌍";
-
-  const map = {
-    ARG:"🇦🇷",BRA:"🇧🇷",FRA:"🇫🇷",GER:"🇩🇪",
-    ESP:"🇪🇸",ENG:"🏴",POR:"🇵🇹",ITA:"🇮🇹",
-    NED:"🇳🇱",BEL:"🇧🇪",CRO:"🇭🇷",URU:"🇺🇾",
-    COL:"🇨🇴",MEX:"🇲🇽",USA:"🇺🇸",CAN:"🇨🇦",
-    JPN:"🇯🇵",KOR:"🇰🇷",KSA:"🇸🇦",AUS:"🇦🇺",
-    MAR:"🇲🇦",SEN:"🇸🇳",EGY:"🇪🇬",NGA:"🇳🇬",
-    GHA:"🇬🇭",CMR:"🇨🇲",CIV:"🇨🇮",ALG:"🇩🇿",
-    TUN:"🇹🇳",RSA:"🇿🇦",BAN:"🇧🇩",IND:"🇮🇳",
-    IRN:"🇮🇷",IRQ:"🇮🇶",QAT:"🇶🇦",TUR:"🇹🇷",
-    SUI:"🇨🇭",AUT:"🇦🇹",DEN:"🇩🇰",SWE:"🇸🇪",
-    NOR:"🇳🇴",POL:"🇵🇱",SRB:"🇷🇸",CZE:"🇨🇿",
-    UKR:"🇺🇦",CHI:"🇨🇱",ECU:"🇪🇨",PAR:"🇵🇾",
-    PER:"🇵🇪",CRC:"🇨🇷"
-  };
-
-  return map[code] || "🌍";
-}
-
-function getCountryName(country){
-  return country.name_bn || country.name_en || country.subject_code;
-}
-
-/* ================================
-   ADMIN AUTHENTICATION
-================================ */
-
-async function loginAdmin(){
-
-  hideMessage("loginMessage");
-
-  const email = document.getElementById("adminEmail").value.trim();
-  const password = document.getElementById("adminPassword").value;
-
-  if(!email || !password){
-    showMessage("loginMessage","Email এবং Password দিন।","error");
-    return;
-  }
-
-  setButtonLoading("loginBtn",true,"Login হচ্ছে...");
-
-  try{
-
-    const {data,error} = await db.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if(error) throw error;
-
-    const user = data.user;
-
-    if(!user){
-      throw new Error("ব্যবহারকারীর তথ্য পাওয়া যায়নি।");
-    }
-
-    const {data:admin,error:adminError} = await db
-      .from("admin_users")
-      .select("user_id")
-      .eq("user_id",user.id)
-      .maybeSingle();
-
-    if(adminError) throw adminError;
-
-    if(!admin){
-      await db.auth.signOut();
-      throw new Error("আপনার Admin অনুমতি নেই।");
-    }
-
-    currentAdmin = user;
-
-    await openAdminPanel();
-
-  }catch(error){
-
-    showMessage(
-      "loginMessage",
-      error.message || "Login ব্যর্থ হয়েছে।",
-      "error"
-    );
-
-  }finally{
-
-    setButtonLoading("loginBtn",false);
-
-  }
-}
-
-async function logoutAdmin(){
-
-  try{
-
-    await db.auth.signOut();
-
-    currentAdmin = null;
-    selectedCountry = null;
-
-    document.getElementById("loginSection").classList.remove("hidden");
-    document.getElementById("adminPanel").classList.add("hidden");
-    document.getElementById("logoutTopBtn").style.display = "none";
-
-    document.getElementById("adminPassword").value = "";
-
-  }catch(error){
-
-    alert("Logout করা যায়নি: " + error.message);
-
-  }
-}
-
-async function openAdminPanel(){
-
-  document.getElementById("loginSection").classList.add("hidden");
-  document.getElementById("adminPanel").classList.remove("hidden");
-
-  document.getElementById("logoutTopBtn").style.display = "block";
-
-  document.getElementById("adminEmailDisplay").textContent =
-    currentAdmin?.email || "";
-
-  await loadCountries();
-}
-
-async function checkAdminSession(){
-
-  try{
-
-    const {data,error} = await db.auth.getSession();
-
-    if(error) throw error;
-
-    const session = data.session;
-
-    if(!session){
-      document.getElementById("loginSection").classList.remove("hidden");
-      document.getElementById("adminPanel").classList.add("hidden");
-      return;
-    }
-
-    const user = session.user;
-
-    const {data:admin,error:adminError} = await db
-      .from("admin_users")
-      .select("user_id")
-      .eq("user_id",user.id)
-      .maybeSingle();
-
-    if(adminError) throw adminError;
-
-    if(!admin){
-      await db.auth.signOut();
-      throw new Error("এই অ্যাকাউন্ট Admin নয়।");
-    }
-
-    currentAdmin = user;
-
-    await openAdminPanel();
-
-  }catch(error){
-
-    document.getElementById("loginSection").classList.remove("hidden");
-    document.getElementById("adminPanel").classList.add("hidden");
-
-    showMessage(
-      "loginMessage",
-      error.message || "Admin session যাচাই করা যায়নি।",
-      "error"
-    );
-
-  }
-}
-
-/* ================================
-   COUNTRY MANAGEMENT
-================================ */
-
-async function loadCountries(){
-
-  const grid = document.getElementById("countryGrid");
-
-  grid.innerHTML = '<div class="empty-state">দেশের তালিকা লোড হচ্ছে...</div>';
-
-  hideMessage("countryMessage");
-
-  try{
-
-    const {data,error} = await db
-      .from("quiz_subjects")
-      .select("*")
-      .eq("subject_type","country")
-      .order("sort_order",{ascending:true})
-      .order("name_en",{ascending:true});
-
-    if(error) throw error;
-
-    countries = data || [];
-
-    document.getElementById("countryCountBadge").textContent =
-      countries.length + " টি দেশ";
-
-    renderCountryCards();
-
-    if(selectedCountry){
-
-      const updated = countries.find(
-        c => c.subject_code === selectedCountry.subject_code
-      );
-
-      if(updated && updated.is_enabled){
-        selectedCountry = updated;
-        updateSelectedCountry();
-      }else{
-        selectedCountry = null;
-        updateSelectedCountry();
-      }
-
-    }
-
-  }catch(error){
-
-    grid.innerHTML = '<div class="empty-state">দেশের তালিকা লোড হয়নি।</div>';
-
-    showMessage(
-      "countryMessage",
-      "দেশ লোড করতে সমস্যা: " + error.message,
-      "error"
-    );
-
-  }
-}
-
-function renderCountryCards(){
-
-  const grid = document.getElementById("countryGrid");
-
-  if(!countries.length){
-    grid.innerHTML = '<div class="empty-state">কোনো দেশ পাওয়া যায়নি।</div>';
-    return;
-  }
-
-  grid.innerHTML = countries.map(country => {
-
-    const code = escapeHTML(country.subject_code);
-    const name = escapeHTML(getCountryName(country));
-    const englishName = escapeHTML(country.name_en || "");
-    const flag = escapeHTML(country.flag_emoji || getFlagEmoji(country.subject_code));
-
-    const selected =
-      selectedCountry?.subject_code === country.subject_code;
-
-    const enabled = country.is_enabled !== false;
-
-    return `
-      <div class="country-card ${selected ? "selected" : ""}"
-        data-code="${code}"
-        data-name="${name.toLowerCase()}"
-        data-english="${englishName.toLowerCase()}"
-        data-enabled="${enabled}"
-        onclick="selectCountry('${code}')">
-
-        <span class="country-flag">${flag}</span>
-
-        <div class="country-name">
-          <strong>${name}</strong>
-          <small>${code}</small>
-          ${!enabled ? '<small style="color:#ff8585">নিষ্ক্রিয়</small>' : ''}
-        </div>
-
-        <span class="country-check">✓</span>
-
-      </div>
-    `;
-
-  }).join("");
-
-  filterCountryCards();
-}
-
-function filterCountryCards(){
-
-  const search = (
-    document.getElementById("countrySearch").value || ""
-  ).trim().toLowerCase();
-
-  const status = document.getElementById("countryStatusFilter").value;
-
-  document.querySelectorAll(".country-card").forEach(card => {
-
-    const matchesSearch =
-      card.dataset.name.includes(search) ||
-      card.dataset.english.includes(search) ||
-      card.dataset.code.toLowerCase().includes(search);
-
-    const enabled = card.dataset.enabled === "true";
-
-    const matchesStatus =
-      status === "all" ||
-      (status === "enabled" && enabled) ||
-      (status === "disabled" && !enabled);
-
-    card.style.display =
-      matchesSearch && matchesStatus ? "flex" : "none";
-
-  });
-
-}
-
-function selectCountry(code){
-
-  const country = countries.find(
-    item => item.subject_code === code
-  );
-
-  if(!country) return;
-
-  if(country.is_enabled === false){
-    showMessage(
-      "countryMessage",
-      "এই দেশটি বর্তমানে নিষ্ক্রিয়।",
-      "error"
-    );
-    return;
-  }
-
-  selectedCountry = country;
-  questionPage = 1;
-
-  updateSelectedCountry();
-  renderCountryCards();
-
-  document.getElementById("questionCountryName").textContent =
-    getCountryName(country);
-
-  document.getElementById("questionCountryCode").textContent =
-    country.subject_code;
-
-  document.getElementById("questionSection").scrollIntoView({
-    behavior:"smooth",
-    block:"start"
-  });
-
-  loadQuestions();
-}
-
-function updateSelectedCountry(){
-
-  const flag = document.getElementById("selectedCountryFlag");
-  const name = document.getElementById("selectedCountryName");
-  const code = document.getElementById("selectedCountryCode");
-
-  if(!selectedCountry){
-
-    flag.textContent = "🌍";
-    name.textContent = "এখনো কোনো দেশ নির্বাচন করা হয়নি";
-    code.textContent = "---";
-
-    document.getElementById("questionCountryName").textContent =
-      "আগে একটি দেশ নির্বাচন করুন";
-
-    document.getElementById("questionCountryCode").textContent = "---";
-
-    document.getElementById("questionTableBody").innerHTML =
-      '<tr><td colspan="6" class="empty-state">প্রথমে একটি দেশ নির্বাচন করুন।</td></tr>';
-
-    return;
-  }
-
-  flag.textContent =
-    selectedCountry.flag_emoji ||
-    getFlagEmoji(selectedCountry.subject_code);
-
-  name.textContent = getCountryName(selectedCountry);
-  code.textContent = selectedCountry.subject_code;
-
-  document.getElementById("questionCountryName").textContent =
-    getCountryName(selectedCountry);
-
-  document.getElementById("questionCountryCode").textContent =
-    selectedCountry.subject_code;
-
-}
-
-/* ================================
-   QUESTION FORM
-================================ */
-
-function resetQuestionForm(){
-
-  document.getElementById("questionForm").reset();
-
-  document.getElementById("editQuestionId").value = "";
-
-  document.getElementById("saveQuestionBtn").textContent =
-    "প্রশ্ন সংরক্ষণ করুন";
-
-  document.getElementById("questionPublished").checked = true;
-
-  hideMessage("questionMessage");
-}
-
-function cancelQuestionEdit(){
-
-  resetQuestionForm();
-
-  document.getElementById("questionSection").scrollIntoView({
-    behavior:"smooth",
-    block:"start"
-  });
-
-}
-
-async function saveQuestion(event){
-
-  event.preventDefault();
-
-  hideMessage("questionMessage");
-
-  if(!selectedCountry){
-    showMessage(
-      "questionMessage",
-      "প্রথমে একটি দেশ নির্বাচন করুন।",
-      "error"
-    );
-    return;
-  }
-
-  const mode = document.getElementById("questionMode").value;
-  const difficulty = document.getElementById("questionDifficulty").value;
-
-  const question = document.getElementById("questionText").value.trim();
-
-  const A = document.getElementById("optionA").value.trim();
-  const B = document.getElementById("optionB").value.trim();
-  const C = document.getElementById("optionC").value.trim();
-  const D = document.getElementById("optionD").value.trim();
-
-  const correct = document.getElementById("correctOption").value;
-
-  const explanation =
-    document.getElementById("questionExplanation").value.trim();
-
-  const imageURL =
-    document.getElementById("questionImage").value.trim();
-
-  const published =
-    document.getElementById("questionPublished").checked;
-
-  const editId =
-    document.getElementById("editQuestionId").value;
-
-  if(!question){
-    showMessage("questionMessage","প্রশ্ন লিখুন।","error");
-    return;
-  }
-
-  const options = {A,B,C,D};
-
-  const isMCQ = mode === "general_mcq";
-
-  if(isMCQ){
-
-    if(!A || !B || !C || !D){
-      showMessage(
-        "questionMessage",
-        "MCQ প্রশ্নের চারটি অপশন পূরণ করুন।",
-        "error"
-      );
-      return;
-    }
-
-    if(!correct){
-      showMessage(
-        "questionMessage",
-        "সঠিক উত্তর নির্বাচন করুন।",
-        "error"
-      );
-      return;
-    }
-
-  }
-
-  const payload = {
-    mode:mode,
-    difficulty:difficulty,
-    question_bn:question,
-    options:isMCQ ? options : {},
-    correct_option:correct || "",
-    explanation_bn:explanation,
-    image_url:imageURL || null,
-    is_published:published,
-    subject_type:"country",
-    subject_code:selectedCountry.subject_code
-  };
-
-  const button = document.getElementById("saveQuestionBtn");
-
-  button.disabled = true;
-  button.textContent = "সংরক্ষণ হচ্ছে...";
-
-  try{
-
-    if(editId){
-
-      const {error} = await db
-        .from("quiz_questions")
-        .update(payload)
-        .eq("id",editId)
-        .eq("subject_type","country")
-        .eq("subject_code",selectedCountry.subject_code);
-
-      if(error) throw error;
-
-      showMessage(
-        "questionMessage",
-        "প্রশ্ন সফলভাবে আপডেট হয়েছে।",
-        "success"
-      );
-
-    }else{
-
-      const {error} = await db
-        .from("quiz_questions")
-        .insert(payload);
-
-      if(error) throw error;
-
-      showMessage(
-        "questionMessage",
-        "নতুন প্রশ্ন সফলভাবে সংরক্ষণ হয়েছে।",
-        "success"
-      );
-
-    }
-
-    resetQuestionForm();
-
-    await loadQuestions();
-
-  }catch(error){
-
-    showMessage(
-      "questionMessage",
-      "প্রশ্ন সংরক্ষণ করা যায়নি: " + error.message,
-      "error"
-    );
-
-  }finally{
-
-    button.disabled = false;
-
-    button.textContent =
-      document.getElementById("editQuestionId").value
-        ? "পরিবর্তন সংরক্ষণ করুন"
-        : "প্রশ্ন সংরক্ষণ করুন";
-
-  }
-
-}
-
-/* ================================
-   AUTH STATE LISTENER
-================================ */
-
-db.auth.onAuthStateChange((event,session) => {
-
-  if(event === "SIGNED_OUT"){
-    currentAdmin = null;
-    document.getElementById("loginSection").classList.remove("hidden");
-    document.getElementById("adminPanel").classList.add("hidden");
-  }
-
-});
-
-/* ================================
-   START APPLICATION
-================================ */
-
-document.addEventListener("DOMContentLoaded",function(){
-
-  document.getElementById("questionPublished").checked = true;
-
-  checkAdminSession();
-
-});
- </script>
- 
-<script>
-// =====================================
-// QUESTION SEARCH, LIST AND PAGINATION
-// =====================================
-
-function scheduleQuestionSearch() {
-  clearTimeout(searchTimer);
-
-  searchTimer = setTimeout(() => {
-    questionPage = 1;
-    loadQuestions();
-  }, 400);
-}
-
-async function loadQuestions() {
-  const tableBody = document.getElementById("questionTableBody");
-
-  if (!selectedCountry) {
-    tableBody.innerHTML =
-      '<tr><td colspan="6" class="empty-state">প্রথমে একটি দেশ নির্বাচন করুন।</td></tr>';
-
-    document.getElementById("questionCountBadge").textContent = "০টি প্রশ্ন";
-    totalQuestionCount = 0;
-    updateQuestionPagination();
-    return;
-  }
-
-  tableBody.innerHTML =
-    '<tr><td colspan="6" class="empty-state">প্রশ্ন লোড হচ্ছে...</td></tr>';
-
-  hideMessage("listMessage");
+async function verifyAdmin() {
+  const message = document.getElementById("connectionMessage");
 
   try {
-    const searchInput = document.getElementById("questionSearch");
-    const modeFilter = document.getElementById("filterMode");
-    const difficultyFilter = document.getElementById("filterDifficulty");
-    const publishFilter = document.getElementById("filterPublished");
+    const { data, error } = await getSession();
+    if (error) throw error;
 
+    const user = data.session?.user;
+
+    if (!user) {
+      message.textContent = "Admin login করা নেই। আগে Admin Panel-এ লগইন করুন।";
+      return;
+    }
+
+    const { data: admin, error: adminError } = await db
+      .from("admin_users")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (adminError) throw adminError;
+
+    if (!admin) {
+      message.textContent = "এই অ্যাকাউন্টের Admin Permission নেই।";
+      return;
+    }
+
+    document.getElementById("loginStatus").classList.add("hidden");
+    document.getElementById("adminPanel").classList.remove("hidden");
+    document.getElementById("adminPanelExtra").classList.remove("hidden");
+
+    message.textContent = "Admin verified";
+
+    await loadSubjects();
+    await loadQuestions(1);
+
+  } catch (error) {
+    message.textContent = "Connection Error: " + error.message;
+  }
+}
+
+db.auth.onAuthStateChange((event) => {
+  if (event === "SIGNED_IN") {
+    verifyAdmin();
+  }
+
+  if (event === "SIGNED_OUT") {
+    location.reload();
+  }
+});
+  </script>
+  <script>
+async function loadSubjects() {
+  const list = document.getElementById("subjectList");
+  list.textContent = "Loading subjects...";
+
+  try {
+    const { data, error } = await db
+      .from("quiz_subjects")
+      .select("*")
+      .order("sort_order", { ascending: true });
+
+    if (error) throw error;
+
+    subjects = data || [];
+
+    if (!subjects.length) {
+      list.textContent = "কোনো Subject পাওয়া যায়নি।";
+    } else {
+      list.innerHTML = subjects.map(subject => `
+        <div class="subject-card">
+          <strong>${escapeHTML(subject.flag_emoji || "")}
+            ${escapeHTML(subject.name_bn || subject.name_en)}</strong>
+          <div class="small">
+            ${escapeHTML(subject.subject_type)} |
+            ${escapeHTML(subject.subject_code)} |
+            ${subject.is_enabled ? "Enabled" : "Disabled"}
+          </div>
+          <button class="secondary"
+            onclick="toggleSubject('${escapeHTML(subject.id)}', ${!subject.is_enabled})">
+            ${subject.is_enabled ? "Disable" : "Enable"}
+          </button>
+        </div>
+      `).join("");
+    }
+
+    updateSubjectOptions();
+
+  } catch (error) {
+    list.textContent = "Error: " + error.message;
+  }
+}
+
+async function addSubject() {
+  const subject = {
+    subject_type: document.getElementById("subjectType").value,
+    subject_code: document.getElementById("subjectCode").value.trim().toUpperCase(),
+    name_en: document.getElementById("subjectNameEn").value.trim(),
+    name_bn: document.getElementById("subjectNameBn").value.trim(),
+    flag_emoji: document.getElementById("subjectFlag").value.trim(),
+    image_url: document.getElementById("subjectImage").value.trim() || null,
+    sort_order: Number(document.getElementById("subjectOrder").value || 0),
+    is_enabled: true
+  };
+
+  if (!subject.subject_code || !subject.name_en || !subject.name_bn) {
+    showMessage("subjectMessage", "Code এবং দুইটি নাম পূরণ করুন।", true);
+    return;
+  }
+
+  try {
+    const { error } = await db
+      .from("quiz_subjects")
+      .insert(subject);
+
+    if (error) throw error;
+
+    showMessage("subjectMessage", "Subject সফলভাবে যোগ হয়েছে।");
+    document.getElementById("subjectCode").value = "";
+    document.getElementById("subjectNameEn").value = "";
+    document.getElementById("subjectNameBn").value = "";
+    document.getElementById("subjectFlag").value = "";
+    document.getElementById("subjectImage").value = "";
+
+    await loadSubjects();
+
+  } catch (error) {
+    showMessage("subjectMessage", error.message, true);
+  }
+}
+
+async function toggleSubject(id, enabled) {
+  try {
+    const { error } = await db
+      .from("quiz_subjects")
+      .update({ is_enabled: enabled })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    await loadSubjects();
+
+  } catch (error) {
+    alert("Update Error: " + error.message);
+  }
+}
+
+function updateSubjectOptions() {
+  const type = document.getElementById("questionSubjectType").value;
+  const select = document.getElementById("questionSubjectCode");
+
+  const filtered = subjects.filter(item =>
+    item.subject_type === type && item.is_enabled
+  );
+
+  select.innerHTML = '<option value="">বিষয় নির্বাচন করুন</option>';
+
+  filtered.forEach(item => {
+    const option = document.createElement("option");
+    option.value = item.subject_code;
+    option.textContent =
+      (item.flag_emoji || "") + " " +
+      (item.name_bn || item.name_en) +
+      " (" + item.subject_code + ")";
+    select.appendChild(option);
+  });
+}
+
+function resetQuestionForm() {
+  document.getElementById("editQuestionId").value = "";
+  document.getElementById("questionMode").value = "general_mcq";
+  document.getElementById("questionDifficulty").value = "easy";
+  document.getElementById("questionSubjectType").value = "";
+  document.getElementById("questionText").value = "";
+  document.getElementById("optionA").value = "";
+  document.getElementById("optionB").value = "";
+  document.getElementById("optionC").value = "";
+  document.getElementById("optionD").value = "";
+  document.getElementById("correctOption").value = "A";
+  document.getElementById("questionImage").value = "";
+  document.getElementById("questionExplanation").value = "";
+  document.getElementById("questionPublished").checked = true;
+
+  updateSubjectOptions();
+  document.getElementById("saveQuestionBtn").textContent = "💾 Save Question";
+}
+
+async function saveQuestion() {
+  const id = document.getElementById("editQuestionId").value;
+
+  const subjectType =
+    document.getElementById("questionSubjectType").value || null;
+
+  const subjectCode =
+    document.getElementById("questionSubjectCode").value || null;
+
+  const options = {
+    A: document.getElementById("optionA").value.trim(),
+    B: document.getElementById("optionB").value.trim(),
+    C: document.getElementById("optionC").value.trim(),
+    D: document.getElementById("optionD").value.trim()
+  };
+
+  const question = {
+    mode: document.getElementById("questionMode").value,
+    difficulty: document.getElementById("questionDifficulty").value,
+    subject_type: subjectType,
+    subject_code: subjectCode,
+    question_bn: document.getElementById("questionText").value.trim(),
+    options,
+    correct_option: document.getElementById("correctOption").value,
+    explanation_bn: document.getElementById("questionExplanation").value.trim(),
+    image_url: document.getElementById("questionImage").value.trim() || null,
+    is_published: document.getElementById("questionPublished").checked
+  };
+
+  if (!question.question_bn ||
+      Object.values(options).some(value => !value)) {
+    showMessage("questionMessage", "প্রশ্ন এবং চারটি Option পূরণ করুন।", true);
+    return;
+  }
+
+  if ((subjectType && !subjectCode) || (!subjectType && subjectCode)) {
+    showMessage("questionMessage", "Subject Type এবং Subject দুটোই নির্বাচন করুন।", true);
+    return;
+  }
+
+  try {
+    let result;
+
+    if (id) {
+      result = await db
+        .from("quiz_questions")
+        .update(question)
+        .eq("id", id);
+    } else {
+      result = await db
+        .from("quiz_questions")
+        .insert(question);
+    }
+
+    if (result.error) throw result.error;
+
+    showMessage("questionMessage", id
+      ? "প্রশ্ন আপডেট হয়েছে।"
+      : "নতুন প্রশ্ন সফলভাবে যোগ হয়েছে।"
+    );
+
+    resetQuestionForm();
+    await loadQuestions(1);
+
+  } catch (error) {
+    showMessage("questionMessage", error.message, true);
+  }
+}
+
+async function editQuestion(id) {
+  const item = questionCache.find(q => String(q.id) === String(id));
+
+  if (!item) {
+    alert("প্রশ্নটি পাওয়া যায়নি।");
+    return;
+  }
+
+  document.getElementById("editQuestionId").value = item.id;
+  document.getElementById("questionMode").value = item.mode;
+  document.getElementById("questionDifficulty").value = item.difficulty || "easy";
+  document.getElementById("questionSubjectType").value = item.subject_type || "";
+
+  updateSubjectOptions();
+
+  document.getElementById("questionSubjectCode").value = item.subject_code || "";
+  document.getElementById("questionText").value = item.question_bn || "";
+
+  document.getElementById("optionA").value = item.options?.A || "";
+  document.getElementById("optionB").value = item.options?.B || "";
+  document.getElementById("optionC").value = item.options?.C || "";
+  document.getElementById("optionD").value = item.options?.D || "";
+
+  document.getElementById("correctOption").value = item.correct_option || "A";
+  document.getElementById("questionImage").value = item.image_url || "";
+  document.getElementById("questionExplanation").value = item.explanation_bn || "";
+  document.getElementById("questionPublished").checked = !!item.is_published;
+
+  document.getElementById("saveQuestionBtn").textContent = "Update Question";
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+  </script>
+  <script>
+async function previewBulk() {
+  const raw = document.getElementById("bulkJson").value.trim();
+
+  bulkQuestions = [];
+  document.getElementById("bulkPreview").innerHTML = "";
+  document.getElementById("bulkSaveBtn").classList.add("hidden");
+
+  try {
+    const parsed = JSON.parse(raw);
+
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error("JSON-এ প্রশ্নের Array থাকতে হবে।");
+    }
+
+    for (let i = 0; i < parsed.length; i++) {
+      const q = parsed[i];
+
+      if (!q.question_bn || !q.mode || !q.options ||
+          !q.correct_option || !q.options.A ||
+          !q.options.B || !q.options.C || !q.options.D) {
+        throw new Error("প্রশ্ন নম্বর " + (i + 1) + ": প্রয়োজনীয় তথ্য নেই।");
+      }
+
+      if (!["A", "B", "C", "D"].includes(q.correct_option)) {
+        throw new Error("প্রশ্ন নম্বর " + (i + 1) + ": Correct Option ভুল।");
+      }
+
+      if (!subjects.some(s =>
+        s.subject_type === q.subject_type &&
+        s.subject_code === q.subject_code &&
+        s.is_enabled
+      ) && (q.subject_type || q.subject_code)) {
+        throw new Error("প্রশ্ন নম্বর " + (i + 1) + ": Subject পাওয়া যায়নি।");
+      }
+
+      bulkQuestions.push({
+        mode: q.mode,
+        difficulty: q.difficulty || "easy",
+        subject_type: q.subject_type || null,
+        subject_code: q.subject_code || null,
+        question_bn: String(q.question_bn).trim(),
+        options: q.options,
+        correct_option: q.correct_option,
+        explanation_bn: q.explanation_bn || "",
+        image_url: q.image_url || null,
+        is_published: q.is_published !== false
+      });
+    }
+
+    document.getElementById("bulkPreview").textContent =
+      "যাচাই সম্পন্ন। মোট " + bulkQuestions.length + "টি প্রশ্ন প্রস্তুত।";
+
+    document.getElementById("bulkSaveBtn").classList.remove("hidden");
+
+  } catch (error) {
+    showMessage("bulkMessage", error.message, true);
+  }
+}
+
+async function publishBulk() {
+  if (!bulkQuestions.length) return;
+
+  const button = document.getElementById("bulkSaveBtn");
+  button.disabled = true;
+
+  let saved = 0;
+  let failed = 0;
+
+  try {
+    for (let start = 0; start < bulkQuestions.length; start += 50) {
+      const batch = bulkQuestions.slice(start, start + 50);
+
+      const { error } = await db
+        .from("quiz_questions")
+        .insert(batch);
+
+      if (error) {
+        failed += batch.length;
+        showMessage("bulkMessage",
+          "একটি Batch সংরক্ষণ হয়নি: " + error.message, true);
+      } else {
+        saved += batch.length;
+      }
+    }
+
+    showMessage("bulkMessage",
+      "সংরক্ষিত: " + saved + "টি | ব্যর্থ: " + failed + "টি",
+      failed > 0
+    );
+
+    if (saved === bulkQuestions.length) {
+      clearBulk();
+    }
+
+    await loadQuestions(1);
+
+  } catch (error) {
+    showMessage("bulkMessage", error.message, true);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function clearBulk() {
+  bulkQuestions = [];
+  document.getElementById("bulkJson").value = "";
+  document.getElementById("bulkPreview").textContent = "";
+  document.getElementById("bulkSaveBtn").classList.add("hidden");
+}
+
+async function loadQuestions(page = 1) {
+  if (page < 1 || (totalPages && page > totalPages)) return;
+
+  currentPage = page;
+
+  const list = document.getElementById("questionList");
+  list.textContent = "Loading questions...";
+
+  try {
     let query = db
       .from("quiz_questions")
-      .select("*", { count: "exact" })
-      .eq("subject_type", "country")
-      .eq("subject_code", selectedCountry.subject_code);
+      .select("*", { count: "exact" });
 
-    if (modeFilter.value) {
-      query = query.eq("mode", modeFilter.value);
+    const mode = document.getElementById("filterMode").value;
+    const published = document.getElementById("filterPublished").value;
+
+    if (mode) query = query.eq("mode", mode);
+    if (published !== "") {
+      query = query.eq("is_published", published === "true");
     }
 
-    if (difficultyFilter.value) {
-      query = query.eq("difficulty", difficultyFilter.value);
-    }
-
-    if (publishFilter.value !== "") {
-      query = query.eq(
-        "is_published",
-        publishFilter.value === "true"
-      );
-    }
-
-    if (searchInput.value.trim()) {
-      query = query.ilike(
-        "question_bn",
-        `%${searchInput.value.trim()}%`
-      );
-    }
-
-    const from = (questionPage - 1) * PAGE_SIZE;
+    const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
     const { data, error, count } = await query
@@ -1697,626 +966,115 @@ async function loadQuestions() {
 
     if (error) throw error;
 
-    totalQuestionCount = count || 0;
+    questionCache = data || [];
+    totalPages = Math.max(1, Math.ceil((count || 0) / PAGE_SIZE));
 
-    document.getElementById("questionCountBadge").textContent =
-      totalQuestionCount + "টি প্রশ্ন";
+    document.getElementById("pageInfo").textContent =
+      "Page " + currentPage + " / " + totalPages;
 
-    if (!data || data.length === 0) {
-      tableBody.innerHTML =
-        '<tr><td colspan="6" class="empty-state">এই নির্বাচিত দেশে কোনো প্রশ্ন পাওয়া যায়নি।</td></tr>';
+    document.getElementById("questionListMessage").textContent =
+      "মোট প্রশ্ন: " + (count || 0);
 
-      updateQuestionPagination();
+    if (!questionCache.length) {
+      list.textContent = "কোনো প্রশ্ন পাওয়া যায়নি।";
       return;
     }
 
-    tableBody.innerHTML = data.map((q) => {
-      const id = escapeHTML(String(q.id));
-      const question = escapeHTML(q.question_bn || "");
-      const mode = escapeHTML(q.mode || "");
-      const difficulty = escapeHTML(q.difficulty || "");
-
-      const status = q.is_published
-        ? '<span class="badge badge-green">প্রকাশিত</span>'
-        : '<span class="badge badge-red">অপ্রকাশিত</span>';
-
-      return `
-        <tr>
-          <td>${id}</td>
-          <td>${question}</td>
-          <td>${mode}</td>
-          <td>${difficulty}</td>
-          <td>${status}</td>
-          <td>
-            <div style="display:flex;gap:5px;flex-wrap:wrap">
-              <button
-                class="btn btn-blue btn-small"
-                type="button"
-                onclick="editQuestion('${id}')">
-                Edit
-              </button>
-
-              <button
-                class="btn btn-warning btn-small"
-                type="button"
-                onclick="toggleQuestionPublish('${id}', ${!q.is_published})">
-                ${q.is_published ? "Unpublish" : "Publish"}
-              </button>
-
-              <button
-                class="btn btn-danger btn-small"
-                type="button"
-                onclick="deleteQuestion('${id}')">
-                Delete
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join("");
-
-    updateQuestionPagination();
+    renderQuestions(questionCache);
 
   } catch (error) {
-    console.error("Question loading error:", error);
-
-    tableBody.innerHTML =
-      '<tr><td colspan="6" class="empty-state">প্রশ্ন লোড করা যায়নি।</td></tr>';
-
-    showMessage(
-      "listMessage",
-      "প্রশ্ন লোড করতে সমস্যা হয়েছে: " + error.message,
-      "error"
-    );
+    list.textContent = "Error: " + error.message;
   }
 }
 
-// =====================================
-// PAGINATION
-// =====================================
+function renderQuestions(items) {
+  const list = document.getElementById("questionList");
 
-function updateQuestionPagination() {
-  const totalPages = Math.max(
-    1,
-    Math.ceil(totalQuestionCount / PAGE_SIZE)
+  list.innerHTML = items.map(q => `
+    <div class="question-card">
+      <strong>${escapeHTML(q.question_bn)}</strong>
+
+      <div class="small">
+        Mode: ${escapeHTML(q.mode)} |
+        Difficulty: ${escapeHTML(q.difficulty || "")}
+        <br>
+        Subject: ${escapeHTML(q.subject_code || "None")}
+        <br>
+        Status: ${q.is_published ? "Published" : "Unpublished"}
+        <br>
+        Correct Answer: ${escapeHTML(q.correct_option)}
+      </div>
+
+      <button onclick="editQuestion('${escapeHTML(q.id)}')">
+        Edit
+      </button>
+
+      <button class="warning"
+        onclick="togglePublish('${escapeHTML(q.id)}', ${!q.is_published})">
+        ${q.is_published ? "Unpublish" : "Publish"}
+      </button>
+
+      <button class="danger"
+        onclick="deleteQuestion('${escapeHTML(q.id)}')">
+        Delete
+      </button>
+    </div>
+  `).join("");
+}
+
+function searchQuestionList() {
+  const search = normalizeText(
+    document.getElementById("searchQuestions").value
   );
 
-  const previousButton =
-    document.getElementById("previousPageBtn");
-
-  const nextButton =
-    document.getElementById("nextPageBtn");
-
-  const pageInfo =
-    document.getElementById("pageInfo");
-
-  pageInfo.textContent =
-    `মোট ${totalQuestionCount}টি প্রশ্ন | পৃষ্ঠা ${questionPage} / ${totalPages}`;
-
-  previousButton.disabled = questionPage <= 1;
-  nextButton.disabled = questionPage >= totalPages;
-}
-
-function changeQuestionPage(direction) {
-  const totalPages = Math.max(
-    1,
-    Math.ceil(totalQuestionCount / PAGE_SIZE)
+  const filtered = questionCache.filter(q =>
+    normalizeText(q.question_bn).includes(search)
   );
 
-  const newPage = questionPage + Number(direction);
-
-  if (newPage < 1 || newPage > totalPages) {
-    return;
-  }
-
-  questionPage = newPage;
-  loadQuestions();
+  renderQuestions(filtered);
 }
 
-// =====================================
-// EDIT QUESTION
-// =====================================
-
-async function editQuestion(id) {
-  if (!selectedCountry) {
-    showMessage(
-      "questionMessage",
-      "প্রথমে একটি দেশ নির্বাচন করুন।",
-      "error"
-    );
-    return;
-  }
-
-  try {
-    const { data, error } = await db
-      .from("quiz_questions")
-      .select("*")
-      .eq("id", id)
-      .eq("subject_type", "country")
-      .eq("subject_code", selectedCountry.subject_code)
-      .single();
-
-    if (error) throw error;
-
-    const q = data;
-    const options = q.options || {};
-
-    document.getElementById("editQuestionId").value = q.id;
-
-    document.getElementById("questionMode").value =
-      q.mode || "general_mcq";
-
-    document.getElementById("questionDifficulty").value =
-      q.difficulty || "easy";
-
-    document.getElementById("questionText").value =
-      q.question_bn || "";
-
-    document.getElementById("optionA").value =
-      options.A || options.a || "";
-
-    document.getElementById("optionB").value =
-      options.B || options.b || "";
-
-    document.getElementById("optionC").value =
-      options.C || options.c || "";
-
-    document.getElementById("optionD").value =
-      options.D || options.d || "";
-
-    document.getElementById("correctOption").value =
-      q.correct_option || "";
-
-    document.getElementById("questionExplanation").value =
-      q.explanation_bn || "";
-
-    document.getElementById("questionImage").value =
-      q.image_url || "";
-
-    document.getElementById("questionPublished").checked =
-      !!q.is_published;
-
-    document.getElementById("saveQuestionBtn").textContent =
-      "পরিবর্তন সংরক্ষণ করুন";
-
-    showMessage(
-      "questionMessage",
-      "প্রশ্নটি সম্পাদনার জন্য লোড হয়েছে।",
-      "success"
-    );
-
-    document.getElementById("questionForm").scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    showMessage(
-      "questionMessage",
-      "প্রশ্ন লোড করা যায়নি: " + error.message,
-      "error"
-    );
-  }
-}
-
-// =====================================
-// PUBLISH / UNPUBLISH
-// =====================================
-
-async function toggleQuestionPublish(id, publishStatus) {
-  if (!selectedCountry) return;
-
+async function togglePublish(id, published) {
   try {
     const { error } = await db
       .from("quiz_questions")
-      .update({
-        is_published: publishStatus
-      })
-      .eq("id", id)
-      .eq("subject_type", "country")
-      .eq("subject_code", selectedCountry.subject_code);
+      .update({ is_published: published })
+      .eq("id", id);
 
     if (error) throw error;
 
-    showMessage(
-      "listMessage",
-      publishStatus
-        ? "প্রশ্ন সফলভাবে প্রকাশ করা হয়েছে।"
-        : "প্রশ্নটি অপ্রকাশিত করা হয়েছে।",
-      "success"
-    );
-
-    await loadQuestions();
+    await loadQuestions(currentPage);
 
   } catch (error) {
-    console.error(error);
-
-    showMessage(
-      "listMessage",
-      "প্রশ্নের অবস্থা পরিবর্তন করা যায়নি: " + error.message,
-      "error"
-    );
+    alert("Publish Error: " + error.message);
   }
 }
 
-// =====================================
-// DELETE QUESTION
-// =====================================
-
 async function deleteQuestion(id) {
-  if (!selectedCountry) return;
-
-  const confirmed = confirm(
-    "আপনি কি নিশ্চিতভাবে এই প্রশ্নটি মুছে ফেলতে চান?"
-  );
-
-  if (!confirmed) return;
+  if (!confirm("আপনি কি নিশ্চিত এই প্রশ্নটি মুছে ফেলতে চান?")) {
+    return;
+  }
 
   try {
     const { error } = await db
       .from("quiz_questions")
       .delete()
-      .eq("id", id)
-      .eq("subject_type", "country")
-      .eq("subject_code", selectedCountry.subject_code);
+      .eq("id", id);
 
     if (error) throw error;
 
-    showMessage(
-      "listMessage",
-      "প্রশ্নটি সফলভাবে মুছে ফেলা হয়েছে।",
-      "success"
-    );
-
-    await loadQuestions();
+    alert("প্রশ্ন মুছে ফেলা হয়েছে।");
+    await loadQuestions(currentPage);
 
   } catch (error) {
-    console.error(error);
-
-    showMessage(
-      "listMessage",
-      "প্রশ্ন মুছতে সমস্যা হয়েছে: " + error.message,
-      "error"
-    );
+    alert("Delete Error: " + error.message);
   }
 }
-
-// =====================================
-// BULK JSON IMPORT
-// =====================================
-
-async function importBulkQuestions() {
-  if (!selectedCountry) {
-    showMessage(
-      "bulkMessage",
-      "প্রথমে একটি দেশ নির্বাচন করুন।",
-      "error"
-    );
-    return;
-  }
-
-  const jsonInput =
-    document.getElementById("bulkQuestions");
-
-  const rawJSON = jsonInput.value.trim();
-
-  if (!rawJSON) {
-    showMessage(
-      "bulkMessage",
-      "প্রথমে JSON প্রশ্নগুলো লিখুন।",
-      "error"
-    );
-    return;
-  }
-
-  let questions;
-
-  try {
-    questions = JSON.parse(rawJSON);
-  } catch (error) {
-    showMessage(
-      "bulkMessage",
-      "JSON ফরম্যাট সঠিক নয়। আবার পরীক্ষা করুন।",
-      "error"
-    );
-    return;
-  }
-
-  if (!Array.isArray(questions) || questions.length === 0) {
-    showMessage(
-      "bulkMessage",
-      "JSON-এর মধ্যে প্রশ্নের Array থাকতে হবে।",
-      "error"
-    );
-    return;
-  }
-
-  const validModes = [
-    "general_mcq",
-    "guess_player",
-    "guess_club",
-    "guess_country",
-    "guess_jersey",
-    "guess_stadium",
-    "guess_silhouette",
-    "guess_clues"
-  ];
-
-  const validDifficulties = [
-    "easy",
-    "medium",
-    "hard"
-  ];
-
-  const seen = new Set();
-  const prepared = [];
-
-  let invalidCount = 0;
-  let duplicateCount = 0;
-
-  for (const item of questions) {
-    if (!item || typeof item !== "object" || Array.isArray(item)) {
-      invalidCount++;
-      continue;
-    }
-
-    const mode = String(
-      item.mode || "general_mcq"
-    ).trim();
-
-    const difficulty = String(
-      item.difficulty || "easy"
-    ).trim();
-
-    const questionText = String(
-      item.question_bn || item.question || ""
-    ).trim();
-
-    if (
-      !validModes.includes(mode) ||
-      !validDifficulties.includes(difficulty) ||
-      !questionText
-    ) {
-      invalidCount++;
-      continue;
-    }
-
-    let options = item.options || {};
-
-    if (
-      typeof options !== "object" ||
-      Array.isArray(options)
-    ) {
-      invalidCount++;
-      continue;
-    }
-
-    const correctOption = String(
-      item.correct_option || item.answer || ""
-    ).trim();
-
-    if (mode === "general_mcq") {
-      const optionA = String(options.A || options.a || item.a || "").trim();
-      const optionB = String(options.B || options.b || item.b || "").trim();
-      const optionC = String(options.C || options.c || item.c || "").trim();
-      const optionD = String(options.D || options.d || item.d || "").trim();
-
-      if (
-        !optionA ||
-        !optionB ||
-        !optionC ||
-        !optionD ||
-        !["A", "B", "C", "D"].includes(correctOption)
-      ) {
-        invalidCount++;
-        continue;
-      }
-
-      options = {
-        A: optionA,
-        B: optionB,
-        C: optionC,
-        D: optionD
-      };
-
-    } else {
-      if (!correctOption) {
-        invalidCount++;
-        continue;
-      }
-    }
-
-    const duplicateKey =
-      mode.toLowerCase() + "|" + questionText.toLowerCase();
-
-    if (seen.has(duplicateKey)) {
-      duplicateCount++;
-      continue;
-    }
-
-    seen.add(duplicateKey);
-
-    prepared.push({
-      subject_type: "country",
-      subject_code: selectedCountry.subject_code,
-      mode: mode,
-      difficulty: difficulty,
-      question_bn: questionText,
-      options: options,
-      correct_option: correctOption,
-      explanation_bn: String(
-        item.explanation_bn || item.explanation || ""
-      ),
-      image_url: item.image_url
-        ? String(item.image_url)
-        : null,
-      is_published: item.is_published === true
-    });
-  }
-
-  if (prepared.length === 0) {
-    showMessage(
-      "bulkMessage",
-      `কোনো বৈধ প্রশ্ন পাওয়া যায়নি। ভুল প্রশ্ন: ${invalidCount}`,
-      "error"
-    );
-    return;
-  }
-
-  const importButton = document.querySelector(
-    '#bulkImportSection button[onclick="importBulkQuestions()"]'
-  );
-
-  if (importButton) {
-    importButton.disabled = true;
-    importButton.textContent = "Import হচ্ছে...";
-  }
-
-  try {
-    const uniquePrepared = [];
-
-    for (const item of prepared) {
-      const { data, error } = await db
-        .from("quiz_questions")
-        .select("id")
-        .eq("subject_type", "country")
-        .eq("subject_code", selectedCountry.subject_code)
-        .eq("mode", item.mode)
-        .eq("question_bn", item.question_bn)
-        .limit(1);
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        duplicateCount++;
-      } else {
-        uniquePrepared.push(item);
-      }
-    }
-
-    if (uniquePrepared.length === 0) {
-      showMessage(
-        "bulkMessage",
-        `নতুন প্রশ্ন পাওয়া যায়নি। Duplicate: ${duplicateCount}, ভুল: ${invalidCount}`,
-        "info"
-      );
-      return;
-    }
-
-    const { error } = await db
-      .from("quiz_questions")
-      .insert(uniquePrepared);
-
-    if (error) throw error;
-
-    jsonInput.value = "";
-    questionPage = 1;
-
-    showMessage(
-      "bulkMessage",
-      `${uniquePrepared.length}টি প্রশ্ন যোগ হয়েছে। Duplicate বাদ: ${duplicateCount}, ভুল প্রশ্ন: ${invalidCount}`,
-      "success"
-    );
-
-    await loadQuestions();
-
-  } catch (error) {
-    console.error(error);
-
-    showMessage(
-      "bulkMessage",
-      "Import করা যায়নি: " + error.message,
-      "error"
-    );
-
-  } finally {
-    if (importButton) {
-      importButton.disabled = false;
-      importButton.textContent = "সব প্রশ্ন Import করুন";
-    }
-  }
-}
-
-// =====================================
-// DOWNLOAD JSON TEMPLATE
-// =====================================
-
-function downloadBulkTemplate() {
-  const template = [
-    {
-      mode: "general_mcq",
-      difficulty: "easy",
-      question_bn: "আর্জেন্টিনার রাজধানী কোনটি?",
-      options: {
-        A: "বুয়েনস আয়ার্স",
-        B: "রিও ডি জেনেইরো",
-        C: "লিমা",
-        D: "সান্তিয়াগো"
-      },
-      correct_option: "A",
-      explanation_bn: "বুয়েনস আয়ার্স আর্জেন্টিনার রাজধানী।",
-      image_url: "",
-      is_published: true
-    },
-    {
-      mode: "guess_player",
-      difficulty: "medium",
-      question_bn: "এই খেলোয়াড় কে?",
-      options: {},
-      correct_option: "খেলোয়াড়ের নাম",
-      explanation_bn: "খেলোয়াড় সম্পর্কে তথ্য।",
-      image_url: "https://example.com/player.jpg",
-      is_published: true
-    }
-  ];
-
-  const blob = new Blob(
-    [JSON.stringify(template, null, 2)],
-    {
-      type: "application/json;charset=utf-8"
-    }
-  );
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = "jaber-football-quiz-template.json";
-
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-
-  URL.revokeObjectURL(url);
-}
-
-// =====================================
-// FILTER EVENTS
-// =====================================
 
 document.addEventListener("DOMContentLoaded", () => {
-  const modeFilter =
-    document.getElementById("filterMode");
-
-  const difficultyFilter =
-    document.getElementById("filterDifficulty");
-
-  const publishFilter =
-    document.getElementById("filterPublished");
-
-  [modeFilter, difficultyFilter, publishFilter].forEach((element) => {
-    if (element) {
-      element.addEventListener("change", () => {
-        questionPage = 1;
-        loadQuestions();
-      });
-    }
-  });
+  verifyAdmin();
 });
 </script>
 
 </body>
- </html>
- 
+</html>
