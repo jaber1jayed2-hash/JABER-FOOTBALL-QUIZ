@@ -260,8 +260,8 @@ class _QuizScreenState extends State<QuizScreen> {
       mode: category == 'country'
           ? 'country_quiz'
           : category == 'club'
-              ? 'club_quiz'
-              : 'player_quiz',
+              ? 'guess_club'
+              : 'guess_player',
       subjectType: category,
       subjectCode: code,
       flag: category == 'country'
