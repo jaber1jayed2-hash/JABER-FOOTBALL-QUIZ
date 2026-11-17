@@ -6,10 +6,12 @@ import 'quiz_play_screen.dart';
 
 class QuizScreen extends StatefulWidget {
   final String? initialCategory;
+  final String? initialMode;
 
   const QuizScreen({
     super.key,
     this.initialCategory,
+    this.initialMode,
   });
 
   @override
@@ -18,62 +20,6 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   final SupabaseClient supabase = Supabase.instance.client;
-
-  final List<(
-    String,
-    String,
-    IconData,
-    String,
-  )> modes = const [
-    (
-      'Guess the Club',
-      'ক্লাবের লোগো দেখে ক্লাব চিনুন',
-      Icons.shield,
-      'guess_club',
-    ),
-    (
-      'Guess the Country',
-      'পতাকা দেখে দেশ চিনুন',
-      Icons.flag,
-      'guess_country',
-    ),
-    (
-      'Guess the Jersey',
-      'জার্সি দেখে দল চিনুন',
-      Icons.checkroom,
-      'guess_jersey',
-    ),
-    (
-      'Guess the Stadium',
-      'স্টেডিয়ামের ছবি দেখে নাম বলুন',
-      Icons.stadium,
-      'guess_stadium',
-    ),
-    (
-      'Guess the Silhouette',
-      'ছায়া দেখে খেলোয়াড় চিনুন',
-      Icons.person_search,
-      'guess_silhouette',
-    ),
-    (
-      'Guess by Clues',
-      'সূত্র দেখে খেলোয়াড় চিনুন',
-      Icons.lightbulb_outline,
-      'guess_clues',
-    ),
-    (
-      'General MCQ',
-      'সাধারণ ফুটবল প্রশ্ন',
-      Icons.quiz,
-      'general_mcq',
-    ),
-    (
-      'Guess the Player',
-      'ছবি দেখে খেলোয়াড় চিনুন',
-      Icons.sports,
-      'guess_player',
-    ),
-  ];
 
   List<Map<String, dynamic>> subjects = [];
 
@@ -84,6 +30,7 @@ class _QuizScreenState extends State<QuizScreen> {
   bool loadingSettings = true;
   bool settingsLoaded = false;
   bool loadingSubjects = false;
+  bool modeStarted = false;
 
   String? subjectError;
   String? activeCategory;
@@ -105,7 +52,6 @@ class _QuizScreenState extends State<QuizScreen> {
     if (value == null) return fallback;
     if (value is int) return value;
     if (value is num) return value.toInt();
-
     return int.tryParse(value.toString()) ?? fallback;
   }
 
@@ -136,18 +82,12 @@ class _QuizScreenState extends State<QuizScreen> {
         50,
       ).clamp(1, 100).toInt();
 
-      if (maximum < minimum) {
-        maximum = minimum;
-      }
+      if (maximum < minimum) maximum = minimum;
 
       int defaultCount = parseSetting(
         settings['quiz_default_questions'],
         10,
-      );
-
-      defaultCount = defaultCount
-          .clamp(minimum, maximum)
-          .toInt();
+      ).clamp(minimum, maximum).toInt();
 
       if (!mounted) return;
 
@@ -158,6 +98,8 @@ class _QuizScreenState extends State<QuizScreen> {
         loadingSettings = false;
         settingsLoaded = true;
       });
+
+      startInitialMode();
     } catch (e) {
       if (!mounted) return;
 
@@ -168,7 +110,39 @@ class _QuizScreenState extends State<QuizScreen> {
         loadingSettings = false;
         settingsLoaded = false;
       });
+
+      startInitialMode();
     }
+  }
+
+  void startInitialMode() {
+    if (widget.initialMode == null || modeStarted) return;
+
+    modeStarted = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final mode = widget.initialMode!;
+
+      final names = {
+        'guess_player': 'Guess the Player',
+        'guess_club': 'Guess the Club',
+        'guess_jersey': 'Guess the Jersey',
+      };
+
+      final name = names[mode];
+
+      if (name == null) {
+        showMessage('এই কুইজ মোডটি পাওয়া যায়নি।');
+        return;
+      }
+
+      openQuestionCountSheet(
+        quizName: name,
+        mode: mode,
+      );
+    });
   }
 
   Future<void> loadSubjects(String category) async {
@@ -212,7 +186,6 @@ class _QuizScreenState extends State<QuizScreen> {
 
     if (bn.isNotEmpty) return bn;
     if (en.isNotEmpty) return en;
-
     return code;
   }
 
@@ -224,20 +197,14 @@ class _QuizScreenState extends State<QuizScreen> {
         '';
   }
 
-  void openCategory(String category) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => QuizScreen(
-          initialCategory: category,
-        ),
-      ),
-    );
-  }
-
   void showMessage(String message) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFF164B2C),
+      ),
     );
   }
 
@@ -250,30 +217,24 @@ class _QuizScreenState extends State<QuizScreen> {
     }
 
     final category = activeCategory;
-
     if (category == null) return;
 
     final name = getSubjectName(subject);
 
+    final mode = category == 'country'
+        ? 'country_quiz'
+        : category == 'club'
+            ? 'club_quiz'
+            : 'player_quiz';
+
     openQuestionCountSheet(
       quizName: name,
-      mode: category == 'country'
-          ? 'country_quiz'
-          : category == 'club'
-              ? 'guess_club'
-              : 'guess_player',
+      mode: mode,
       subjectType: category,
       subjectCode: code,
       flag: category == 'country'
           ? subject['flag_emoji']?.toString()
           : null,
-    );
-  }
-
-  void selectGeneralMode(String name, String mode) {
-    openQuestionCountSheet(
-      quizName: name,
-      mode: mode,
     );
   }
 
@@ -407,11 +368,11 @@ class _QuizScreenState extends State<QuizScreen> {
 
                     Text(
                       'সর্বনিম্ন: $minQuestions টি  •  সর্বোচ্চ: $maxQuestions টি',
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white54,
                         fontSize: 12,
                       ),
-                      textAlign: TextAlign.center,
                     ),
 
                     const SizedBox(height: 24),
@@ -688,62 +649,6 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Widget buildModeCard(
-    String title,
-    String subtitle,
-    IconData icon,
-    String mode,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 11),
-      color: const Color(0xFF151D18),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: Colors.white.withOpacity(0.05),
-        ),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 9,
-        ),
-        leading: CircleAvatar(
-          radius: 25,
-          backgroundColor: const Color(0xFF164B2C),
-          child: Icon(
-            icon,
-            color: const Color(0xFF27D66B),
-            size: 25,
-          ),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 5),
-          child: Text(
-            subtitle,
-            style: const TextStyle(
-              color: Colors.white60,
-              fontSize: 12,
-            ),
-          ),
-        ),
-        trailing: const Icon(
-          Icons.chevron_right,
-          color: Color(0xFF27D66B),
-        ),
-        onTap: () => selectGeneralMode(title, mode),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (activeCategory != null) {
@@ -754,8 +659,8 @@ class _QuizScreenState extends State<QuizScreen> {
                 ? 'দেশভিত্তিক কুইজ'
                 : activeCategory == 'club'
                     ? 'ক্লাব কুইজ'
-                    : 'খেলোয়াড় কুইজ',
-          ),
+                    : 'প্লেয়ার কুইজ',
+        ),
         ),
         body: SafeArea(
           child: RefreshIndicator(
@@ -773,198 +678,37 @@ class _QuizScreenState extends State<QuizScreen> {
       );
     }
 
-    return SafeArea(
-      child: RefreshIndicator(
-        color: const Color(0xFF27D66B),
-        onRefresh: loadQuizSettings,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(18),
-          children: [
-            const Text(
-              'কুইজ নির্বাচন করুন',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 23,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            const Text(
-              'আপনার পছন্দের ফুটবল কুইজ পদ্ধতি বেছে নিন।',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-              ),
-            ),
-
-            const SizedBox(height: 22),
-
-            if (loadingSettings)
-              const LinearProgressIndicator(
-                color: Color(0xFF27D66B),
-                backgroundColor: Colors.white12,
-              ),
-
-            if (!loadingSettings && !settingsLoaded)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 14),
-                child: Text(
-                  'Default কুইজ সেটিংস ব্যবহার করা হচ্ছে।',
-                  style: TextStyle(
-                    color: Colors.orangeAccent,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-
-            if (!loadingSettings && settingsLoaded)
-              Container(
-                margin: const EdgeInsets.only(bottom: 18),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF164B2C).withOpacity(0.35),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  'প্রশ্ন নির্বাচন: $minQuestions–$maxQuestions টি',
-                  style: const TextStyle(
-                    color: Color(0xFF27D66B),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-
-            Card(
-              color: const Color(0xFF151D18),
-              child: ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFF164B2C),
-                  child: Icon(
-                    Icons.flag,
-                    color: Color(0xFF27D66B),
-                  ),
-                ),
-                title: const Text(
-                  'দেশভিত্তিক কুইজ',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: const Text(
-                  '৫০টি দেশের মধ্যে পছন্দের দেশ বেছে নিন',
-                  style: TextStyle(color: Colors.white60),
-                ),
-                trailing: const Icon(
-                  Icons.chevron_right,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('কুইজ'),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (loadingSettings)
+                const CircularProgressIndicator(
                   color: Color(0xFF27D66B),
-                ),
-                onTap: () => openCategory('country'),
-              ),
-            ),
-
-            Card(
-              color: const Color(0xFF151D18),
-              child: ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFF164B2C),
-                  child: Icon(
-                    Icons.shield,
-                    color: Color(0xFF27D66B),
-                  ),
-                ),
-                title: const Text(
-                  'ক্লাব কুইজ',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: const Text(
-                  'পছন্দের ফুটবল ক্লাব বেছে নিন',
-                  style: TextStyle(color: Colors.white60),
-                ),
-                trailing: const Icon(
-                  Icons.chevron_right,
+                )
+              else
+                const Icon(
+                  Icons.sports_soccer,
                   color: Color(0xFF27D66B),
+                  size: 48,
                 ),
-                onTap: () => openCategory('club'),
-              ),
-            ),
-
-            Card(
-              color: const Color(0xFF151D18),
-              child: ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFF164B2C),
-                  child: Icon(
-                    Icons.person,
-                    color: Color(0xFF27D66B),
-                  ),
-                ),
-                title: const Text(
-                  'খেলোয়াড় কুইজ',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: const Text(
-                  'পছন্দের খেলোয়াড় বেছে নিন',
-                  style: TextStyle(color: Colors.white60),
-                ),
-                trailing: const Icon(
-                  Icons.chevron_right,
-                  color: Color(0xFF27D66B),
-                ),
-                onTap: () => openCategory('player'),
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            const Divider(color: Colors.white24),
-
-            const SizedBox(height: 15),
-
-            const Text(
-              'সাধারণ ফুটবল কুইজ',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 21,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            ...modes.map(
-              (mode) => buildModeCard(
-                mode.$1,
-                mode.$2,
-                mode.$3,
-                mode.$4,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            const Center(
-              child: Text(
-                'JABER FOOTBALL QUIZ',
+              const SizedBox(height: 16),
+              const Text(
+                'হোম পেজ থেকে আপনার পছন্দের কুইজ নির্বাচন করুন।',
+                textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white38,
-                  fontSize: 11,
-                  letterSpacing: 1.5,
-                  fontWeight: FontWeight.bold,
+                  color: Colors.white70,
+                  fontSize: 15,
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
