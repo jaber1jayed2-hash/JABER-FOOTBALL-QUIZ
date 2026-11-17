@@ -9,14 +9,14 @@
 
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#080d0b;color:white}
+body{margin:0;font-family:Arial,sans-serif;background:#080d0b;color:#fff}
 header{background:#101b15;padding:20px;border-bottom:2px solid #16c766}
 header h2{margin:0;color:#20e879}
 .container{padding:15px;max-width:1100px;margin:auto}
 .card{background:#14221a;padding:18px;border-radius:12px;margin:15px 0;border:1px solid #244a32}
 input,select{width:100%;padding:13px;margin:8px 0;border-radius:7px;border:0;font-size:15px;background:#e8eee9;color:#111}
 button{width:100%;padding:13px;margin:8px 0;border-radius:7px;border:0;font-size:15px;background:#16c766;color:#06130a;font-weight:bold;cursor:pointer}
-button:disabled{opacity:.6}
+button:disabled{opacity:.55;cursor:not-allowed}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}
 .stat{background:#1a3022;padding:18px;border-radius:10px;text-align:center}
 .stat h2{color:#20e879}
@@ -26,17 +26,18 @@ button:disabled{opacity:.6}
 .hidden{display:none!important}
 small{color:#b7c8bd}
 .preview{max-width:180px;max-height:140px;display:block;margin:10px 0;border-radius:8px;object-fit:contain;background:#0b140e}
-.status{color:#b7c8bd;white-space:pre-wrap;line-height:1.6}
+.status{color:#b7c8bd;white-space:pre-wrap;line-height:1.6;overflow-wrap:anywhere}
 label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 .setting-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 .setting-box{background:#1a3022;padding:12px;border-radius:9px}
-.subject-image{width:90px;height:90px;object-fit:contain;background:#0b140e;border-radius:10px;padding:5px}
+.subject-image{width:75px;height:75px;object-fit:contain;background:#0b140e;border-radius:10px;padding:5px;flex-shrink:0}
 .subject-row{display:flex;align-items:center;gap:12px;background:#1a3022;padding:12px;border-radius:10px;margin:10px 0}
 .subject-info{flex:1;min-width:0}
 .subject-info strong{display:block;overflow-wrap:anywhere}
 .subject-info small{display:block;margin-top:5px}
 .danger{background:#a83232;color:white}
 .secondary{background:#294b35;color:white}
+.section-note{padding:12px;background:#1a3022;border-radius:8px;color:#c5d6ca}
 </style>
 </head>
 
@@ -50,10 +51,10 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 
 <div id="login" class="card">
 <h2>Admin Login</h2>
-<p>আপনার Admin Account দিয়ে প্রবেশ করুন</p>
+<p>আপনার Admin Account দিয়ে প্রবেশ করুন।</p>
 <input type="email" id="email" placeholder="Admin Email" autocomplete="username">
 <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-<button id="loginButton" onclick="login()">Login</button>
+<button id="loginButton" type="button">Login</button>
 <p id="message" class="status">Admin Account দিয়ে প্রবেশ করুন।</p>
 </div>
 
@@ -69,38 +70,39 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 <div class="stat"><h2 id="questionCount">0</h2><p>মোট প্রশ্ন</p></div>
 <div class="stat"><h2 id="playerCount">0</h2><p>মোট খেলোয়াড়</p></div>
 <div class="stat"><h2 id="clubCount">0</h2><p>মোট ক্লাব</p></div>
-<div class="stat"><h2>0</h2><p>মোট রিপোর্ট</p></div>
+<div class="stat"><h2>—</h2><p>মোট রিপোর্ট</p></div>
 </div>
 
 <div class="card menu">
 <h2>Admin Menu</h2>
-<button onclick="show('questions')">প্রশ্ন পরিচালনা</button>
-<button class="country-button" onclick="show('country_questions')">🌍 দেশভিত্তিক প্রশ্ন পরিচালনা</button>
-<button onclick="show('players')">খেলোয়াড় পরিচালনা ও ছবি</button>
-<button onclick="show('clubs')">ক্লাব পরিচালনা ও লোগো</button>
-<button onclick="show('countries')">দেশ পরিচালনা</button>
-<button onclick="show('tournaments')">টুর্নামেন্ট পরিচালনা</button>
-<button onclick="show('users')">ব্যবহারকারী পরিচালনা</button>
-<button onclick="show('settings')">অ্যাপ সেটিংস</button>
-<button onclick="show('quiz-settings')">কুইজ সেটিংস</button>
-<button onclick="show('developer')">Contact with Developer</button>
+<button type="button" onclick="show('questions')">প্রশ্ন পরিচালনা</button>
+<button class="country-button" type="button" onclick="show('country_questions')">🌍 দেশভিত্তিক প্রশ্ন পরিচালনা</button>
+<button type="button" onclick="show('players')">খেলোয়াড় পরিচালনা ও ছবি</button>
+<button type="button" onclick="show('clubs')">ক্লাব পরিচালনা ও লোগো</button>
+<button type="button" onclick="show('countries')">দেশ পরিচালনা</button>
+<button type="button" onclick="show('tournaments')">টুর্নামেন্ট পরিচালনা</button>
+<button type="button" onclick="show('users')">ব্যবহারকারী পরিচালনা</button>
+<button type="button" onclick="show('settings')">অ্যাপ সেটিংস</button>
+<button type="button" onclick="show('quiz-settings')">কুইজ সেটিংস</button>
+<button type="button" onclick="show('developer')">Contact with Developer</button>
 </div>
 
-<!-- SUBJECT IMAGE MANAGEMENT -->
+<!-- CLUB / PLAYER IMAGE MANAGEMENT -->
 <div id="subjectManager" class="card hidden">
 <h2 id="managerTitle">ছবি পরিচালনা</h2>
-<p class="status" id="managerDescription"></p>
+<p id="managerDescription" class="status"></p>
 
 <label>নাম বা কোড দিয়ে খুঁজুন</label>
-<input id="subjectSearch" type="search" placeholder="নাম বা কোড লিখুন..." oninput="renderSubjectList()">
+<input id="subjectSearch" type="search" placeholder="নাম বা কোড লিখুন...">
 
 <label>ক্লাব / খেলোয়াড় নির্বাচন করুন</label>
-<select id="subjectSelect" onchange="selectSubject()">
+<select id="subjectSelect">
 <option value="">প্রথমে নির্বাচন করুন</option>
 </select>
 
 <div id="selectedSubject" class="hidden">
 <p id="selectedName" class="status"></p>
+
 <label>বর্তমান ছবি</label>
 <img id="subjectPreview" class="preview hidden" alt="বর্তমান ছবি">
 <p id="imageStatus" class="status"></p>
@@ -109,8 +111,8 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 <input type="file" id="subjectImageFile" accept="image/jpeg,image/png,image/webp">
 <img id="newSubjectPreview" class="preview hidden" alt="নতুন ছবির Preview">
 
-<button id="saveSubjectImageButton" onclick="saveSubjectImage()">ছবি সংরক্ষণ করুন</button>
-<button class="danger" onclick="removeSubjectImage()">ছবি সরিয়ে দিন</button>
+<button id="saveSubjectImageButton" type="button">ছবি সংরক্ষণ করুন</button>
+<button id="removeSubjectImageButton" class="danger" type="button">ছবি সরিয়ে দিন</button>
 </div>
 
 <h3>সব তালিকা</h3>
@@ -121,19 +123,20 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 <!-- APP SETTINGS -->
 <div id="settings" class="card hidden">
 <h2>অ্যাপ সেটিংস</h2>
+
 <label>Home Cover Image</label>
 <input type="file" id="coverFile" accept="image/jpeg,image/png,image/webp">
-<img id="coverPreview" class="preview hidden">
+<img id="coverPreview" class="preview hidden" alt="Home Cover">
 
 <label>Home Logo</label>
 <input type="file" id="logoFile" accept="image/jpeg,image/png,image/webp">
-<img id="logoPreview" class="preview hidden">
+<img id="logoPreview" class="preview hidden" alt="Home Logo">
 
 <label>App Icon</label>
 <input type="file" id="iconFile" accept="image/jpeg,image/png,image/webp">
-<img id="iconPreview" class="preview hidden">
+<img id="iconPreview" class="preview hidden" alt="App Icon">
 
-<button onclick="saveAppSettings()">Save App Settings</button>
+<button id="saveAppButton" type="button">Save App Settings</button>
 <p id="appStatus" class="status"></p>
 </div>
 
@@ -143,522 +146,1064 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 <p class="status">এখান থেকে Quiz-এর নিয়ম পরিবর্তন করতে পারবেন।</p>
 
 <div class="setting-grid">
-<div class="setting-box"><label>সর্বনিম্ন প্রশ্ন সংখ্যা</label><input type="number" id="quizMin" min="1" max="500"></div>
-<div class="setting-box"><label>সর্বোচ্চ প্রশ্ন সংখ্যা</label><input type="number" id="quizMax" min="1" max="500"></div>
-<div class="setting-box"><label>ডিফল্ট প্রশ্ন সংখ্যা</label><input type="number" id="quizDefault" min="1" max="500"></div>
-<div class="setting-box"><label>প্রতি প্রশ্নের টাইমার (সেকেন্ড)</label><input type="number" id="quizTimer" min="1" max="300"></div>
-<div class="setting-box"><label>সঠিক উত্তরে XP</label><input type="number" id="quizCorrectXP" min="0" max="10000"></div>
-<div class="setting-box"><label>ভুল উত্তরে XP</label><input type="number" id="quizWrongXP" min="-10000" max="0"></div>
-<div class="setting-box"><label>সঠিক উত্তরে পয়েন্ট</label><input type="number" id="quizCorrectPoints" min="0" max="10000"></div>
-<div class="setting-box"><label>ভুল উত্তরে পয়েন্ট</label><input type="number" id="quizWrongPoints" min="0" max="10000"></div>
+<div class="setting-box">
+<label>সর্বনিম্ন প্রশ্ন সংখ্যা</label>
+<input type="number" id="quizMin" min="1" max="500">
+</div>
+<div class="setting-box">
+<label>সর্বোচ্চ প্রশ্ন সংখ্যা</label>
+<input type="number" id="quizMax" min="1" max="500">
+</div>
+<div class="setting-box">
+<label>ডিফল্ট প্রশ্ন সংখ্যা</label>
+<input type="number" id="quizDefault" min="1" max="500">
+</div>
+<div class="setting-box">
+<label>প্রতি প্রশ্নের টাইমার (সেকেন্ড)</label>
+<input type="number" id="quizTimer" min="1" max="300">
+</div>
+<div class="setting-box">
+<label>সঠিক উত্তরে XP</label>
+<input type="number" id="quizCorrectXP" min="0" max="10000">
+</div>
+<div class="setting-box">
+<label>ভুল উত্তরে XP</label>
+<input type="number" id="quizWrongXP" min="-10000" max="0">
+</div>
+<div class="setting-box">
+<label>সঠিক উত্তরে পয়েন্ট</label>
+<input type="number" id="quizCorrectPoints" min="0" max="10000">
+</div>
+<div class="setting-box">
+<label>ভুল উত্তরে পয়েন্ট</label>
+<input type="number" id="quizWrongPoints" min="0" max="10000">
+</div>
 </div>
 
-<button id="saveQuizButton" onclick="saveQuizSettings()">কুইজ সেটিংস সংরক্ষণ করুন</button>
+<button id="saveQuizButton" type="button">কুইজ সেটিংস সংরক্ষণ করুন</button>
 <p id="quizStatus" class="status"></p>
 </div>
 
 <!-- DEVELOPER SETTINGS -->
 <div id="developer" class="card hidden">
 <h2>Contact with Developer</h2>
+
 <label>Developer Photo</label>
 <input type="file" id="developerPhotoFile" accept="image/jpeg,image/png,image/webp">
-<img id="developerPreview" class="preview hidden">
+<img id="developerPreview" class="preview hidden" alt="Developer Photo">
+
 <label>Developer Name</label>
 <input type="text" id="developerName" placeholder="আপনার নাম">
+
 <label>Developer Phone</label>
 <input type="tel" id="developerPhone" placeholder="আপনার ফোন নম্বর">
+
 <label>WhatsApp Link</label>
 <input type="url" id="whatsappLink" placeholder="https://wa.me/">
-<button onclick="saveDeveloperSettings()">Save Developer Settings</button>
+
+<button id="saveDeveloperButton" type="button">Save Developer Settings</button>
 <p id="developerStatus" class="status"></p>
 </div>
 
+<!-- OTHER SECTIONS -->
 <div id="section" class="card hidden">
 <h2 id="sectionTitle"></h2>
-<p id="sectionText"></p>
+<p id="sectionText" class="section-note"></p>
 </div>
 
-<button onclick="back()">ড্যাশবোর্ডে ফিরে যান</button>
-<button onclick="logout()">Logout</button>
+<button id="backButton" type="button">ড্যাশবোর্ডে ফিরে যান</button>
+<button id="logoutButton" type="button" class="danger">Logout</button>
+
 </div>
 </div>
 
 <script>
-const SUPABASE_URL="https://cuvfoltgtopchiugrbuf.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY="sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D";
-const BUCKET="app-assets";
+"use strict";
 
-const db=window.supabase.createClient(
- SUPABASE_URL,
- SUPABASE_PUBLISHABLE_KEY,
- {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}
+/* =========================
+   SUPABASE CONFIGURATION
+========================= */
+
+const SUPABASE_URL = "https://cuvfoltgtopchiugrbuf.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D";
+const BUCKET = "app-assets";
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
 );
 
-let currentUser=null;
-let isAdminVerified=false;
-let activeSubjectType="";
-let subjects=[];
-let selectedSubjectRow=null;
+/* =========================
+   STATE
+========================= */
 
-async function verifyAdmin(user){
- if(!user)return false;
- const {data,error}=await db.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();
- if(error){console.error(error.message);return false;}
- return !!data;
+let currentUser = null;
+let isAdminVerified = false;
+let activeSubjectType = "";
+let subjects = [];
+let selectedSubjectRow = null;
+let previewUrls = [];
+
+/* =========================
+   DOM HELPERS
+========================= */
+
+const $ = id => document.getElementById(id);
+
+function setText(id, value) {
+  $(id).textContent = value ?? "";
 }
 
-async function openDashboard(user){
- const allowed=await verifyAdmin(user);
- if(!allowed){
-  await db.auth.signOut();
-  currentUser=null;
-  isAdminVerified=false;
-  document.getElementById("dashboard").classList.add("hidden");
-  document.getElementById("login").classList.remove("hidden");
-  document.getElementById("message").innerText="আপনার Account-এ Admin অনুমতি নেই।";
-  return false;
- }
- currentUser=user;
- isAdminVerified=true;
- document.getElementById("login").classList.add("hidden");
- document.getElementById("dashboard").classList.remove("hidden");
- document.getElementById("adminEmail").innerText="Admin: "+(user.email||"");
- await loadSettings();
- await loadDashboardCounts();
- return true;
+function showElement(id) {
+  $(id).classList.remove("hidden");
 }
 
-async function restoreSession(){
- const message=document.getElementById("message");
- message.innerText="Admin Session যাচাই হচ্ছে...";
- try{
-  const {data,error}=await db.auth.getSession();
-  if(error)throw error;
-  if(data.session?.user)await openDashboard(data.session.user);
-  else message.innerText="Admin Account দিয়ে প্রবেশ করুন।";
- }catch(error){message.innerText="Session Error: "+error.message;}
+function hideElement(id) {
+  $(id).classList.add("hidden");
 }
 
-async function login(){
- const message=document.getElementById("message");
- const button=document.getElementById("loginButton");
- const email=document.getElementById("email").value.trim();
- const password=document.getElementById("password").value;
- if(!email||!password){message.innerText="Email ও Password লিখুন।";return;}
- button.disabled=true;
- message.innerText="লগইন হচ্ছে...";
- try{
-  const {data,error}=await db.auth.signInWithPassword({email,password});
-  if(error)throw error;
-  if(!await openDashboard(data.user))throw new Error("Admin অনুমতি পাওয়া যায়নি।");
- }catch(error){message.innerText="Login Error: "+error.message;}
- finally{button.disabled=false;}
+function setStatus(id, message) {
+  setText(id, message);
 }
 
-async function loadDashboardCounts(){
- try{
-  const [q,p,c]=await Promise.all([
-   db.from("quiz_questions").select("id",{count:"exact",head:true}),
-   db.from("quiz_subjects").select("id",{count:"exact",head:true}).eq("subject_type","player"),
-   db.from("quiz_subjects").select("id",{count:"exact",head:true}).eq("subject_type","club")
-  ]);
-  document.getElementById("questionCount").innerText=q.count??0;
-  document.getElementById("playerCount").innerText=p.count??0;
-  document.getElementById("clubCount").innerText=c.count??0;
- }catch(e){console.error("Count error",e.message);}
-}
+function makePreview(file, imageId) {
+  if (!file) return;
 
-function hidePanels(){
- ["settings","quiz-settings","developer","section","subjectManager"].forEach(id=>{
-  document.getElementById(id).classList.add("hidden");
- });
-}
-
-function show(name){
- if(!isAdminVerified||!currentUser){alert("প্রথমে Admin Login করুন।");return;}
- if(name==="questions"){location.href="questions.html";return;}
- if(name==="country_questions"){location.href="country_questions.html";return;}
- hidePanels();
-
- if(name==="settings"){document.getElementById("settings").classList.remove("hidden");return;}
- if(name==="quiz-settings"){
-  document.getElementById("quiz-settings").classList.remove("hidden");
-  loadQuizSettings();return;
- }
- if(name==="developer"){document.getElementById("developer").classList.remove("hidden");return;}
- if(name==="clubs"){openSubjectManager("club");return;}
- if(name==="players"){openSubjectManager("player");return;}
-
- const titles={countries:"দেশ পরিচালনা",tournaments:"টুর্নামেন্ট পরিচালনা",users:"ব্যবহারকারী পরিচালনা"};
- document.getElementById("sectionTitle").innerText=titles[name]||"পরিচালনা";
- document.getElementById("sectionText").innerText="এই অংশের কার্যক্রম পরবর্তী ধাপে তৈরি করা হবে।";
- document.getElementById("section").classList.remove("hidden");
-}
-
-function back(){
- hidePanels();
- document.getElementById("subjectImageFile").value="";
- document.getElementById("newSubjectPreview").classList.add("hidden");
-}
-
-async function openSubjectManager(type){
- activeSubjectType=type;
- selectedSubjectRow=null;
- const title=type==="club"?"ক্লাব লোগো পরিচালনা":"খেলোয়াড়ের ছবি পরিচালনা";
- document.getElementById("managerTitle").innerText=title;
- document.getElementById("managerDescription").innerText=
-  type==="club"
-  ?"ক্লাব নির্বাচন করে লোগো আপলোড, পরিবর্তন অথবা সরাতে পারবেন।"
-  :"খেলোয়াড় নির্বাচন করে ছবি আপলোড, পরিবর্তন অথবা সরাতে পারবেন।";
- document.getElementById("subjectManager").classList.remove("hidden");
- document.getElementById("selectedSubject").classList.add("hidden");
- document.getElementById("managerStatus").innerText="তালিকা লোড হচ্ছে...";
- document.getElementById("subjectSearch").value="";
- await loadSubjects(type);
-}
-
-async function loadSubjects(type){
- const status=document.getElementById("managerStatus");
- status.innerText="তালিকা লোড হচ্ছে...";
- try{
-  let all=[];
-  let start=0;
-  const size=500;
-  while(true){
-   const {data,error}=await db.from("quiz_subjects")
-    .select("id,subject_type,subject_code,name_en,name_bn,image_url,is_enabled,sort_order")
-    .eq("subject_type",type)
-    .order("sort_order",{ascending:true})
-    .range(start,start+size-1);
-   if(error)throw error;
-   all=all.concat(data||[]);
-   if(!data||data.length<size)break;
-   start+=size;
+  const validation = validateImage(file);
+  if (validation) {
+    alert(validation);
+    return false;
   }
-  subjects=all;
-  renderSubjectList();
-  fillSubjectSelect();
-  status.innerText="মোট "+subjects.length+"টি রেকর্ড পাওয়া গেছে।";
- }catch(error){
-  status.innerText="Load Error: "+error.message;
- }
+
+  const oldUrl = $(imageId).dataset.objectUrl;
+  if (oldUrl) URL.revokeObjectURL(oldUrl);
+
+  const url = URL.createObjectURL(file);
+  $(imageId).dataset.objectUrl = url;
+  $(imageId).src = url;
+  showElement(imageId);
+  return true;
 }
 
-function fillSubjectSelect(){
- const select=document.getElementById("subjectSelect");
- select.innerHTML='<option value="">নির্বাচন করুন</option>';
- subjects.forEach(s=>{
-  const option=document.createElement("option");
-  option.value=String(s.id);
-  option.textContent=(s.name_en||s.subject_code)+" ("+s.subject_code+")";
-  select.appendChild(option);
- });
+function validateImage(file) {
+  if (!file) return "প্রথমে একটি ছবি নির্বাচন করুন।";
+
+  const allowed = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowed.includes(file.type)) {
+    return "শুধু JPG, PNG অথবা WEBP ছবি ব্যবহার করুন।";
+  }
+
+  if (file.size > MAX_IMAGE_SIZE) {
+    return "ছবির সাইজ ১০ MB-এর বেশি হতে পারবে না।";
+  }
+
+  return "";
 }
 
-function renderSubjectList(){
- const search=(document.getElementById("subjectSearch").value||"").trim().toLowerCase();
- const list=document.getElementById("subjectList");
- const filtered=subjects.filter(s=>
-  (s.name_en||"").toLowerCase().includes(search)||
-  (s.name_bn||"").toLowerCase().includes(search)||
-  (s.subject_code||"").toLowerCase().includes(search)
- );
- if(!filtered.length){list.innerHTML="কোনো ফলাফল পাওয়া যায়নি।";return;}
+function clearFilePreview(inputId, imageId) {
+  $(inputId).value = "";
 
- list.innerHTML="";
- filtered.forEach(s=>{
-  const row=document.createElement("div");
-  row.className="subject-row";
-  const img=document.createElement("img");
-  img.className="subject-image";
-  img.alt="ছবি";
-  img.src=s.image_url||"";
-  if(!s.image_url)img.style.visibility="hidden";
-  const info=document.createElement("div");
-  info.className="subject-info";
-  const name=document.createElement("strong");
-  name.textContent=s.name_en||s.subject_code;
-  const code=document.createElement("small");
-  code.textContent=s.subject_code+" • "+(s.image_url?"ছবি আছে":"ছবি যোগ করা হয়নি");
-  info.append(name,code);
-  const btn=document.createElement("button");
-  btn.className="secondary";
-  btn.style.width="auto";
-  btn.textContent="পরিবর্তন";
-  btn.onclick=()=>chooseSubject(s.id);
-  row.append(img,info,btn);
-  list.appendChild(row);
- });
+  const oldUrl = $(imageId).dataset.objectUrl;
+  if (oldUrl) URL.revokeObjectURL(oldUrl);
+
+  $(imageId).removeAttribute("src");
+  delete $(imageId).dataset.objectUrl;
+  hideElement(imageId);
 }
 
-function chooseSubject(id){
- document.getElementById("subjectSelect").value=String(id);
- selectSubject();
- document.getElementById("selectedSubject").scrollIntoView({behavior:"smooth",block:"start"});
+/* =========================
+   ADMIN AUTHENTICATION
+========================= */
+
+async function verifyAdmin(user) {
+  if (!user) return false;
+
+  const { data, error } = await db
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Admin verification:", error.message);
+    throw error;
+  }
+
+  return !!data;
 }
 
-function selectSubject(){
- const id=Number(document.getElementById("subjectSelect").value);
- selectedSubjectRow=subjects.find(s=>s.id===id)||null;
- const panel=document.getElementById("selectedSubject");
- const preview=document.getElementById("subjectPreview");
- const file=document.getElementById("subjectImageFile");
- file.value="";
- document.getElementById("newSubjectPreview").classList.add("hidden");
+async function openDashboard(user) {
+  try {
+    const allowed = await verifyAdmin(user);
 
- if(!selectedSubjectRow){panel.classList.add("hidden");return;}
- panel.classList.remove("hidden");
- document.getElementById("selectedName").innerText=
-  (selectedSubjectRow.name_en||"")+" • "+selectedSubjectRow.subject_code;
- if(selectedSubjectRow.image_url){
-  preview.src=selectedSubjectRow.image_url;
-  preview.classList.remove("hidden");
-  document.getElementById("imageStatus").innerText="বর্তমান ছবি সংরক্ষিত আছে।";
- }else{
-  preview.removeAttribute("src");
-  preview.classList.add("hidden");
-  document.getElementById("imageStatus").innerText="এখনো কোনো ছবি যোগ করা হয়নি।";
- }
+    if (!allowed) {
+      await db.auth.signOut();
+      currentUser = null;
+      isAdminVerified = false;
+
+      hideElement("dashboard");
+      showElement("login");
+      setStatus("message", "আপনার Account-এ Admin অনুমতি নেই।");
+      return false;
+    }
+
+    currentUser = user;
+    isAdminVerified = true;
+
+    hideElement("login");
+    showElement("dashboard");
+
+    setStatus("adminEmail", "Admin: " + (user.email || ""));
+
+    await Promise.all([
+      loadSettings(),
+      loadDashboardCounts()
+    ]);
+
+    return true;
+
+  } catch (error) {
+    setStatus("message", "Admin যাচাই করতে সমস্যা হয়েছে: " + error.message);
+    return false;
+  }
 }
 
-document.getElementById("subjectImageFile").addEventListener("change",function(){
- const file=this.files[0];
- if(!file)return;
- const allowed=["image/jpeg","image/png","image/webp"];
- if(!allowed.includes(file.type)){
-  alert("শুধু JPG, PNG অথবা WEBP ছবি দিন।");
-  this.value="";return;
- }
- if(file.size>10*1024*1024){
-  alert("ছবির সাইজ ১০ MB-এর বেশি হতে পারবে না।");
-  this.value="";return;
- }
- const preview=document.getElementById("newSubjectPreview");
- preview.src=URL.createObjectURL(file);
- preview.classList.remove("hidden");
+async function restoreSession() {
+  setStatus("message", "Admin Session যাচাই হচ্ছে...");
+
+  try {
+    const { data, error } = await db.auth.getSession();
+    if (error) throw error;
+
+    if (data.session?.user) {
+      await openDashboard(data.session.user);
+    } else {
+      setStatus("message", "Admin Account দিয়ে প্রবেশ করুন।");
+    }
+  } catch (error) {
+    setStatus("message", "Session Error: " + error.message);
+  }
+}
+
+async function login() {
+  const email = $("email").value.trim();
+  const password = $("password").value;
+  const button = $("loginButton");
+
+  if (!email || !password) {
+    setStatus("message", "Email ও Password লিখুন।");
+    return;
+  }
+
+  button.disabled = true;
+  setStatus("message", "লগইন হচ্ছে...");
+
+  try {
+    const { data, error } = await db.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) throw error;
+
+    const success = await openDashboard(data.user);
+
+    if (!success) {
+      setStatus("message", "এই Account-এ Admin অনুমতি নেই।");
+    }
+
+  } catch (error) {
+    setStatus("message", "Login Error: " + error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function logout() {
+  try {
+    await db.auth.signOut();
+  } catch (error) {
+    console.error(error);
+  }
+
+  currentUser = null;
+  isAdminVerified = false;
+  selectedSubjectRow = null;
+
+  hideElement("dashboard");
+  showElement("login");
+
+  $("password").value = "";
+  setStatus("message", "আপনি Logout করেছেন।");
+  setText("adminEmail", "");
+}
+
+/* =========================
+   DASHBOARD COUNTS
+========================= */
+
+async function loadDashboardCounts() {
+  try {
+    const [questions, players, clubs] = await Promise.all([
+      db.from("quiz_questions")
+        .select("id", { count: "exact", head: true }),
+
+      db.from("quiz_subjects")
+        .select("id", { count: "exact", head: true })
+        .eq("subject_type", "player"),
+
+      db.from("quiz_subjects")
+        .select("id", { count: "exact", head: true })
+        .eq("subject_type", "club")
+    ]);
+
+    if (questions.error) throw questions.error;
+    if (players.error) throw players.error;
+    if (clubs.error) throw clubs.error;
+
+    setText("questionCount", questions.count ?? 0);
+    setText("playerCount", players.count ?? 0);
+    setText("clubCount", clubs.count ?? 0);
+
+  } catch (error) {
+    console.error("Dashboard count error:", error.message);
+  }
+}
+
+/* =========================
+   NAVIGATION
+========================= */
+
+function hidePanels() {
+  [
+    "settings",
+    "quiz-settings",
+    "developer",
+    "section",
+    "subjectManager"
+  ].forEach(hideElement);
+}
+
+function show(name) {
+  if (!isAdminVerified || !currentUser) {
+    alert("প্রথমে Admin Login করুন।");
+    return;
+  }
+
+  if (name === "questions") {
+    location.href = "questions.html";
+    return;
+  }
+
+  if (name === "country_questions") {
+    location.href = "country_questions.html";
+    return;
+  }
+
+  hidePanels();
+
+  if (name === "settings") {
+    showElement("settings");
+    return;
+  }
+
+  if (name === "quiz-settings") {
+    showElement("quiz-settings");
+    loadQuizSettings();
+    return;
+  }
+
+  if (name === "developer") {
+    showElement("developer");
+    return;
+  }
+
+  if (name === "clubs") {
+    openSubjectManager("club");
+    return;
+  }
+
+  if (name === "players") {
+    openSubjectManager("player");
+    return;
+  }
+
+  const titles = {
+    countries: "দেশ পরিচালনা",
+    tournaments: "টুর্নামেন্ট পরিচালনা",
+    users: "ব্যবহারকারী পরিচালনা"
+  };
+
+  setText("sectionTitle", titles[name] || "পরিচালনা");
+  setText(
+    "sectionText",
+    "এই অংশের সম্পূর্ণ কার্যক্রম এখনো যুক্ত করা হয়নি। এই অংশ তৈরি করতে সংশ্লিষ্ট ডেটাবেস কাঠামো ও নিয়ম যুক্ত করতে হবে।"
+  );
+
+  showElement("section");
+}
+
+function back() {
+  hidePanels();
+  selectedSubjectRow = null;
+  hideElement("selectedSubject");
+  clearFilePreview("subjectImageFile", "newSubjectPreview");
+  setStatus("managerStatus", "");
+}
+
+/* =========================
+   IMAGE UPLOAD
+========================= */
+
+async function uploadImage(file, folder) {
+  if (!isAdminVerified || !currentUser) {
+    throw new Error("Admin Login নেই।");
+  }
+
+  const validation = validateImage(file);
+  if (validation) throw new Error(validation);
+
+  const extensionMap = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp"
+  };
+
+  const extension = extensionMap[file.type];
+  const uniqueName =
+    Date.now() + "-" +
+    crypto.randomUUID() + "." + extension;
+
+  const path = folder + "/" + uniqueName;
+
+  const { error } = await db.storage
+    .from(BUCKET)
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type
+    });
+
+  if (error) throw error;
+
+  const { data } = db.storage
+    .from(BUCKET)
+    .getPublicUrl(path);
+
+  if (!data?.publicUrl) {
+    throw new Error("ছবির Public URL পাওয়া যায়নি।");
+  }
+
+  return data.publicUrl;
+}
+
+/* =========================
+   CLUB / PLAYER MANAGEMENT
+========================= */
+
+async function openSubjectManager(type) {
+  activeSubjectType = type;
+  selectedSubjectRow = null;
+
+  const isClub = type === "club";
+
+  setText(
+    "managerTitle",
+    isClub ? "ক্লাব লোগো পরিচালনা" : "খেলোয়াড়ের ছবি পরিচালনা"
+  );
+
+  setText(
+    "managerDescription",
+    isClub
+      ? "ক্লাব নির্বাচন করে লোগো আপলোড, পরিবর্তন অথবা সরাতে পারবেন।"
+      : "খেলোয়াড় নির্বাচন করে ছবি আপলোড, পরিবর্তন অথবা সরাতে পারবেন।"
+  );
+
+  $("subjectSearch").value = "";
+  $("subjectSelect").innerHTML =
+    '<option value="">নির্বাচন করুন</option>';
+
+  hideElement("selectedSubject");
+  showElement("subjectManager");
+
+  await loadSubjects(type);
+}
+
+async function loadSubjects(type) {
+  setStatus("managerStatus", "তালিকা লোড হচ্ছে...");
+
+  try {
+    let all = [];
+    let start = 0;
+    const pageSize = 500;
+
+    while (true) {
+      const { data, error } = await db
+        .from("quiz_subjects")
+        .select("id,subject_type,subject_code,name_en,name_bn,image_url,is_enabled,sort_order")
+        .eq("subject_type", type)
+        .order("sort_order", { ascending: true })
+        .range(start, start + pageSize - 1);
+
+      if (error) throw error;
+
+      const rows = data || [];
+      all = all.concat(rows);
+
+      if (rows.length < pageSize) break;
+      start += pageSize;
+    }
+
+    subjects = all;
+    fillSubjectSelect();
+    renderSubjectList();
+
+    setStatus(
+      "managerStatus",
+      "মোট " + subjects.length + "টি রেকর্ড পাওয়া গেছে।"
+    );
+
+  } catch (error) {
+    setStatus("managerStatus", "Load Error: " + error.message);
+  }
+}
+
+function fillSubjectSelect() {
+  const select = $("subjectSelect");
+  select.innerHTML = '<option value="">নির্বাচন করুন</option>';
+
+  subjects.forEach(subject => {
+    const option = document.createElement("option");
+    option.value = String(subject.id);
+
+    const name = subject.name_bn || subject.name_en || subject.subject_code;
+    option.textContent = name + " (" + subject.subject_code + ")";
+
+    select.appendChild(option);
+  });
+}
+
+function renderSubjectList() {
+  const search = $("subjectSearch").value.trim().toLowerCase();
+  const list = $("subjectList");
+
+  const filtered = subjects.filter(subject => {
+    return [
+      subject.name_en,
+      subject.name_bn,
+      subject.subject_code
+    ].some(value => (value || "").toLowerCase().includes(search));
+  });
+
+  list.innerHTML = "";
+
+  if (!filtered.length) {
+    list.textContent = "কোনো ফলাফল পাওয়া যায়নি।";
+    return;
+  }
+
+  filtered.forEach(subject => {
+    const row = document.createElement("div");
+    row.className = "subject-row";
+
+    const img = document.createElement("img");
+    img.className = "subject-image";
+    img.alt = "ছবি";
+
+    if (subject.image_url) {
+      img.src = subject.image_url;
+    } else {
+      img.style.visibility = "hidden";
+    }
+
+    const info = document.createElement("div");
+    info.className = "subject-info";
+
+    const name = document.createElement("strong");
+    name.textContent =
+      subject.name_bn || subject.name_en || subject.subject_code;
+
+    const details = document.createElement("small");
+    details.textContent =
+      subject.subject_code + " • " +
+      (subject.image_url ? "ছবি আছে" : "ছবি যোগ করা হয়নি");
+
+    info.append(name, details);
+
+    const button = document.createElement("button");
+    button.className = "secondary";
+    button.style.width = "auto";
+    button.textContent = "পরিবর্তন";
+    button.type = "button";
+    button.addEventListener("click", () => chooseSubject(subject.id));
+
+    row.append(img, info, button);
+    list.appendChild(row);
+  });
+}
+
+function chooseSubject(id) {
+  $("subjectSelect").value = String(id);
+  selectSubject();
+
+  $("selectedSubject").scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+function selectSubject() {
+  const id = Number($("subjectSelect").value);
+
+  selectedSubjectRow =
+    subjects.find(subject => subject.id === id) || null;
+
+  clearFilePreview("subjectImageFile", "newSubjectPreview");
+
+  if (!selectedSubjectRow) {
+    hideElement("selectedSubject");
+    return;
+  }
+
+  showElement("selectedSubject");
+
+  setText(
+    "selectedName",
+    (selectedSubjectRow.name_bn || selectedSubjectRow.name_en || "") +
+    " • " + selectedSubjectRow.subject_code
+  );
+
+  const preview = $("subjectPreview");
+
+  if (selectedSubjectRow.image_url) {
+    preview.src = selectedSubjectRow.image_url;
+    showElement("subjectPreview");
+    setText("imageStatus", "বর্তমান ছবি সংরক্ষিত আছে।");
+  } else {
+    preview.removeAttribute("src");
+    hideElement("subjectPreview");
+    setText("imageStatus", "এখনো কোনো ছবি যোগ করা হয়নি।");
+  }
+}
+
+async function saveSubjectImage() {
+  if (!selectedSubjectRow) {
+    alert("প্রথমে একটি বিষয় নির্বাচন করুন।");
+    return;
+  }
+
+  const file = $("subjectImageFile").files[0];
+  const button = $("saveSubjectImageButton");
+
+  if (!file) {
+    setStatus("managerStatus", "প্রথমে নতুন ছবি নির্বাচন করুন।");
+    return;
+  }
+
+  const validation = validateImage(file);
+  if (validation) {
+    setStatus("managerStatus", validation);
+    return;
+  }
+
+  button.disabled = true;
+  setStatus("managerStatus", "ছবি আপলোড হচ্ছে...");
+
+  try {
+    const folder =
+      activeSubjectType === "club" ? "club-logos" : "player-photos";
+
+    const url = await uploadImage(file, folder);
+
+    const { error } = await db
+      .from("quiz_subjects")
+      .update({ image_url: url })
+      .eq("id", selectedSubjectRow.id)
+      .eq("subject_type", activeSubjectType);
+
+    if (error) throw error;
+
+    selectedSubjectRow.image_url = url;
+
+    const index = subjects.findIndex(
+      subject => subject.id === selectedSubjectRow.id
+    );
+
+    if (index !== -1) {
+      subjects[index].image_url = url;
+    }
+
+    selectSubject();
+    renderSubjectList();
+
+    setStatus(
+      "managerStatus",
+      "ছবি সফলভাবে আপলোড ও সংরক্ষণ হয়েছে।"
+    );
+
+  } catch (error) {
+    setStatus("managerStatus", "Save Error: " + error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function removeSubjectImage() {
+  if (!selectedSubjectRow) return;
+
+  if (!selectedSubjectRow.image_url) {
+    alert("এই রেকর্ডে কোনো ছবি নেই।");
+    return;
+  }
+
+  if (!confirm("এই ক্লাব/খেলোয়াড়ের ছবি সরাতে চান?")) return;
+
+  const button = $("removeSubjectImageButton");
+  button.disabled = true;
+
+  try {
+    setStatus("managerStatus", "ছবি সরানো হচ্ছে...");
+
+    const { error } = await db
+      .from("quiz_subjects")
+      .update({ image_url: null })
+      .eq("id", selectedSubjectRow.id)
+      .eq("subject_type", activeSubjectType);
+
+    if (error) throw error;
+
+    selectedSubjectRow.image_url = null;
+
+    const index = subjects.findIndex(
+      subject => subject.id === selectedSubjectRow.id
+    );
+
+    if (index !== -1) {
+      subjects[index].image_url = null;
+    }
+
+    selectSubject();
+    renderSubjectList();
+
+    setStatus("managerStatus", "ছবির URL সফলভাবে সরানো হয়েছে।");
+
+  } catch (error) {
+    setStatus("managerStatus", "Remove Error: " + error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/* =========================
+   GENERAL IMAGE PREVIEWS
+========================= */
+
+function setupPreview(inputId, previewId) {
+  $(inputId).addEventListener("change", function () {
+    const file = this.files[0];
+    if (!file) {
+      clearFilePreview(inputId, previewId);
+      return;
+    }
+
+    if (!makePreview(file, previewId)) {
+      this.value = "";
+    }
+  });
+}
+
+setupPreview("subjectImageFile", "newSubjectPreview");
+setupPreview("coverFile", "coverPreview");
+setupPreview("logoFile", "logoPreview");
+setupPreview("iconFile", "iconPreview");
+setupPreview("developerPhotoFile", "developerPreview");
+
+/* =========================
+   APP SETTINGS
+========================= */
+
+async function saveSetting(key, value) {
+  if (!isAdminVerified || !currentUser) {
+    throw new Error("Admin অনুমতি নেই।");
+  }
+
+  const { error } = await db
+    .from("app_settings")
+    .upsert(
+      {
+        key,
+        value: String(value),
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: "key" }
+    );
+
+  if (error) throw error;
+}
+
+function setRemotePreview(id, url) {
+  if (url) {
+    $(id).src = url;
+    showElement(id);
+  } else {
+    $(id).removeAttribute("src");
+    hideElement(id);
+  }
+}
+
+async function loadSettings() {
+  try {
+    const { data, error } = await db
+      .from("app_settings")
+      .select("key,value");
+
+    if (error) throw error;
+
+    const settings = {};
+
+    (data || []).forEach(item => {
+      settings[item.key] = item.value;
+    });
+
+    $("developerName").value = settings.developer_name || "";
+    $("developerPhone").value = settings.developer_phone || "";
+    $("whatsappLink").value = settings.whatsapp_link || "";
+
+    setRemotePreview("coverPreview", settings.home_cover_url);
+    setRemotePreview("logoPreview", settings.home_logo_url);
+    setRemotePreview("iconPreview", settings.app_icon_url);
+    setRemotePreview("developerPreview", settings.developer_photo_url);
+
+    fillQuizSettings(settings);
+
+  } catch (error) {
+    console.error("Settings Load Error:", error.message);
+  }
+}
+
+async function saveAppSettings() {
+  const button = $("saveAppButton");
+  button.disabled = true;
+  setStatus("appStatus", "সংরক্ষণ হচ্ছে...");
+
+  try {
+    const files = [
+      ["coverFile", "home-cover", "home_cover_url"],
+      ["logoFile", "home-logo", "home_logo_url"],
+      ["iconFile", "app-icon", "app_icon_url"]
+    ];
+
+    for (const [inputId, folder, key] of files) {
+      const file = $(inputId).files[0];
+
+      if (file) {
+        const url = await uploadImage(file, folder);
+        await saveSetting(key, url);
+      }
+    }
+
+    setStatus("appStatus", "App Settings সফলভাবে সংরক্ষিত হয়েছে।");
+
+  } catch (error) {
+    setStatus("appStatus", "Error: " + error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/* =========================
+   QUIZ SETTINGS
+========================= */
+
+function fillQuizSettings(settings) {
+  $("quizMin").value = settings.quiz_min_questions ?? 5;
+  $("quizMax").value = settings.quiz_max_questions ?? 50;
+  $("quizDefault").value = settings.quiz_default_questions ?? 10;
+  $("quizTimer").value = settings.quiz_timer_seconds ?? 20;
+  $("quizCorrectXP").value = settings.quiz_correct_xp ?? 5;
+  $("quizWrongXP").value = settings.quiz_wrong_xp ?? -2;
+  $("quizCorrectPoints").value = settings.quiz_correct_points ?? 5;
+  $("quizWrongPoints").value = settings.quiz_wrong_points ?? 0;
+}
+
+async function loadQuizSettings() {
+  setStatus("quizStatus", "সেটিংস লোড হচ্ছে...");
+
+  try {
+    const { data, error } = await db
+      .from("app_settings")
+      .select("key,value")
+      .like("key", "quiz_%");
+
+    if (error) throw error;
+
+    const settings = {};
+
+    (data || []).forEach(item => {
+      settings[item.key] = item.value;
+    });
+
+    fillQuizSettings(settings);
+    setStatus("quizStatus", "Quiz Settings লোড হয়েছে।");
+
+  } catch (error) {
+    setStatus("quizStatus", "Load Error: " + error.message);
+  }
+}
+
+async function saveQuizSettings() {
+  const button = $("saveQuizButton");
+  const status = $("quizStatus");
+
+  const values = {
+    quiz_min_questions: Number($("quizMin").value),
+    quiz_max_questions: Number($("quizMax").value),
+    quiz_default_questions: Number($("quizDefault").value),
+    quiz_timer_seconds: Number($("quizTimer").value),
+    quiz_correct_xp: Number($("quizCorrectXP").value),
+    quiz_wrong_xp: Number($("quizWrongXP").value),
+    quiz_correct_points: Number($("quizCorrectPoints").value),
+    quiz_wrong_points: Number($("quizWrongPoints").value)
+  };
+
+  if (Object.values(values).some(value => !Number.isInteger(value))) {
+    setStatus("quizStatus", "সব ঘরে পূর্ণসংখ্যা লিখুন।");
+    return;
+  }
+
+  if (
+    values.quiz_min_questions < 1 ||
+    values.quiz_max_questions < values.quiz_min_questions ||
+    values.quiz_max_questions > 500
+  ) {
+    setStatus("quizStatus", "সর্বনিম্ন ও সর্বোচ্চ প্রশ্ন সংখ্যা সঠিকভাবে দিন।");
+    return;
+  }
+
+  if (
+    values.quiz_default_questions < values.quiz_min_questions ||
+    values.quiz_default_questions > values.quiz_max_questions
+  ) {
+    setStatus("quizStatus", "ডিফল্ট প্রশ্ন সংখ্যা নির্ধারিত সীমার মধ্যে দিন।");
+    return;
+  }
+
+  if (
+    values.quiz_timer_seconds < 1 ||
+    values.quiz_timer_seconds > 300 ||
+    values.quiz_correct_xp < 0 ||
+    values.quiz_wrong_xp > 0 ||
+    values.quiz_correct_points < 0 ||
+    values.quiz_wrong_points < 0
+  ) {
+    setStatus("quizStatus", "XP, পয়েন্ট অথবা টাইমারের মান সঠিক নয়।");
+    return;
+  }
+
+  button.disabled = true;
+  setStatus("quizStatus", "সেটিংস সংরক্ষণ হচ্ছে...");
+
+  try {
+    for (const [key, value] of Object.entries(values)) {
+      await saveSetting(key, value);
+    }
+
+    setStatus("quizStatus", "Quiz Settings সফলভাবে সংরক্ষিত হয়েছে।");
+
+  } catch (error) {
+    setStatus("quizStatus", "Save Error: " + error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/* =========================
+   DEVELOPER SETTINGS
+========================= */
+
+async function saveDeveloperSettings() {
+  const button = $("saveDeveloperButton");
+  button.disabled = true;
+
+  setStatus("developerStatus", "সংরক্ষণ হচ্ছে...");
+
+  try {
+    const photo = $("developerPhotoFile").files[0];
+
+    if (photo) {
+      const url = await uploadImage(photo, "developer-photo");
+      await saveSetting("developer_photo_url", url);
+    }
+
+    const name = $("developerName").value.trim();
+    const phone = $("developerPhone").value.trim();
+    const whatsapp = $("whatsappLink").value.trim();
+
+    if (whatsapp && !/^https:\/\/(wa\.me|api\.whatsapp\.com)\//i.test(whatsapp)) {
+      throw new Error("সঠিক WhatsApp Link দিন।");
+    }
+
+    await saveSetting("developer_name", name);
+    await saveSetting("developer_phone", phone);
+    await saveSetting("whatsapp_link", whatsapp);
+
+    setStatus(
+      "developerStatus",
+      "Developer Settings সফলভাবে সংরক্ষিত হয়েছে।"
+    );
+
+  } catch (error) {
+    setStatus("developerStatus", "Error: " + error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/* =========================
+   EVENT LISTENERS
+========================= */
+
+$("loginButton").addEventListener("click", login);
+$("saveSubjectImageButton").addEventListener("click", saveSubjectImage);
+$("removeSubjectImageButton").addEventListener("click", removeSubjectImage);
+$("saveAppButton").addEventListener("click", saveAppSettings);
+$("saveQuizButton").addEventListener("click", saveQuizSettings);
+$("saveDeveloperButton").addEventListener("click", saveDeveloperSettings);
+$("backButton").addEventListener("click", back);
+$("logoutButton").addEventListener("click", logout);
+
+$("subjectSelect").addEventListener("change", selectSubject);
+$("subjectSearch").addEventListener("input", renderSubjectList);
+
+$("password").addEventListener("keydown", event => {
+  if (event.key === "Enter") login();
 });
 
-async function uploadImage(file,folder){
- if(!isAdminVerified||!currentUser)throw new Error("Admin Login নেই।");
- if(!file)return null;
- if(file.size>10*1024*1024)throw new Error("ছবির সাইজ ১০ MB-এর বেশি।");
- const ext=file.name.split(".").pop().toLowerCase();
- if(!["jpg","jpeg","png","webp"].includes(ext))throw new Error("ছবির ফরম্যাট সঠিক নয়।");
- const path=folder+"/"+Date.now()+"-"+Math.random().toString(36).slice(2)+"."+ext;
- const {error}=await db.storage.from(BUCKET).upload(path,file,{
-  cacheControl:"3600",upsert:false,contentType:file.type
- });
- if(error)throw error;
- return db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-}
+/* =========================
+   AUTH STATE
+========================= */
 
-async function saveSubjectImage(){
- if(!selectedSubjectRow){alert("প্রথমে একটি বিষয় নির্বাচন করুন।");return;}
- const file=document.getElementById("subjectImageFile").files[0];
- const status=document.getElementById("managerStatus");
- const button=document.getElementById("saveSubjectImageButton");
- if(!file){status.innerText="প্রথমে নতুন ছবি নির্বাচন করুন।";return;}
- button.disabled=true;
- status.innerText="ছবি আপলোড হচ্ছে...";
- try{
-  const folder=activeSubjectType==="club"?"club-logos":"player-photos";
-  const url=await uploadImage(file,folder);
-  const {error}=await db.from("quiz_subjects")
-   .update({image_url:url})
-   .eq("id",selectedSubjectRow.id)
-   .eq("subject_type",activeSubjectType);
-  if(error)throw error;
-  selectedSubjectRow.image_url=url;
-  const index=subjects.findIndex(s=>s.id===selectedSubjectRow.id);
-  if(index>=0)subjects[index].image_url=url;
-  selectSubject();
-  renderSubjectList();
-  document.getElementById("subjectImageFile").value="";
-  document.getElementById("newSubjectPreview").classList.add("hidden");
-  status.innerText="ছবি সফলভাবে আপলোড ও সংরক্ষণ হয়েছে।";
- }catch(error){
-  status.innerText="Save Error: "+error.message;
- }finally{button.disabled=false;}
-}
-
-async function removeSubjectImage(){
- if(!selectedSubjectRow)return;
- if(!selectedSubjectRow.image_url){alert("এই রেকর্ডে কোনো ছবি নেই।");return;}
- if(!confirm("এই ক্লাব/খেলোয়াড়ের ছবি সরাতে চান?"))return;
- const status=document.getElementById("managerStatus");
- try{
-  status.innerText="ছবি সরানো হচ্ছে...";
-  const {error}=await db.from("quiz_subjects")
-   .update({image_url:null})
-   .eq("id",selectedSubjectRow.id)
-   .eq("subject_type",activeSubjectType);
-  if(error)throw error;
-  selectedSubjectRow.image_url=null;
-  const index=subjects.findIndex(s=>s.id===selectedSubjectRow.id);
-  if(index>=0)subjects[index].image_url=null;
-  selectSubject();
-  renderSubjectList();
-  status.innerText="ছবির URL সরানো হয়েছে।";
- }catch(error){status.innerText="Remove Error: "+error.message;}
-}
-
-function preview(inputId,previewId){
- document.getElementById(inputId).addEventListener("change",function(){
-  const file=this.files[0];
-  const img=document.getElementById(previewId);
-  if(!file)return;
-  if(!["image/jpeg","image/png","image/webp"].includes(file.type)){
-   alert("JPG, PNG অথবা WEBP ছবি দিন।");this.value="";return;
+db.auth.onAuthStateChange((event) => {
+  if (event === "SIGNED_OUT") {
+    currentUser = null;
+    isAdminVerified = false;
   }
-  if(file.size>10*1024*1024){
-   alert("ছবির সাইজ ১০ MB-এর বেশি হতে পারবে না।");this.value="";return;
-  }
-  img.src=URL.createObjectURL(file);
-  img.classList.remove("hidden");
- });
-}
-
-preview("coverFile","coverPreview");
-preview("logoFile","logoPreview");
-preview("iconFile","iconPreview");
-preview("developerPhotoFile","developerPreview");
-
-async function saveSetting(key,value){
- if(!isAdminVerified)throw new Error("Admin অনুমতি নেই।");
- const {error}=await db.from("app_settings").upsert({
-  key,value:String(value),updated_at:new Date().toISOString()
- },{onConflict:"key"});
- if(error)throw error;
-}
-
-async function loadSettings(){
- try{
-  const {data,error}=await db.from("app_settings").select("key,value");
-  if(error)throw error;
-  const settings={};
-  (data||[]).forEach(x=>settings[x.key]=x.value);
-  document.getElementById("developerName").value=settings.developer_name||"";
-  document.getElementById("developerPhone").value=settings.developer_phone||"";
-  document.getElementById("whatsappLink").value=settings.whatsapp_link||"";
-  setPreview("coverPreview",settings.home_cover_url);
-  setPreview("logoPreview",settings.home_logo_url);
-  setPreview("iconPreview",settings.app_icon_url);
-  setPreview("developerPreview",settings.developer_photo_url);
-  fillQuizSettings(settings);
- }catch(error){console.log("Settings Load Error:",error.message);}
-}
-
-function setPreview(id,url){
- if(!url)return;
- const img=document.getElementById(id);
- img.src=url;
- img.classList.remove("hidden");
-}
-
-function fillQuizSettings(s){
- document.getElementById("quizMin").value=s.quiz_min_questions??5;
- document.getElementById("quizMax").value=s.quiz_max_questions??50;
- document.getElementById("quizDefault").value=s.quiz_default_questions??10;
- document.getElementById("quizTimer").value=s.quiz_timer_seconds??20;
- document.getElementById("quizCorrectXP").value=s.quiz_correct_xp??5;
- document.getElementById("quizWrongXP").value=s.quiz_wrong_xp??-2;
- document.getElementById("quizCorrectPoints").value=s.quiz_correct_points??5;
- document.getElementById("quizWrongPoints").value=s.quiz_wrong_points??0;
-}
-
-async function loadQuizSettings(){
- const status=document.getElementById("quizStatus");
- status.innerText="সেটিংস লোড হচ্ছে...";
- try{
-  const {data,error}=await db.from("app_settings").select("key,value").like("key","quiz_%");
-  if(error)throw error;
-  const settings={};
-  (data||[]).forEach(x=>settings[x.key]=x.value);
-  fillQuizSettings(settings);
-  status.innerText="Quiz Settings লোড হয়েছে।";
- }catch(error){status.innerText="Load Error: "+error.message;}
-}
-
-async function saveQuizSettings(){
- const status=document.getElementById("quizStatus");
- const button=document.getElementById("saveQuizButton");
- const values={
-  quiz_min_questions:Number(quizMin.value),
-  quiz_max_questions:Number(quizMax.value),
-  quiz_default_questions:Number(quizDefault.value),
-  quiz_timer_seconds:Number(quizTimer.value),
-  quiz_correct_xp:Number(quizCorrectXP.value),
-  quiz_wrong_xp:Number(quizWrongXP.value),
-  quiz_correct_points:Number(quizCorrectPoints.value),
-  quiz_wrong_points:Number(quizWrongPoints.value)
- };
- for(const v of Object.values(values)){
-  if(!Number.isInteger(v)){status.innerText="সব ঘরে পূর্ণসংখ্যা লিখুন।";return;}
- }
- if(values.quiz_min_questions<1||values.quiz_max_questions<values.quiz_min_questions||values.quiz_max_questions>500){
-  status.innerText="প্রশ্নের সর্বনিম্ন ও সর্বোচ্চ সংখ্যা সঠিকভাবে দিন।";return;
- }
- if(values.quiz_default_questions<values.quiz_min_questions||values.quiz_default_questions>values.quiz_max_questions){
-  status.innerText="ডিফল্ট প্রশ্ন সংখ্যা সঠিক সীমার মধ্যে দিন।";return;
- }
- if(values.quiz_timer_seconds<1||values.quiz_timer_seconds>300||
- values.quiz_correct_xp<0||values.quiz_wrong_xp>0||
- values.quiz_correct_points<0||values.quiz_wrong_points<0){
-  status.innerText="XP, পয়েন্ট অথবা টাইমারের মান সঠিক নয়।";return;
- }
- button.disabled=true;status.innerText="সংরক্ষণ হচ্ছে...";
- try{
-  for(const [key,value] of Object.entries(values))await saveSetting(key,value);
-  status.innerText="Quiz Settings সংরক্ষিত হয়েছে।";
- }catch(error){status.innerText="Save Error: "+error.message;}
- finally{button.disabled=false;}
-}
-
-async function saveAppSettings(){
- const status=document.getElementById("appStatus");
- status.innerText="সংরক্ষণ হচ্ছে...";
- try{
-  const files=[
-   ["coverFile","home-cover","home_cover_url"],
-   ["logoFile","home-logo","home_logo_url"],
-   ["iconFile","app-icon","app_icon_url"]
-  ];
-  for(const [inputId,folder,key] of files){
-   const file=document.getElementById(inputId).files[0];
-   if(file)await saveSetting(key,await uploadImage(file,folder));
-  }
-  status.innerText="App Settings সংরক্ষিত হয়েছে।";
- }catch(error){status.innerText="Error: "+error.message;}
-}
-
-async function saveDeveloperSettings(){
- const status=document.getElementById("developerStatus");
- status.innerText="সংরক্ষণ হচ্ছে...";
- try{
-  const photo=document.getElementById("developerPhotoFile").files[0];
-  if(photo)await saveSetting("developer_photo_url",await uploadImage(photo,"developer-photo"));
-  await saveSetting("developer_name",developerName.value.trim());
-  await saveSetting("developer_phone",developerPhone.value.trim());
-  await saveSetting("whatsapp_link",whatsappLink.value.trim());
-  status.innerText="Developer Settings সংরক্ষিত হয়েছে।";
- }catch(error){status.innerText="Error: "+error.message;}
-}
-
-async function logout(){
- try{await db.auth.signOut();}catch(e){console.error(e);}
- currentUser=null;isAdminVerified=false;
- document.getElementById("dashboard").classList.add("hidden");
- document.getElementById("login").classList.remove("hidden");
- document.getElementById("password").value="";
- document.getElementById("message").innerText="আপনি Logout করেছেন।";
- document.getElementById("adminEmail").innerText="";
-}
-
-db.auth.onAuthStateChange((event)=>{
- if(event==="SIGNED_OUT"){currentUser=null;isAdminVerified=false;}
 });
+
+/* =========================
+   START
+========================= */
 
 restoreSession();
+
 </script>
 </body>
 </html>
