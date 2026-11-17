@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -43,12 +44,12 @@ label{display:block;margin-top:10px}
 .warning{background:#45351b;color:#ffe0a0}
 .success{background:#153b25;color:#a8f5c1}
 .error{background:#491f1f;color:#ffb2b2}
-hr{border:0;border-top:1px solid #35513e;margin:20px 0}
 .subject-box{padding:12px;background:#203528;border-radius:8px;margin-top:10px}
 .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .pagination{display:flex;gap:8px;align-items:center}
 .pagination button{flex:1}
 .question-select{width:auto!important}
+.mode-note{padding:12px;background:#10291b;border-left:3px solid #16c766;border-radius:7px;line-height:1.6;margin:10px 0}
 @media(max-width:500px){
  .actions{flex-direction:column}
  .toolbar{grid-template-columns:1fr}
@@ -75,13 +76,22 @@ hr{border:0;border-top:1px solid #35513e;margin:20px 0}
 <select id="type" required>
 <option value="general_mcq">সাধারণ MCQ</option>
 <option value="country_quiz">দেশভিত্তিক কুইজ</option>
-<option value="guess_club">Guess the Club</option>
-<option value="guess_player">Guess the Player</option>
+
+<option value="player_quiz">Player Selection — খেলোয়াড় নির্বাচন</option>
+<option value="club_quiz">Club Selection — ক্লাব নির্বাচন</option>
+
+<option value="guess_player">Guess the Player — ছবি দেখে খেলোয়াড় চেনা</option>
+<option value="guess_club">Guess the Club — লোগো দেখে ক্লাব চেনা</option>
+
 <option value="guess_jersey">Guess the Jersey</option>
 <option value="guess_stadium">Guess the Stadium</option>
 <option value="guess_silhouette">Guess the Silhouette</option>
 <option value="guess_clues">Guess by Clues</option>
 </select>
+
+<div id="modeNote" class="mode-note">
+সাধারণ MCQ প্রশ্ন তৈরি করুন।
+</div>
 
 <div id="subjectBox" class="subject-box" style="display:none">
 <label id="subjectLabel">বিষয় নির্বাচন করুন</label>
@@ -115,8 +125,11 @@ hr{border:0;border-top:1px solid #35513e;margin:20px 0}
 <label>ব্যাখ্যা</label>
 <input id="explanation" placeholder="সঠিক উত্তরের ব্যাখ্যা">
 
-<label>ছবির URL (ঐচ্ছিক)</label>
+<label>ছবির URL</label>
 <input id="imageUrl" type="url" placeholder="https://example.com/image.jpg">
+<p class="help" id="imageHelp">
+প্রয়োজনে প্রশ্নের ছবি যোগ করুন।
+</p>
 <img id="singleImagePreview" class="question-image" style="display:none" alt="প্রশ্নের ছবি">
 <div id="singleImageError" class="image-error"></div>
 
@@ -228,6 +241,8 @@ const IMPORT_BATCH_SIZE = 100;
 const allowedModes = [
   'general_mcq',
   'country_quiz',
+  'player_quiz',
+  'club_quiz',
   'guess_player',
   'guess_club',
   'guess_jersey',
@@ -236,10 +251,43 @@ const allowedModes = [
   'guess_clues'
 ];
 
+/*
+  Player Selection এবং Guess the Player আলাদা Mode।
+  Club Selection এবং Guess the Club আলাদা Mode।
+  তবে চারটি Mode-ই quiz_subjects থেকে বিষয় নির্বাচন করে।
+*/
 const modeSubjectType = {
   country_quiz:'country',
-  guess_club:'club',
-  guess_player:'player'
+  player_quiz:'player',
+  club_quiz:'club',
+  guess_player:'player',
+  guess_club:'club'
+};
+
+const modeLabels = {
+  general_mcq:'সাধারণ MCQ',
+  country_quiz:'দেশভিত্তিক কুইজ',
+  player_quiz:'Player Selection',
+  club_quiz:'Club Selection',
+  guess_player:'Guess the Player',
+  guess_club:'Guess the Club',
+  guess_jersey:'Guess the Jersey',
+  guess_stadium:'Guess the Stadium',
+  guess_silhouette:'Guess the Silhouette',
+  guess_clues:'Guess by Clues'
+};
+
+const modeDescriptions = {
+  general_mcq:'সাধারণ ফুটবল MCQ প্রশ্ন তৈরি করুন।',
+  country_quiz:'একটি দেশ নির্বাচন করুন। সেই দেশের প্রশ্ন এখানে সংরক্ষিত হবে।',
+  player_quiz:'একটি খেলোয়াড় নির্বাচন করুন। Player Selection-এ সেই খেলোয়াড়ের প্রশ্ন দেখানো হবে।',
+  club_quiz:'একটি ক্লাব নির্বাচন করুন। Club Selection-এ সেই ক্লাবের প্রশ্ন দেখানো হবে।',
+  guess_player:'একজন খেলোয়াড় নির্বাচন করুন। তাঁর ছবি দিন এবং চারটি অপশনে খেলোয়াড়ের নাম দিন।',
+  guess_club:'একটি ক্লাব নির্বাচন করুন। ক্লাবের লোগো দিন এবং চারটি অপশনে ক্লাবের নাম দিন।',
+  guess_jersey:'জার্সির ছবি বা বিবরণ দিয়ে চারটি অপশনে উত্তর তৈরি করুন।',
+  guess_stadium:'স্টেডিয়ামের ছবি বা বিবরণ দিয়ে চারটি অপশনে উত্তর তৈরি করুন।',
+  guess_silhouette:'সিলুয়েটের ছবি দিয়ে চারটি অপশনে উত্তর তৈরি করুন।',
+  guess_clues:'ইঙ্গিত বা Clues দিয়ে চারটি অপশনে উত্তর তৈরি করুন।'
 };
 
 function setStatus(id,message,type=''){
@@ -294,11 +342,6 @@ function makeImage(url,alt){
   return wrapper;
 }
 
-/*
-  Duplicate পরীক্ষা:
-  একই Mode + একই Subject + একই প্রশ্ন হলে Duplicate।
-  অন্য দেশ/ক্লাব/খেলোয়াড়ের প্রশ্ন হলে Duplicate নয়।
-*/
 function isDuplicate(
   mode,
   question,
@@ -339,6 +382,7 @@ function resetForm(){
   $('singleImageError').textContent = '';
 
   updateSubjectBox();
+  updateModeDescription();
 }
 
 // Admin যাচাই
@@ -404,6 +448,21 @@ async function loadSubjects(){
   return true;
 }
 
+// Mode অনুযায়ী ব্যাখ্যা
+function updateModeDescription(){
+  const mode = $('type').value;
+  $('modeNote').textContent =
+    modeDescriptions[mode] || 'প্রশ্ন তৈরি করুন।';
+
+  if(mode==='guess_player' || mode==='guess_club'){
+    $('imageHelp').textContent =
+      'এই Guess Mode-এর জন্য ছবি বা লোগোর URL দেওয়া প্রয়োজন।';
+  }else{
+    $('imageHelp').textContent =
+      'প্রয়োজনে প্রশ্নের ছবি যোগ করুন।';
+  }
+}
+
 // Mode অনুযায়ী বিষয় নির্বাচন
 function updateSubjectBox(selectedCode=null){
   const mode = $('type').value;
@@ -426,9 +485,18 @@ function updateSubjectBox(selectedCode=null){
   };
 
   $('subjectLabel').textContent = labels[subjectType];
+
+  const helpTexts = {
+    country:'নির্বাচিত দেশের প্রশ্ন এখানে সংরক্ষিত হবে।',
+    player_quiz:'নির্বাচিত খেলোয়াড়ের নিজস্ব প্রশ্ন Player Selection-এ ব্যবহৃত হবে।',
+    club_quiz:'নির্বাচিত ক্লাবের নিজস্ব প্রশ্ন Club Selection-এ ব্যবহৃত হবে।',
+    guess_player:'যে খেলোয়াড়ের ছবি দেখিয়ে উত্তর জানতে চান, তাঁকে নির্বাচন করুন।',
+    guess_club:'যে ক্লাবের লোগো দেখিয়ে উত্তর জানতে চান, সেই ক্লাব নির্বাচন করুন।'
+  };
+
   $('subjectHelp').textContent =
-    'নির্বাচিত '+labels[subjectType].replace(' নির্বাচন করুন','')+
-    ' সম্পর্কিত প্রশ্ন এখানে সংরক্ষিত হবে।';
+    helpTexts[mode] ||
+    'নির্বাচিত বিষয়ের সঙ্গে সম্পর্কিত প্রশ্ন এখানে সংরক্ষিত হবে।';
 
   const matching = subjects.filter(s =>
     s.subject_type === subjectType
@@ -447,7 +515,9 @@ function updateSubjectBox(selectedCode=null){
   matching.forEach(s=>{
     const option = document.createElement('option');
     option.value = s.subject_code;
-    option.textContent = s.name_bn || s.name_en || s.subject_code;
+    option.textContent =
+      (s.name_bn || s.name_en || s.subject_code)+
+      ' ('+s.subject_code+')';
     select.append(option);
   });
 
@@ -458,6 +528,7 @@ function updateSubjectBox(selectedCode=null){
 
 $('type').addEventListener('change',()=>{
   updateSubjectBox();
+  updateModeDescription();
 });
 
 // সব প্রশ্ন পেজ ধরে লোড
@@ -521,6 +592,10 @@ function getSubjectName(q){
     : q.subject_code;
 }
 
+function getModeLabel(mode){
+  return modeLabels[mode] || mode;
+}
+
 // প্রশ্নের তালিকা Filter
 function getFilteredQuestions(){
   const term = normalizeQuestion($('searchQuestions').value);
@@ -531,6 +606,7 @@ function getFilteredQuestions(){
     const searchable = [
       q.question_bn,
       q.mode,
+      getModeLabel(q.mode),
       q.subject_code,
       getSubjectName(q)
     ].join(' ');
@@ -585,7 +661,8 @@ function renderQuestions(){
 
     const info = document.createElement('p');
     info.textContent =
-      'ধরন: '+q.mode+
+      'ধরন: '+getModeLabel(q.mode)+
+      ' | Mode Code: '+q.mode+
       ' | বিষয়: '+getSubjectName(q)+
       ' | সঠিক উত্তর: '+q.correct_option;
 
@@ -643,6 +720,7 @@ function editQuestion(q){
   $('type').value = q.mode;
 
   updateSubjectBox(q.subject_code || null);
+  updateModeDescription();
 
   $('question').value = q.question_bn || '';
 
@@ -874,6 +952,18 @@ $('questionForm').addEventListener('submit',async function(e){
     return;
   }
 
+  if(
+    (mode==='guess_player' || mode==='guess_club') &&
+    !imageUrl
+  ){
+    setStatus(
+      'status',
+      'Guess the Player ও Guess the Club-এর জন্য ছবি বা লোগোর URL দিতে হবে।',
+      'warning'
+    );
+    return;
+  }
+
   if(subjectType && !subjectCode){
     setStatus(
       'status',
@@ -1048,6 +1138,16 @@ function validateBulkQuestion(item,index){
     throw new Error('প্রশ্ন '+number+': image_url সঠিক URL নয়।');
   }
 
+  if(
+    (mode==='guess_player' || mode==='guess_club') &&
+    !imageUrl
+  ){
+    throw new Error(
+      'প্রশ্ন '+number+
+      ': Guess Mode-এর জন্য image_url দিতে হবে।'
+    );
+  }
+
   if(typeof item.is_published!=='undefined' &&
      typeof item.is_published!=='boolean'){
     throw new Error(
@@ -1084,7 +1184,9 @@ function renderBulkPreview(){
 
     const mode = document.createElement('p');
     mode.textContent =
-      'ধরন: '+q.mode+' | বিষয়: '+getSubjectName(q);
+      'ধরন: '+getModeLabel(q.mode)+
+      ' | Mode: '+q.mode+
+      ' | বিষয়: '+getSubjectName(q);
 
     const status = document.createElement('small');
     status.textContent = q.is_published
@@ -1245,7 +1347,6 @@ $('publishAllButton').addEventListener('click',async function(){
       throw new Error('প্রশ্নের তালিকা যাচাই করা যায়নি।');
     }
 
-    // সংরক্ষণের আগে আবার Duplicate পরীক্ষা
     for(let i=0;i<bulkQuestions.length;i++){
       const q = bulkQuestions[i];
 
@@ -1311,8 +1412,6 @@ $('publishAllButton').addEventListener('click',async function(){
       'error'
     );
 
-    // আংশিক Import হলে আবার একই প্রশ্ন যেন ভুল করে
-    // পুনরায় পাঠানো না হয়, তাই নতুন Preview বাধ্যতামূলক।
     bulkQuestions = [];
     $('previewArea').style.display = 'none';
 
@@ -1334,6 +1433,8 @@ async function start(){
     'Admin যাচাই সফল হয়েছে। Supabase সংযুক্ত।',
     'success'
   );
+
+  updateModeDescription();
 
   const subjectsLoaded = await loadSubjects();
 
