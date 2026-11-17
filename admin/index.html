@@ -38,6 +38,13 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 .danger{background:#a83232;color:white}
 .secondary{background:#294b35;color:white}
 .section-note{padding:12px;background:#1a3022;border-radius:8px;color:#c5d6ca}
+.form-card{background:#1a3022;padding:14px;border-radius:10px;margin:15px 0}
+.form-card h3{margin-top:0;color:#20e879}
+.check-row{display:flex;align-items:center;gap:10px;margin:12px 0}
+.check-row input{width:20px;height:20px;margin:0}
+.check-row label{margin:0}
+.subject-actions{display:flex;gap:7px;flex-wrap:wrap}
+.subject-actions button{width:auto;flex:1;min-width:90px}
 </style>
 </head>
 
@@ -87,10 +94,45 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 <button type="button" onclick="show('developer')">Contact with Developer</button>
 </div>
 
-<!-- CLUB / PLAYER IMAGE MANAGEMENT -->
+<!-- SUBJECT MANAGER -->
 <div id="subjectManager" class="card hidden">
-<h2 id="managerTitle">ছবি পরিচালনা</h2>
+
+<h2 id="managerTitle">ছবি ও তালিকা পরিচালনা</h2>
 <p id="managerDescription" class="status"></p>
+
+<!-- ADD NEW SUBJECT -->
+<div class="form-card">
+<h3 id="subjectFormTitle">নতুন রেকর্ড যোগ করুন</h3>
+
+<label>বাংলা নাম</label>
+<input id="subjectNameBn" type="text" placeholder="বাংলা নাম লিখুন">
+
+<label>ইংরেজি নাম</label>
+<input id="subjectNameEn" type="text" placeholder="English name">
+
+<label>Subject Code</label>
+<input id="subjectCode" type="text" placeholder="যেমন: REAL_MADRID">
+
+<label>Sort Order</label>
+<input id="subjectSortOrder" type="number" min="0" value="0">
+
+<div class="check-row">
+<input id="subjectEnabled" type="checkbox" checked>
+<label for="subjectEnabled">সক্রিয় রাখুন</label>
+</div>
+
+<label>ছবি / লোগো</label>
+<input type="file" id="newSubjectImageFile" accept="image/jpeg,image/png,image/webp">
+<img id="newSubjectImagePreview" class="preview hidden" alt="New subject preview">
+
+<button id="addSubjectButton" type="button">নতুন তালিকা যোগ করুন</button>
+<button id="updateSubjectButton" type="button" class="secondary hidden">পরিবর্তন সংরক্ষণ করুন</button>
+<button id="cancelEditButton" type="button" class="danger hidden">Edit বাতিল করুন</button>
+
+<p id="subjectFormStatus" class="status"></p>
+</div>
+
+<hr>
 
 <label>নাম বা কোড দিয়ে খুঁজুন</label>
 <input id="subjectSearch" type="search" placeholder="নাম বা কোড লিখুন...">
@@ -113,6 +155,7 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 
 <button id="saveSubjectImageButton" type="button">ছবি সংরক্ষণ করুন</button>
 <button id="removeSubjectImageButton" class="danger" type="button">ছবি সরিয়ে দিন</button>
+<button id="editSelectedSubjectButton" class="secondary" type="button">নাম ও তথ্য পরিবর্তন করুন</button>
 </div>
 
 <h3>সব তালিকা</h3>
@@ -220,9 +263,7 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 <script>
 "use strict";
 
-/* =========================
-   SUPABASE CONFIGURATION
-========================= */
+/* SUPABASE CONFIG */
 
 const SUPABASE_URL = "https://cuvfoltgtopchiugrbuf.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D";
@@ -241,20 +282,15 @@ const db = window.supabase.createClient(
   }
 );
 
-/* =========================
-   STATE
-========================= */
+/* STATE */
 
 let currentUser = null;
 let isAdminVerified = false;
 let activeSubjectType = "";
 let subjects = [];
 let selectedSubjectRow = null;
-let previewUrls = [];
 
-/* =========================
-   DOM HELPERS
-========================= */
+/* DOM HELPERS */
 
 const $ = id => document.getElementById(id);
 
@@ -274,30 +310,10 @@ function setStatus(id, message) {
   setText(id, message);
 }
 
-function makePreview(file, imageId) {
-  if (!file) return;
-
-  const validation = validateImage(file);
-  if (validation) {
-    alert(validation);
-    return false;
-  }
-
-  const oldUrl = $(imageId).dataset.objectUrl;
-  if (oldUrl) URL.revokeObjectURL(oldUrl);
-
-  const url = URL.createObjectURL(file);
-  $(imageId).dataset.objectUrl = url;
-  $(imageId).src = url;
-  showElement(imageId);
-  return true;
-}
-
 function validateImage(file) {
   if (!file) return "প্রথমে একটি ছবি নির্বাচন করুন।";
 
-  const allowed = ["image/jpeg", "image/png", "image/webp"];
-  if (!allowed.includes(file.type)) {
+  if (!["image/jpeg","image/png","image/webp"].includes(file.type)) {
     return "শুধু JPG, PNG অথবা WEBP ছবি ব্যবহার করুন।";
   }
 
@@ -308,34 +324,70 @@ function validateImage(file) {
   return "";
 }
 
+function makePreview(file, imageId) {
+  if (!file) return false;
+
+  const error = validateImage(file);
+  if (error) {
+    alert(error);
+    return false;
+  }
+
+  const img = $(imageId);
+  if (img.dataset.objectUrl) {
+    URL.revokeObjectURL(img.dataset.objectUrl);
+  }
+
+  const url = URL.createObjectURL(file);
+  img.dataset.objectUrl = url;
+  img.src = url;
+  showElement(imageId);
+  return true;
+}
+
 function clearFilePreview(inputId, imageId) {
   $(inputId).value = "";
 
-  const oldUrl = $(imageId).dataset.objectUrl;
-  if (oldUrl) URL.revokeObjectURL(oldUrl);
+  const img = $(imageId);
 
-  $(imageId).removeAttribute("src");
-  delete $(imageId).dataset.objectUrl;
+  if (img.dataset.objectUrl) {
+    URL.revokeObjectURL(img.dataset.objectUrl);
+  }
+
+  img.removeAttribute("src");
+  delete img.dataset.objectUrl;
   hideElement(imageId);
 }
 
-/* =========================
-   ADMIN AUTHENTICATION
-========================= */
+function resetSubjectForm() {
+  $("subjectNameBn").value = "";
+  $("subjectNameEn").value = "";
+  $("subjectCode").value = "";
+  $("subjectSortOrder").value = "0";
+  $("subjectEnabled").checked = true;
+
+  clearFilePreview("newSubjectImageFile","newSubjectImagePreview");
+
+  hideElement("updateSubjectButton");
+  hideElement("cancelEditButton");
+  showElement("addSubjectButton");
+
+  setText("subjectFormTitle","নতুন রেকর্ড যোগ করুন");
+  setStatus("subjectFormStatus","");
+}
+
+/* AUTHENTICATION */
 
 async function verifyAdmin(user) {
   if (!user) return false;
 
-  const { data, error } = await db
+  const {data,error} = await db
     .from("admin_users")
     .select("user_id")
-    .eq("user_id", user.id)
+    .eq("user_id",user.id)
     .maybeSingle();
 
-  if (error) {
-    console.error("Admin verification:", error.message);
-    throw error;
-  }
+  if (error) throw error;
 
   return !!data;
 }
@@ -351,7 +403,7 @@ async function openDashboard(user) {
 
       hideElement("dashboard");
       showElement("login");
-      setStatus("message", "আপনার Account-এ Admin অনুমতি নেই।");
+      setStatus("message","আপনার Account-এ Admin অনুমতি নেই।");
       return false;
     }
 
@@ -361,7 +413,7 @@ async function openDashboard(user) {
     hideElement("login");
     showElement("dashboard");
 
-    setStatus("adminEmail", "Admin: " + (user.email || ""));
+    setStatus("adminEmail","Admin: " + (user.email || ""));
 
     await Promise.all([
       loadSettings(),
@@ -370,26 +422,26 @@ async function openDashboard(user) {
 
     return true;
 
-  } catch (error) {
-    setStatus("message", "Admin যাচাই করতে সমস্যা হয়েছে: " + error.message);
+  } catch(error) {
+    setStatus("message","Admin যাচাই করতে সমস্যা হয়েছে: " + error.message);
     return false;
   }
 }
 
 async function restoreSession() {
-  setStatus("message", "Admin Session যাচাই হচ্ছে...");
+  setStatus("message","Admin Session যাচাই হচ্ছে...");
 
   try {
-    const { data, error } = await db.auth.getSession();
+    const {data,error} = await db.auth.getSession();
     if (error) throw error;
 
     if (data.session?.user) {
       await openDashboard(data.session.user);
     } else {
-      setStatus("message", "Admin Account দিয়ে প্রবেশ করুন।");
+      setStatus("message","Admin Account দিয়ে প্রবেশ করুন।");
     }
-  } catch (error) {
-    setStatus("message", "Session Error: " + error.message);
+  } catch(error) {
+    setStatus("message","Session Error: " + error.message);
   }
 }
 
@@ -399,29 +451,21 @@ async function login() {
   const button = $("loginButton");
 
   if (!email || !password) {
-    setStatus("message", "Email ও Password লিখুন।");
+    setStatus("message","Email ও Password লিখুন।");
     return;
   }
 
   button.disabled = true;
-  setStatus("message", "লগইন হচ্ছে...");
+  setStatus("message","লগইন হচ্ছে...");
 
   try {
-    const { data, error } = await db.auth.signInWithPassword({
-      email,
-      password
-    });
-
+    const {data,error} = await db.auth.signInWithPassword({email,password});
     if (error) throw error;
 
-    const success = await openDashboard(data.user);
+    await openDashboard(data.user);
 
-    if (!success) {
-      setStatus("message", "এই Account-এ Admin অনুমতি নেই।");
-    }
-
-  } catch (error) {
-    setStatus("message", "Login Error: " + error.message);
+  } catch(error) {
+    setStatus("message","Login Error: " + error.message);
   } finally {
     button.disabled = false;
   }
@@ -430,7 +474,7 @@ async function login() {
 async function logout() {
   try {
     await db.auth.signOut();
-  } catch (error) {
+  } catch(error) {
     console.error(error);
   }
 
@@ -442,45 +486,34 @@ async function logout() {
   showElement("login");
 
   $("password").value = "";
-  setStatus("message", "আপনি Logout করেছেন।");
-  setText("adminEmail", "");
+  setStatus("message","আপনি Logout করেছেন।");
+  setText("adminEmail","");
 }
 
-/* =========================
-   DASHBOARD COUNTS
-========================= */
+/* DASHBOARD COUNTS */
 
 async function loadDashboardCounts() {
   try {
-    const [questions, players, clubs] = await Promise.all([
-      db.from("quiz_questions")
-        .select("id", { count: "exact", head: true }),
-
-      db.from("quiz_subjects")
-        .select("id", { count: "exact", head: true })
-        .eq("subject_type", "player"),
-
-      db.from("quiz_subjects")
-        .select("id", { count: "exact", head: true })
-        .eq("subject_type", "club")
+    const [questions,players,clubs] = await Promise.all([
+      db.from("quiz_questions").select("id",{count:"exact",head:true}),
+      db.from("quiz_subjects").select("id",{count:"exact",head:true}).eq("subject_type","player"),
+      db.from("quiz_subjects").select("id",{count:"exact",head:true}).eq("subject_type","club")
     ]);
 
     if (questions.error) throw questions.error;
     if (players.error) throw players.error;
     if (clubs.error) throw clubs.error;
 
-    setText("questionCount", questions.count ?? 0);
-    setText("playerCount", players.count ?? 0);
-    setText("clubCount", clubs.count ?? 0);
+    setText("questionCount",questions.count ?? 0);
+    setText("playerCount",players.count ?? 0);
+    setText("clubCount",clubs.count ?? 0);
 
-  } catch (error) {
-    console.error("Dashboard count error:", error.message);
+  } catch(error) {
+    console.error("Dashboard count error:",error.message);
   }
 }
 
-/* =========================
-   NAVIGATION
-========================= */
+/* NAVIGATION */
 
 function hidePanels() {
   [
@@ -526,28 +559,19 @@ function show(name) {
     return;
   }
 
-  if (name === "clubs") {
-    openSubjectManager("club");
-    return;
-  }
-
-  if (name === "players") {
-    openSubjectManager("player");
+  if (name === "clubs" || name === "players") {
+    openSubjectManager(name === "clubs" ? "club" : "player");
     return;
   }
 
   const titles = {
-    countries: "দেশ পরিচালনা",
-    tournaments: "টুর্নামেন্ট পরিচালনা",
-    users: "ব্যবহারকারী পরিচালনা"
+    countries:"দেশ পরিচালনা",
+    tournaments:"টুর্নামেন্ট পরিচালনা",
+    users:"ব্যবহারকারী পরিচালনা"
   };
 
-  setText("sectionTitle", titles[name] || "পরিচালনা");
-  setText(
-    "sectionText",
-    "এই অংশের সম্পূর্ণ কার্যক্রম এখনো যুক্ত করা হয়নি। এই অংশ তৈরি করতে সংশ্লিষ্ট ডেটাবেস কাঠামো ও নিয়ম যুক্ত করতে হবে।"
-  );
-
+  setText("sectionTitle",titles[name] || "পরিচালনা");
+  setText("sectionText","এই অংশের সম্পূর্ণ কার্যক্রম এখনো যুক্ত করা হয়নি।");
   showElement("section");
 }
 
@@ -555,15 +579,16 @@ function back() {
   hidePanels();
   selectedSubjectRow = null;
   hideElement("selectedSubject");
-  clearFilePreview("subjectImageFile", "newSubjectPreview");
-  setStatus("managerStatus", "");
+
+  clearFilePreview("subjectImageFile","newSubjectPreview");
+  resetSubjectForm();
+
+  setStatus("managerStatus","");
 }
 
-/* =========================
-   IMAGE UPLOAD
-========================= */
+/* IMAGE UPLOAD */
 
-async function uploadImage(file, folder) {
+async function uploadImage(file,folder) {
   if (!isAdminVerified || !currentUser) {
     throw new Error("Admin Login নেই।");
   }
@@ -571,32 +596,30 @@ async function uploadImage(file, folder) {
   const validation = validateImage(file);
   if (validation) throw new Error(validation);
 
-  const extensionMap = {
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp"
+  const extensions = {
+    "image/jpeg":"jpg",
+    "image/png":"png",
+    "image/webp":"webp"
   };
 
-  const extension = extensionMap[file.type];
+  const extension = extensions[file.type];
   const uniqueName =
     Date.now() + "-" +
     crypto.randomUUID() + "." + extension;
 
   const path = folder + "/" + uniqueName;
 
-  const { error } = await db.storage
+  const {error} = await db.storage
     .from(BUCKET)
-    .upload(path, file, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: file.type
+    .upload(path,file,{
+      cacheControl:"3600",
+      upsert:false,
+      contentType:file.type
     });
 
   if (error) throw error;
 
-  const { data } = db.storage
-    .from(BUCKET)
-    .getPublicUrl(path);
+  const {data} = db.storage.from(BUCKET).getPublicUrl(path);
 
   if (!data?.publicUrl) {
     throw new Error("ছবির Public URL পাওয়া যায়নি।");
@@ -605,9 +628,7 @@ async function uploadImage(file, folder) {
   return data.publicUrl;
 }
 
-/* =========================
-   CLUB / PLAYER MANAGEMENT
-========================= */
+/* SUBJECT MANAGEMENT */
 
 async function openSubjectManager(type) {
   activeSubjectType = type;
@@ -617,28 +638,28 @@ async function openSubjectManager(type) {
 
   setText(
     "managerTitle",
-    isClub ? "ক্লাব লোগো পরিচালনা" : "খেলোয়াড়ের ছবি পরিচালনা"
+    isClub ? "ক্লাব পরিচালনা ও লোগো" : "খেলোয়াড় পরিচালনা ও ছবি"
   );
 
   setText(
     "managerDescription",
     isClub
-      ? "ক্লাব নির্বাচন করে লোগো আপলোড, পরিবর্তন অথবা সরাতে পারবেন।"
-      : "খেলোয়াড় নির্বাচন করে ছবি আপলোড, পরিবর্তন অথবা সরাতে পারবেন।"
+      ? "এখান থেকে নতুন ক্লাব যোগ, নাম পরিবর্তন, লোগো আপলোড ও তালিকা পরিচালনা করতে পারবেন।"
+      : "এখান থেকে নতুন খেলোয়াড় যোগ, নাম পরিবর্তন, ছবি আপলোড ও তালিকা পরিচালনা করতে পারবেন।"
   );
 
   $("subjectSearch").value = "";
-  $("subjectSelect").innerHTML =
-    '<option value="">নির্বাচন করুন</option>';
+  $("subjectSelect").innerHTML = '<option value="">নির্বাচন করুন</option>';
 
   hideElement("selectedSubject");
+  resetSubjectForm();
   showElement("subjectManager");
 
   await loadSubjects(type);
 }
 
 async function loadSubjects(type) {
-  setStatus("managerStatus", "তালিকা লোড হচ্ছে...");
+  setStatus("managerStatus","তালিকা লোড হচ্ছে...");
 
   try {
     let all = [];
@@ -646,12 +667,12 @@ async function loadSubjects(type) {
     const pageSize = 500;
 
     while (true) {
-      const { data, error } = await db
+      const {data,error} = await db
         .from("quiz_subjects")
         .select("id,subject_type,subject_code,name_en,name_bn,image_url,is_enabled,sort_order")
-        .eq("subject_type", type)
-        .order("sort_order", { ascending: true })
-        .range(start, start + pageSize - 1);
+        .eq("subject_type",type)
+        .order("sort_order",{ascending:true})
+        .range(start,start + pageSize - 1);
 
       if (error) throw error;
 
@@ -666,13 +687,10 @@ async function loadSubjects(type) {
     fillSubjectSelect();
     renderSubjectList();
 
-    setStatus(
-      "managerStatus",
-      "মোট " + subjects.length + "টি রেকর্ড পাওয়া গেছে।"
-    );
+    setStatus("managerStatus","মোট " + subjects.length + "টি রেকর্ড পাওয়া গেছে।");
 
-  } catch (error) {
-    setStatus("managerStatus", "Load Error: " + error.message);
+  } catch(error) {
+    setStatus("managerStatus","Load Error: " + error.message);
   }
 }
 
@@ -700,7 +718,7 @@ function renderSubjectList() {
       subject.name_en,
       subject.name_bn,
       subject.subject_code
-    ].some(value => (value || "").toLowerCase().includes(search));
+    ].some(value => String(value || "").toLowerCase().includes(search));
   });
 
   list.innerHTML = "";
@@ -734,20 +752,33 @@ function renderSubjectList() {
     const details = document.createElement("small");
     details.textContent =
       subject.subject_code + " • " +
-      (subject.image_url ? "ছবি আছে" : "ছবি যোগ করা হয়নি");
+      (subject.image_url ? "ছবি আছে" : "ছবি নেই") + " • " +
+      (subject.is_enabled === false ? "নিষ্ক্রিয়" : "সক্রিয়");
 
-    info.append(name, details);
+    info.append(name,details);
 
-    const button = document.createElement("button");
-    button.className = "secondary";
-    button.style.width = "auto";
-    button.textContent = "পরিবর্তন";
-    button.type = "button";
-    button.addEventListener("click", () => chooseSubject(subject.id));
+    const actions = document.createElement("div");
+    actions.className = "subject-actions";
 
-    row.append(img, info, button);
+    const selectButton = document.createElement("button");
+    selectButton.className = "secondary";
+    selectButton.textContent = "নির্বাচন";
+    selectButton.type = "button";
+    selectButton.addEventListener("click",() => chooseSubject(subject.id));
+
+    const editButton = document.createElement("button");
+    editButton.textContent = "Edit";
+    editButton.type = "button";
+    editButton.addEventListener("click",() => editSubject(subject.id));
+
+    actions.append(selectButton,editButton);
+    row.append(img,info,actions);
     list.appendChild(row);
   });
+}
+
+function findSubject(id) {
+  return subjects.find(subject => String(subject.id) === String(id)) || null;
 }
 
 function chooseSubject(id) {
@@ -755,18 +786,17 @@ function chooseSubject(id) {
   selectSubject();
 
   $("selectedSubject").scrollIntoView({
-    behavior: "smooth",
-    block: "start"
+    behavior:"smooth",
+    block:"start"
   });
 }
 
 function selectSubject() {
-  const id = Number($("subjectSelect").value);
+  const id = $("subjectSelect").value;
 
-  selectedSubjectRow =
-    subjects.find(subject => subject.id === id) || null;
+  selectedSubjectRow = findSubject(id);
 
-  clearFilePreview("subjectImageFile", "newSubjectPreview");
+  clearFilePreview("subjectImageFile","newSubjectPreview");
 
   if (!selectedSubjectRow) {
     hideElement("selectedSubject");
@@ -786,13 +816,222 @@ function selectSubject() {
   if (selectedSubjectRow.image_url) {
     preview.src = selectedSubjectRow.image_url;
     showElement("subjectPreview");
-    setText("imageStatus", "বর্তমান ছবি সংরক্ষিত আছে।");
+    setText("imageStatus","বর্তমান ছবি সংরক্ষিত আছে।");
   } else {
     preview.removeAttribute("src");
     hideElement("subjectPreview");
-    setText("imageStatus", "এখনো কোনো ছবি যোগ করা হয়নি।");
+    setText("imageStatus","এখনো কোনো ছবি যোগ করা হয়নি।");
   }
 }
+
+/* ADD NEW SUBJECT */
+
+async function addSubject() {
+  const button = $("addSubjectButton");
+
+  const nameBn = $("subjectNameBn").value.trim();
+  const nameEn = $("subjectNameEn").value.trim();
+  const code = $("subjectCode").value.trim().toUpperCase();
+  const sortOrder = Number($("subjectSortOrder").value);
+  const enabled = $("subjectEnabled").checked;
+  const file = $("newSubjectImageFile").files[0];
+
+  if (!nameBn && !nameEn) {
+    setStatus("subjectFormStatus","বাংলা অথবা ইংরেজি নাম লিখুন।");
+    return;
+  }
+
+  if (!code) {
+    setStatus("subjectFormStatus","Subject Code লিখুন।");
+    return;
+  }
+
+  if (!/^[A-Z0-9_-]+$/.test(code)) {
+    setStatus("subjectFormStatus","Code-এ শুধু ইংরেজি অক্ষর, সংখ্যা, _ এবং - ব্যবহার করুন।");
+    return;
+  }
+
+  if (!Number.isInteger(sortOrder) || sortOrder < 0) {
+    setStatus("subjectFormStatus","Sort Order সঠিকভাবে লিখুন।");
+    return;
+  }
+
+  if (subjects.some(item => String(item.subject_code).toUpperCase() === code)) {
+    setStatus("subjectFormStatus","এই Subject Code আগে থেকেই আছে।");
+    return;
+  }
+
+  if (file) {
+    const validation = validateImage(file);
+    if (validation) {
+      setStatus("subjectFormStatus",validation);
+      return;
+    }
+  }
+
+  button.disabled = true;
+  setStatus("subjectFormStatus","নতুন তালিকা যোগ হচ্ছে...");
+
+  try {
+    let imageUrl = null;
+
+    if (file) {
+      const folder = activeSubjectType === "club" ? "club-logos" : "player-photos";
+      imageUrl = await uploadImage(file,folder);
+    }
+
+    const {data,error} = await db
+      .from("quiz_subjects")
+      .insert({
+        subject_type:activeSubjectType,
+        subject_code:code,
+        name_bn:nameBn || null,
+        name_en:nameEn || null,
+        image_url:imageUrl,
+        is_enabled:enabled,
+        sort_order:sortOrder
+      })
+      .select("id,subject_type,subject_code,name_en,name_bn,image_url,is_enabled,sort_order")
+      .single();
+
+    if (error) throw error;
+
+    subjects.push(data);
+    subjects.sort((a,b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+    fillSubjectSelect();
+    renderSubjectList();
+    await loadDashboardCounts();
+
+    resetSubjectForm();
+
+    setStatus("subjectFormStatus","নতুন তালিকা সফলভাবে যোগ হয়েছে।");
+    setStatus("managerStatus","নতুন রেকর্ড Database-এ সংরক্ষিত হয়েছে।");
+
+  } catch(error) {
+    setStatus("subjectFormStatus","Add Error: " + error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/* EDIT SUBJECT */
+
+function editSubject(id) {
+  const subject = findSubject(id);
+  if (!subject) return;
+
+  selectedSubjectRow = subject;
+
+  $("subjectNameBn").value = subject.name_bn || "";
+  $("subjectNameEn").value = subject.name_en || "";
+  $("subjectCode").value = subject.subject_code || "";
+  $("subjectSortOrder").value = subject.sort_order ?? 0;
+  $("subjectEnabled").checked = subject.is_enabled !== false;
+
+  clearFilePreview("newSubjectImageFile","newSubjectImagePreview");
+
+  setText("subjectFormTitle","তথ্য পরিবর্তন করুন");
+
+  hideElement("addSubjectButton");
+  showElement("updateSubjectButton");
+  showElement("cancelEditButton");
+
+  chooseSubject(id);
+
+  $("subjectFormTitle").scrollIntoView({
+    behavior:"smooth",
+    block:"start"
+  });
+}
+
+async function updateSubject() {
+  if (!selectedSubjectRow) {
+    setStatus("subjectFormStatus","প্রথমে একটি রেকর্ড নির্বাচন করুন।");
+    return;
+  }
+
+  const button = $("updateSubjectButton");
+
+  const nameBn = $("subjectNameBn").value.trim();
+  const nameEn = $("subjectNameEn").value.trim();
+  const code = $("subjectCode").value.trim().toUpperCase();
+  const sortOrder = Number($("subjectSortOrder").value);
+  const enabled = $("subjectEnabled").checked;
+
+  if (!nameBn && !nameEn) {
+    setStatus("subjectFormStatus","বাংলা অথবা ইংরেজি নাম লিখুন।");
+    return;
+  }
+
+  if (!code || !/^[A-Z0-9_-]+$/.test(code)) {
+    setStatus("subjectFormStatus","সঠিক Subject Code লিখুন।");
+    return;
+  }
+
+  if (!Number.isInteger(sortOrder) || sortOrder < 0) {
+    setStatus("subjectFormStatus","Sort Order সঠিক নয়।");
+    return;
+  }
+
+  const duplicate = subjects.find(item =>
+    String(item.id) !== String(selectedSubjectRow.id) &&
+    String(item.subject_code).toUpperCase() === code
+  );
+
+  if (duplicate) {
+    setStatus("subjectFormStatus","এই Code অন্য একটি রেকর্ডে ব্যবহার করা হয়েছে।");
+    return;
+  }
+
+  button.disabled = true;
+  setStatus("subjectFormStatus","পরিবর্তন সংরক্ষণ হচ্ছে...");
+
+  try {
+    const {data,error} = await db
+      .from("quiz_subjects")
+      .update({
+        name_bn:nameBn || null,
+        name_en:nameEn || null,
+        subject_code:code,
+        sort_order:sortOrder,
+        is_enabled:enabled
+      })
+      .eq("id",selectedSubjectRow.id)
+      .eq("subject_type",activeSubjectType)
+      .select("id,subject_type,subject_code,name_en,name_bn,image_url,is_enabled,sort_order")
+      .single();
+
+    if (error) throw error;
+
+    const index = subjects.findIndex(
+      item => String(item.id) === String(data.id)
+    );
+
+    if (index !== -1) subjects[index] = data;
+
+    selectedSubjectRow = data;
+
+    subjects.sort((a,b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+    fillSubjectSelect();
+    $("subjectSelect").value = String(data.id);
+
+    selectSubject();
+    renderSubjectList();
+    await loadDashboardCounts();
+
+    resetSubjectForm();
+    setStatus("subjectFormStatus","তথ্য সফলভাবে পরিবর্তন হয়েছে।");
+
+  } catch(error) {
+    setStatus("subjectFormStatus","Update Error: " + error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/* SAVE SUBJECT IMAGE */
 
 async function saveSubjectImage() {
   if (!selectedSubjectRow) {
@@ -804,57 +1043,52 @@ async function saveSubjectImage() {
   const button = $("saveSubjectImageButton");
 
   if (!file) {
-    setStatus("managerStatus", "প্রথমে নতুন ছবি নির্বাচন করুন।");
+    setStatus("managerStatus","প্রথমে নতুন ছবি নির্বাচন করুন।");
     return;
   }
 
   const validation = validateImage(file);
   if (validation) {
-    setStatus("managerStatus", validation);
+    setStatus("managerStatus",validation);
     return;
   }
 
   button.disabled = true;
-  setStatus("managerStatus", "ছবি আপলোড হচ্ছে...");
+  setStatus("managerStatus","ছবি আপলোড হচ্ছে...");
 
   try {
-    const folder =
-      activeSubjectType === "club" ? "club-logos" : "player-photos";
+    const folder = activeSubjectType === "club" ? "club-logos" : "player-photos";
+    const url = await uploadImage(file,folder);
 
-    const url = await uploadImage(file, folder);
-
-    const { error } = await db
+    const {error} = await db
       .from("quiz_subjects")
-      .update({ image_url: url })
-      .eq("id", selectedSubjectRow.id)
-      .eq("subject_type", activeSubjectType);
+      .update({image_url:url})
+      .eq("id",selectedSubjectRow.id)
+      .eq("subject_type",activeSubjectType);
 
     if (error) throw error;
 
     selectedSubjectRow.image_url = url;
 
     const index = subjects.findIndex(
-      subject => subject.id === selectedSubjectRow.id
+      item => String(item.id) === String(selectedSubjectRow.id)
     );
 
-    if (index !== -1) {
-      subjects[index].image_url = url;
-    }
+    if (index !== -1) subjects[index].image_url = url;
 
     selectSubject();
     renderSubjectList();
 
-    setStatus(
-      "managerStatus",
-      "ছবি সফলভাবে আপলোড ও সংরক্ষণ হয়েছে।"
-    );
+    setStatus("managerStatus","ছবি সফলভাবে আপলোড ও সংরক্ষণ হয়েছে।");
 
-  } catch (error) {
-    setStatus("managerStatus", "Save Error: " + error.message);
+  } catch(error) {
+    setStatus("managerStatus","Save Error: " + error.message);
   } finally {
     button.disabled = false;
   }
 }
+
+/* REMOVE SUBJECT IMAGE */
 
 async function removeSubjectImage() {
   if (!selectedSubjectRow) return;
@@ -870,86 +1104,79 @@ async function removeSubjectImage() {
   button.disabled = true;
 
   try {
-    setStatus("managerStatus", "ছবি সরানো হচ্ছে...");
+    setStatus("managerStatus","ছবি সরানো হচ্ছে...");
 
-    const { error } = await db
+    const {error} = await db
       .from("quiz_subjects")
-      .update({ image_url: null })
-      .eq("id", selectedSubjectRow.id)
-      .eq("subject_type", activeSubjectType);
+      .update({image_url:null})
+      .eq("id",selectedSubjectRow.id)
+      .eq("subject_type",activeSubjectType);
 
     if (error) throw error;
 
     selectedSubjectRow.image_url = null;
 
     const index = subjects.findIndex(
-      subject => subject.id === selectedSubjectRow.id
+      item => String(item.id) === String(selectedSubjectRow.id)
     );
 
-    if (index !== -1) {
-      subjects[index].image_url = null;
-    }
+    if (index !== -1) subjects[index].image_url = null;
 
     selectSubject();
     renderSubjectList();
 
-    setStatus("managerStatus", "ছবির URL সফলভাবে সরানো হয়েছে।");
+    setStatus("managerStatus","ছবির URL সরানো হয়েছে। Storage-এর পুরোনো ফাইল আলাদা থাকতে পারে।");
 
-  } catch (error) {
-    setStatus("managerStatus", "Remove Error: " + error.message);
+  } catch(error) {
+    setStatus("managerStatus","Remove Error: " + error.message);
   } finally {
     button.disabled = false;
   }
 }
 
-/* =========================
-   GENERAL IMAGE PREVIEWS
-========================= */
+/* GENERAL PREVIEWS */
 
-function setupPreview(inputId, previewId) {
-  $(inputId).addEventListener("change", function () {
+function setupPreview(inputId,previewId) {
+  $(inputId).addEventListener("change",function() {
     const file = this.files[0];
+
     if (!file) {
-      clearFilePreview(inputId, previewId);
+      clearFilePreview(inputId,previewId);
       return;
     }
 
-    if (!makePreview(file, previewId)) {
+    if (!makePreview(file,previewId)) {
       this.value = "";
     }
   });
 }
 
-setupPreview("subjectImageFile", "newSubjectPreview");
-setupPreview("coverFile", "coverPreview");
-setupPreview("logoFile", "logoPreview");
-setupPreview("iconFile", "iconPreview");
-setupPreview("developerPhotoFile", "developerPreview");
+setupPreview("subjectImageFile","newSubjectPreview");
+setupPreview("newSubjectImageFile","newSubjectImagePreview");
+setupPreview("coverFile","coverPreview");
+setupPreview("logoFile","logoPreview");
+setupPreview("iconFile","iconPreview");
+setupPreview("developerPhotoFile","developerPreview");
 
-/* =========================
-   APP SETTINGS
-========================= */
+/* APP SETTINGS */
 
-async function saveSetting(key, value) {
+async function saveSetting(key,value) {
   if (!isAdminVerified || !currentUser) {
     throw new Error("Admin অনুমতি নেই।");
   }
 
-  const { error } = await db
+  const {error} = await db
     .from("app_settings")
-    .upsert(
-      {
-        key,
-        value: String(value),
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: "key" }
-    );
+    .upsert({
+      key,
+      value:String(value),
+      updated_at:new Date().toISOString()
+    },{onConflict:"key"});
 
   if (error) throw error;
 }
 
-function setRemotePreview(id, url) {
+function setRemotePreview(id,url) {
   if (url) {
     $(id).src = url;
     showElement(id);
@@ -961,7 +1188,7 @@ function setRemotePreview(id, url) {
 
 async function loadSettings() {
   try {
-    const { data, error } = await db
+    const {data,error} = await db
       .from("app_settings")
       .select("key,value");
 
@@ -977,51 +1204,52 @@ async function loadSettings() {
     $("developerPhone").value = settings.developer_phone || "";
     $("whatsappLink").value = settings.whatsapp_link || "";
 
-    setRemotePreview("coverPreview", settings.home_cover_url);
-    setRemotePreview("logoPreview", settings.home_logo_url);
-    setRemotePreview("iconPreview", settings.app_icon_url);
-    setRemotePreview("developerPreview", settings.developer_photo_url);
+    setRemotePreview("coverPreview",settings.home_cover_url);
+    setRemotePreview("logoPreview",settings.home_logo_url);
+    setRemotePreview("iconPreview",settings.app_icon_url);
+    setRemotePreview("developerPreview",settings.developer_photo_url);
 
     fillQuizSettings(settings);
 
-  } catch (error) {
-    console.error("Settings Load Error:", error.message);
+  } catch(error) {
+    console.error("Settings Load Error:",error.message);
   }
 }
 
 async function saveAppSettings() {
   const button = $("saveAppButton");
   button.disabled = true;
-  setStatus("appStatus", "সংরক্ষণ হচ্ছে...");
+  setStatus("appStatus","সংরক্ষণ হচ্ছে...");
 
   try {
     const files = [
-      ["coverFile", "home-cover", "home_cover_url"],
-      ["logoFile", "home-logo", "home_logo_url"],
-      ["iconFile", "app-icon", "app_icon_url"]
+      ["coverFile","home-cover","home_cover_url","coverPreview"],
+      ["logoFile","home-logo","home_logo_url","logoPreview"],
+      ["iconFile","app-icon","app_icon_url","iconPreview"]
     ];
 
-    for (const [inputId, folder, key] of files) {
+    for (const [inputId,folder,key,previewId] of files) {
       const file = $(inputId).files[0];
 
       if (file) {
-        const url = await uploadImage(file, folder);
-        await saveSetting(key, url);
+        const url = await uploadImage(file,folder);
+        await saveSetting(key,url);
+        setRemotePreview(previewId,url);
+        clearFilePreview(inputId,previewId);
+        setRemotePreview(previewId,url);
       }
     }
 
-    setStatus("appStatus", "App Settings সফলভাবে সংরক্ষিত হয়েছে।");
+    setStatus("appStatus","App Settings সফলভাবে সংরক্ষিত হয়েছে।");
 
-  } catch (error) {
-    setStatus("appStatus", "Error: " + error.message);
+  } catch(error) {
+    setStatus("appStatus","Error: " + error.message);
   } finally {
     button.disabled = false;
   }
 }
 
-/* =========================
-   QUIZ SETTINGS
-========================= */
+/* QUIZ SETTINGS */
 
 function fillQuizSettings(settings) {
   $("quizMin").value = settings.quiz_min_questions ?? 5;
@@ -1035,13 +1263,13 @@ function fillQuizSettings(settings) {
 }
 
 async function loadQuizSettings() {
-  setStatus("quizStatus", "সেটিংস লোড হচ্ছে...");
+  setStatus("quizStatus","সেটিংস লোড হচ্ছে...");
 
   try {
-    const { data, error } = await db
+    const {data,error} = await db
       .from("app_settings")
       .select("key,value")
-      .like("key", "quiz_%");
+      .like("key","quiz_%");
 
     if (error) throw error;
 
@@ -1052,30 +1280,29 @@ async function loadQuizSettings() {
     });
 
     fillQuizSettings(settings);
-    setStatus("quizStatus", "Quiz Settings লোড হয়েছে।");
+    setStatus("quizStatus","Quiz Settings লোড হয়েছে।");
 
-  } catch (error) {
-    setStatus("quizStatus", "Load Error: " + error.message);
+  } catch(error) {
+    setStatus("quizStatus","Load Error: " + error.message);
   }
 }
 
 async function saveQuizSettings() {
   const button = $("saveQuizButton");
-  const status = $("quizStatus");
 
   const values = {
-    quiz_min_questions: Number($("quizMin").value),
-    quiz_max_questions: Number($("quizMax").value),
-    quiz_default_questions: Number($("quizDefault").value),
-    quiz_timer_seconds: Number($("quizTimer").value),
-    quiz_correct_xp: Number($("quizCorrectXP").value),
-    quiz_wrong_xp: Number($("quizWrongXP").value),
-    quiz_correct_points: Number($("quizCorrectPoints").value),
-    quiz_wrong_points: Number($("quizWrongPoints").value)
+    quiz_min_questions:Number($("quizMin").value),
+    quiz_max_questions:Number($("quizMax").value),
+    quiz_default_questions:Number($("quizDefault").value),
+    quiz_timer_seconds:Number($("quizTimer").value),
+    quiz_correct_xp:Number($("quizCorrectXP").value),
+    quiz_wrong_xp:Number($("quizWrongXP").value),
+    quiz_correct_points:Number($("quizCorrectPoints").value),
+    quiz_wrong_points:Number($("quizWrongPoints").value)
   };
 
   if (Object.values(values).some(value => !Number.isInteger(value))) {
-    setStatus("quizStatus", "সব ঘরে পূর্ণসংখ্যা লিখুন।");
+    setStatus("quizStatus","সব ঘরে পূর্ণসংখ্যা লিখুন।");
     return;
   }
 
@@ -1084,7 +1311,7 @@ async function saveQuizSettings() {
     values.quiz_max_questions < values.quiz_min_questions ||
     values.quiz_max_questions > 500
   ) {
-    setStatus("quizStatus", "সর্বনিম্ন ও সর্বোচ্চ প্রশ্ন সংখ্যা সঠিকভাবে দিন।");
+    setStatus("quizStatus","সর্বনিম্ন ও সর্বোচ্চ প্রশ্ন সংখ্যা সঠিকভাবে দিন।");
     return;
   }
 
@@ -1092,7 +1319,7 @@ async function saveQuizSettings() {
     values.quiz_default_questions < values.quiz_min_questions ||
     values.quiz_default_questions > values.quiz_max_questions
   ) {
-    setStatus("quizStatus", "ডিফল্ট প্রশ্ন সংখ্যা নির্ধারিত সীমার মধ্যে দিন।");
+    setStatus("quizStatus","ডিফল্ট প্রশ্ন সংখ্যা নির্ধারিত সীমার মধ্যে দিন।");
     return;
   }
 
@@ -1101,48 +1328,43 @@ async function saveQuizSettings() {
     values.quiz_timer_seconds > 300 ||
     values.quiz_correct_xp < 0 ||
     values.quiz_wrong_xp > 0 ||
+    values.quiz_wrong_xp < -10000 ||
     values.quiz_correct_points < 0 ||
-    values.quiz_wrong_points < 0
+    values.quiz_correct_points > 10000 ||
+    values.quiz_wrong_points < 0 ||
+    values.quiz_wrong_points > 10000 ||
+    values.quiz_correct_xp > 10000
   ) {
-    setStatus("quizStatus", "XP, পয়েন্ট অথবা টাইমারের মান সঠিক নয়।");
+    setStatus("quizStatus","XP, পয়েন্ট অথবা টাইমারের মান সঠিক নয়।");
     return;
   }
 
   button.disabled = true;
-  setStatus("quizStatus", "সেটিংস সংরক্ষণ হচ্ছে...");
+  setStatus("quizStatus","সেটিংস সংরক্ষণ হচ্ছে...");
 
   try {
-    for (const [key, value] of Object.entries(values)) {
-      await saveSetting(key, value);
+    for (const [key,value] of Object.entries(values)) {
+      await saveSetting(key,value);
     }
 
-    setStatus("quizStatus", "Quiz Settings সফলভাবে সংরক্ষিত হয়েছে।");
+    setStatus("quizStatus","Quiz Settings সফলভাবে সংরক্ষিত হয়েছে।");
 
-  } catch (error) {
-    setStatus("quizStatus", "Save Error: " + error.message);
+  } catch(error) {
+    setStatus("quizStatus","Save Error: " + error.message);
   } finally {
     button.disabled = false;
   }
 }
 
-/* =========================
-   DEVELOPER SETTINGS
-========================= */
+/* DEVELOPER SETTINGS */
 
 async function saveDeveloperSettings() {
   const button = $("saveDeveloperButton");
   button.disabled = true;
 
-  setStatus("developerStatus", "সংরক্ষণ হচ্ছে...");
+  setStatus("developerStatus","সংরক্ষণ হচ্ছে...");
 
   try {
-    const photo = $("developerPhotoFile").files[0];
-
-    if (photo) {
-      const url = await uploadImage(photo, "developer-photo");
-      await saveSetting("developer_photo_url", url);
-    }
-
     const name = $("developerName").value.trim();
     const phone = $("developerPhone").value.trim();
     const whatsapp = $("whatsappLink").value.trim();
@@ -1151,56 +1373,64 @@ async function saveDeveloperSettings() {
       throw new Error("সঠিক WhatsApp Link দিন।");
     }
 
-    await saveSetting("developer_name", name);
-    await saveSetting("developer_phone", phone);
-    await saveSetting("whatsapp_link", whatsapp);
+    const photo = $("developerPhotoFile").files[0];
 
-    setStatus(
-      "developerStatus",
-      "Developer Settings সফলভাবে সংরক্ষিত হয়েছে।"
-    );
+    if (photo) {
+      const url = await uploadImage(photo,"developer-photo");
+      await saveSetting("developer_photo_url",url);
+      setRemotePreview("developerPreview",url);
+      clearFilePreview("developerPhotoFile","developerPreview");
+      setRemotePreview("developerPreview",url);
+    }
 
-  } catch (error) {
-    setStatus("developerStatus", "Error: " + error.message);
+    await saveSetting("developer_name",name);
+    await saveSetting("developer_phone",phone);
+    await saveSetting("whatsapp_link",whatsapp);
+
+    setStatus("developerStatus","Developer Settings সফলভাবে সংরক্ষিত হয়েছে।");
+
+  } catch(error) {
+    setStatus("developerStatus","Error: " + error.message);
   } finally {
     button.disabled = false;
   }
 }
 
-/* =========================
-   EVENT LISTENERS
-========================= */
+/* EVENTS */
 
-$("loginButton").addEventListener("click", login);
-$("saveSubjectImageButton").addEventListener("click", saveSubjectImage);
-$("removeSubjectImageButton").addEventListener("click", removeSubjectImage);
-$("saveAppButton").addEventListener("click", saveAppSettings);
-$("saveQuizButton").addEventListener("click", saveQuizSettings);
-$("saveDeveloperButton").addEventListener("click", saveDeveloperSettings);
-$("backButton").addEventListener("click", back);
-$("logoutButton").addEventListener("click", logout);
+$("loginButton").addEventListener("click",login);
+$("saveSubjectImageButton").addEventListener("click",saveSubjectImage);
+$("removeSubjectImageButton").addEventListener("click",removeSubjectImage);
+$("addSubjectButton").addEventListener("click",addSubject);
+$("updateSubjectButton").addEventListener("click",updateSubject);
+$("cancelEditButton").addEventListener("click",resetSubjectForm);
+$("editSelectedSubjectButton").addEventListener("click",() => {
+  if (selectedSubjectRow) editSubject(selectedSubjectRow.id);
+});
 
-$("subjectSelect").addEventListener("change", selectSubject);
-$("subjectSearch").addEventListener("input", renderSubjectList);
+$("saveAppButton").addEventListener("click",saveAppSettings);
+$("saveQuizButton").addEventListener("click",saveQuizSettings);
+$("saveDeveloperButton").addEventListener("click",saveDeveloperSettings);
+$("backButton").addEventListener("click",back);
+$("logoutButton").addEventListener("click",logout);
 
-$("password").addEventListener("keydown", event => {
+$("subjectSelect").addEventListener("change",selectSubject);
+$("subjectSearch").addEventListener("input",renderSubjectList);
+
+$("password").addEventListener("keydown",event => {
   if (event.key === "Enter") login();
 });
 
-/* =========================
-   AUTH STATE
-========================= */
+/* AUTH STATE */
 
-db.auth.onAuthStateChange((event) => {
+db.auth.onAuthStateChange(event => {
   if (event === "SIGNED_OUT") {
     currentUser = null;
     isAdminVerified = false;
   }
 });
 
-/* =========================
-   START
-========================= */
+/* START */
 
 restoreSession();
 
