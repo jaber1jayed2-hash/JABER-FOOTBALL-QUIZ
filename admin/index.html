@@ -45,6 +45,21 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 .check-row label{margin:0}
 .subject-actions{display:flex;gap:7px;flex-wrap:wrap}
 .subject-actions button{width:auto;flex:1;min-width:90px}
+.subject-check{width:22px;height:22px;flex-shrink:0;margin:0;cursor:pointer}
+.bulk-toolbar{background:#1a3022;border:1px solid #315b3d;border-radius:10px;padding:12px;margin:15px 0}
+.bulk-toolbar p{margin:4px 0 10px;color:#c5d6ca}
+.bulk-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px}
+.bulk-buttons button{margin:3px 0}
+.bulk-select-all{display:flex;align-items:center;gap:9px;margin:5px 0 12px}
+.bulk-select-all input{width:21px;height:21px;margin:0}
+.bulk-select-all label{margin:0}
+@media(max-width:520px){
+.subject-row{gap:8px;padding:9px}
+.subject-image{width:55px;height:55px}
+.subject-actions{min-width:85px;flex-direction:column}
+.subject-actions button{min-width:0;width:100%;padding:9px 5px;font-size:13px}
+.subject-info{font-size:13px}
+}
 </style>
 </head>
 
@@ -100,7 +115,6 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 <h2 id="managerTitle">ছবি ও তালিকা পরিচালনা</h2>
 <p id="managerDescription" class="status"></p>
 
-<!-- ADD NEW SUBJECT -->
 <div class="form-card">
 <h3 id="subjectFormTitle">নতুন রেকর্ড যোগ করুন</h3>
 
@@ -159,6 +173,28 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 </div>
 
 <h3>সব তালিকা</h3>
+
+<!-- BULK ACTIONS -->
+<div class="bulk-toolbar">
+<p><strong>একসাথে একাধিক রেকর্ড পরিচালনা</strong></p>
+
+<div class="bulk-select-all">
+<input type="checkbox" id="selectAllSubjects">
+<label for="selectAllSubjects">এই তালিকার সব নির্বাচন করুন</label>
+</div>
+
+<p id="selectionCount" class="status">নির্বাচিত: ০টি</p>
+
+<div class="bulk-buttons">
+<button type="button" class="secondary" id="clearSubjectSelectionButton">নির্বাচন বাতিল</button>
+<button type="button" id="bulkEnableButton">নির্বাচিত প্রকাশ করুন</button>
+<button type="button" class="secondary" id="bulkDisableButton">নির্বাচিত অপ্রকাশ করুন</button>
+<button type="button" class="danger" id="bulkDeleteButton">নির্বাচিত মুছুন</button>
+</div>
+
+<p class="status">নোট: প্রশ্নের সঙ্গে যুক্ত কোনো ক্লাব বা খেলোয়াড় মুছে ফেলা যাবে না। আগে সংশ্লিষ্ট প্রশ্ন সরাতে হবে অথবা রেকর্ডটি অপ্রকাশ করতে হবে।</p>
+</div>
+
 <div id="subjectList" class="status">তালিকা লোড হচ্ছে...</div>
 <p id="managerStatus" class="status"></p>
 </div>
@@ -289,12 +325,13 @@ let isAdminVerified = false;
 let activeSubjectType = "";
 let subjects = [];
 let selectedSubjectRow = null;
+let selectedSubjectIds = new Set();
 
 /* DOM HELPERS */
 
 const $ = id => document.getElementById(id);
 
-function setText(id, value) {
+function setText(id,value) {
   $(id).textContent = value ?? "";
 }
 
@@ -306,8 +343,8 @@ function hideElement(id) {
   $(id).classList.add("hidden");
 }
 
-function setStatus(id, message) {
-  setText(id, message);
+function setStatus(id,message) {
+  setText(id,message);
 }
 
 function validateImage(file) {
@@ -324,7 +361,7 @@ function validateImage(file) {
   return "";
 }
 
-function makePreview(file, imageId) {
+function makePreview(file,imageId) {
   if (!file) return false;
 
   const error = validateImage(file);
@@ -334,6 +371,7 @@ function makePreview(file, imageId) {
   }
 
   const img = $(imageId);
+
   if (img.dataset.objectUrl) {
     URL.revokeObjectURL(img.dataset.objectUrl);
   }
@@ -345,7 +383,7 @@ function makePreview(file, imageId) {
   return true;
 }
 
-function clearFilePreview(inputId, imageId) {
+function clearFilePreview(inputId,imageId) {
   $(inputId).value = "";
 
   const img = $(imageId);
@@ -481,6 +519,7 @@ async function logout() {
   currentUser = null;
   isAdminVerified = false;
   selectedSubjectRow = null;
+  selectedSubjectIds.clear();
 
   hideElement("dashboard");
   showElement("login");
@@ -580,6 +619,9 @@ function back() {
   selectedSubjectRow = null;
   hideElement("selectedSubject");
 
+  selectedSubjectIds.clear();
+  updateSelectionUI();
+
   clearFilePreview("subjectImageFile","newSubjectPreview");
   resetSubjectForm();
 
@@ -634,6 +676,11 @@ async function openSubjectManager(type) {
   activeSubjectType = type;
   selectedSubjectRow = null;
 
+  // ক্লাব থেকে খেলোয়াড় বা খেলোয়াড় থেকে ক্লাবে গেলে
+  // আগের তালিকার নির্বাচন বাতিল হবে।
+  selectedSubjectIds.clear();
+  updateSelectionUI();
+
   const isClub = type === "club";
 
   setText(
@@ -684,8 +731,16 @@ async function loadSubjects(type) {
     }
 
     subjects = all;
+
+    // তালিকায় আর নেই এমন ID নির্বাচন থেকে বাদ।
+    const existingIds = new Set(subjects.map(item => String(item.id)));
+    selectedSubjectIds = new Set(
+      [...selectedSubjectIds].filter(id => existingIds.has(String(id)))
+    );
+
     fillSubjectSelect();
     renderSubjectList();
+    updateSelectionUI();
 
     setStatus("managerStatus","মোট " + subjects.length + "টি রেকর্ড পাওয়া গেছে।");
 
@@ -709,28 +764,107 @@ function fillSubjectSelect() {
   });
 }
 
-function renderSubjectList() {
-  const search = $("subjectSearch").value.trim().toLowerCase();
-  const list = $("subjectList");
+/* FILTERED SUBJECTS */
 
-  const filtered = subjects.filter(subject => {
+function getFilteredSubjects() {
+  const search = $("subjectSearch").value.trim().toLowerCase();
+
+  return subjects.filter(subject => {
     return [
       subject.name_en,
       subject.name_bn,
       subject.subject_code
     ].some(value => String(value || "").toLowerCase().includes(search));
   });
+}
+
+/* BULK SELECTION UI */
+
+function updateSelectionUI() {
+  const selectedCount = selectedSubjectIds.size;
+
+  setText("selectionCount","নির্বাচিত: " + selectedCount + "টি");
+
+  const filtered = getFilteredSubjects();
+  const allSelected = filtered.length > 0 &&
+    filtered.every(subject => selectedSubjectIds.has(String(subject.id)));
+
+  $("selectAllSubjects").checked = allSelected;
+  $("selectAllSubjects").indeterminate =
+    !allSelected && filtered.some(subject => selectedSubjectIds.has(String(subject.id)));
+
+  $("bulkEnableButton").disabled = selectedCount === 0;
+  $("bulkDisableButton").disabled = selectedCount === 0;
+  $("bulkDeleteButton").disabled = selectedCount === 0;
+  $("clearSubjectSelectionButton").disabled = selectedCount === 0;
+}
+
+function toggleSubjectSelection(id,checked) {
+  const key = String(id);
+
+  if (checked) {
+    selectedSubjectIds.add(key);
+  } else {
+    selectedSubjectIds.delete(key);
+  }
+
+  updateSelectionUI();
+}
+
+function selectAllFilteredSubjects(checked) {
+  const filtered = getFilteredSubjects();
+
+  filtered.forEach(subject => {
+    const id = String(subject.id);
+
+    if (checked) {
+      selectedSubjectIds.add(id);
+    } else {
+      selectedSubjectIds.delete(id);
+    }
+  });
+
+  renderSubjectList();
+  updateSelectionUI();
+}
+
+function clearSubjectSelection() {
+  selectedSubjectIds.clear();
+  renderSubjectList();
+  updateSelectionUI();
+  setStatus("managerStatus","সব নির্বাচন বাতিল করা হয়েছে।");
+}
+
+/* RENDER SUBJECT LIST */
+
+function renderSubjectList() {
+  const filtered = getFilteredSubjects();
+  const list = $("subjectList");
 
   list.innerHTML = "";
 
   if (!filtered.length) {
     list.textContent = "কোনো ফলাফল পাওয়া যায়নি।";
+    updateSelectionUI();
     return;
   }
 
   filtered.forEach(subject => {
     const row = document.createElement("div");
     row.className = "subject-row";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "subject-check";
+    checkbox.checked = selectedSubjectIds.has(String(subject.id));
+    checkbox.setAttribute(
+      "aria-label",
+      (subject.name_bn || subject.name_en || subject.subject_code) + " নির্বাচন"
+    );
+
+    checkbox.addEventListener("change",() => {
+      toggleSubjectSelection(subject.id,checkbox.checked);
+    });
 
     const img = document.createElement("img");
     img.className = "subject-image";
@@ -753,7 +887,7 @@ function renderSubjectList() {
     details.textContent =
       subject.subject_code + " • " +
       (subject.image_url ? "ছবি আছে" : "ছবি নেই") + " • " +
-      (subject.is_enabled === false ? "নিষ্ক্রিয়" : "সক্রিয়");
+      (subject.is_enabled === false ? "অপ্রকাশিত" : "প্রকাশিত");
 
     info.append(name,details);
 
@@ -772,9 +906,11 @@ function renderSubjectList() {
     editButton.addEventListener("click",() => editSubject(subject.id));
 
     actions.append(selectButton,editButton);
-    row.append(img,info,actions);
+    row.append(checkbox,img,info,actions);
     list.appendChild(row);
   });
+
+  updateSelectionUI();
 }
 
 function findSubject(id) {
@@ -824,6 +960,208 @@ function selectSubject() {
   }
 }
 
+/* BULK ENABLE / DISABLE */
+
+async function bulkUpdateSubjects(enabled) {
+  if (!isAdminVerified || !currentUser) {
+    alert("প্রথমে Admin Login করুন।");
+    return;
+  }
+
+  const ids = [...selectedSubjectIds];
+
+  if (!ids.length) {
+    alert("প্রথমে অন্তত একটি রেকর্ড নির্বাচন করুন।");
+    return;
+  }
+
+  const actionText = enabled ? "প্রকাশ" : "অপ্রকাশ";
+
+  if (!confirm(
+    "নির্বাচিত " + ids.length + "টি " +
+    (activeSubjectType === "club" ? "ক্লাব" : "খেলোয়াড়") +
+    " " + actionText + " করতে চান?"
+  )) return;
+
+  const button = enabled ? $("bulkEnableButton") : $("bulkDisableButton");
+  button.disabled = true;
+
+  setStatus("managerStatus","নির্বাচিত রেকর্ডগুলো আপডেট হচ্ছে...");
+
+  try {
+    const {error} = await db
+      .from("quiz_subjects")
+      .update({is_enabled:enabled})
+      .eq("subject_type",activeSubjectType)
+      .in("id",ids);
+
+    if (error) throw error;
+
+    selectedSubjectIds.clear();
+
+    if (
+      selectedSubjectRow &&
+      ids.includes(String(selectedSubjectRow.id))
+    ) {
+      selectedSubjectRow = null;
+      $("subjectSelect").value = "";
+      hideElement("selectedSubject");
+      clearFilePreview("subjectImageFile","newSubjectPreview");
+    }
+
+    await loadSubjects(activeSubjectType);
+    await loadDashboardCounts();
+
+    setStatus(
+      "managerStatus",
+      ids.length + "টি রেকর্ড সফলভাবে " + actionText + " করা হয়েছে।"
+    );
+
+  } catch(error) {
+    setStatus("managerStatus","Bulk Update Error: " + error.message);
+  } finally {
+    button.disabled = false;
+    updateSelectionUI();
+  }
+}
+
+/* SAFE BULK DELETE */
+
+async function findQuestionsUsingSubjects(selectedRows) {
+  const codes = [...new Set(
+    selectedRows.map(item => item.subject_code).filter(Boolean)
+  )];
+
+  const linkedCodes = new Set();
+
+  // একবারে সর্বোচ্চ ১০০টি Code পরীক্ষা করা হচ্ছে।
+  for (let i = 0; i < codes.length; i += 100) {
+    const batch = codes.slice(i,i + 100);
+
+    const {data,error} = await db
+      .from("quiz_questions")
+      .select("subject_code")
+      .eq("subject_type",activeSubjectType)
+      .in("subject_code",batch);
+
+    if (error) throw error;
+
+    (data || []).forEach(question => {
+      if (question.subject_code) {
+        linkedCodes.add(String(question.subject_code));
+      }
+    });
+  }
+
+  return linkedCodes;
+}
+
+async function bulkDeleteSubjects() {
+  if (!isAdminVerified || !currentUser) {
+    alert("প্রথমে Admin Login করুন।");
+    return;
+  }
+
+  const ids = [...selectedSubjectIds];
+
+  if (!ids.length) {
+    alert("প্রথমে অন্তত একটি রেকর্ড নির্বাচন করুন।");
+    return;
+  }
+
+  const selectedRows = subjects.filter(subject =>
+    ids.includes(String(subject.id))
+  );
+
+  if (!selectedRows.length) {
+    alert("নির্বাচিত রেকর্ড পাওয়া যায়নি। তালিকা আবার লোড করুন।");
+    return;
+  }
+
+  const typeName = activeSubjectType === "club" ? "ক্লাব" : "খেলোয়াড়";
+
+  const confirmed = confirm(
+    "আপনি কি সত্যিই নির্বাচিত " + selectedRows.length +
+    "টি " + typeName + " মুছে ফেলতে চান?\n\n" +
+    "যেসব রেকর্ডের সঙ্গে প্রশ্ন যুক্ত আছে, সেগুলো মুছে ফেলা হবে না।"
+  );
+
+  if (!confirmed) return;
+
+  const button = $("bulkDeleteButton");
+  button.disabled = true;
+
+  setStatus(
+    "managerStatus",
+    "মুছে ফেলার আগে সংশ্লিষ্ট প্রশ্ন পরীক্ষা করা হচ্ছে..."
+  );
+
+  try {
+    // প্রথমে পরীক্ষা: নির্বাচিত Subject Code-এ কোনো প্রশ্ন আছে কি না।
+    const linkedCodes = await findQuestionsUsingSubjects(selectedRows);
+
+    if (linkedCodes.size > 0) {
+      const linkedNames = selectedRows
+        .filter(subject => linkedCodes.has(String(subject.subject_code)))
+        .map(subject =>
+          (subject.name_bn || subject.name_en || subject.subject_code) +
+          " [" + subject.subject_code + "]"
+        );
+
+      setStatus(
+        "managerStatus",
+        "নিরাপত্তার কারণে মুছে ফেলা বন্ধ করা হয়েছে।\n\n" +
+        "নিচের রেকর্ডগুলোর সঙ্গে Quiz Question যুক্ত আছে:\n" +
+        linkedNames.join("\n") +
+        "\n\nপ্রথমে সংশ্লিষ্ট প্রশ্নগুলো পরিচালনা করুন। প্রশ্ন হারিয়ে যাওয়া ঠেকাতে এই রেকর্ডগুলো মুছে ফেলা হয়নি।"
+      );
+
+      alert(
+        "কিছু নির্বাচিত রেকর্ডের সঙ্গে প্রশ্ন যুক্ত আছে।\n" +
+        "তাই নিরাপত্তার জন্য কোনো রেকর্ড মুছে ফেলা হয়নি।\n\n" +
+        linkedNames.join("\n")
+      );
+
+      return;
+    }
+
+    // কোনো প্রশ্ন যুক্ত না থাকলেই শুধু Subject মুছে ফেলা হবে।
+    const {error} = await db
+      .from("quiz_subjects")
+      .delete()
+      .eq("subject_type",activeSubjectType)
+      .in("id",ids);
+
+    if (error) throw error;
+
+    selectedSubjectIds.clear();
+
+    if (
+      selectedSubjectRow &&
+      ids.includes(String(selectedSubjectRow.id))
+    ) {
+      selectedSubjectRow = null;
+      $("subjectSelect").value = "";
+      hideElement("selectedSubject");
+      clearFilePreview("subjectImageFile","newSubjectPreview");
+    }
+
+    await loadSubjects(activeSubjectType);
+    await loadDashboardCounts();
+
+    setStatus(
+      "managerStatus",
+      selectedRows.length + "টি রেকর্ড সফলভাবে মুছে ফেলা হয়েছে।"
+    );
+
+  } catch(error) {
+    setStatus("managerStatus","Bulk Delete Error: " + error.message);
+  } finally {
+    button.disabled = false;
+    updateSelectionUI();
+  }
+}
+
 /* ADD NEW SUBJECT */
 
 async function addSubject() {
@@ -851,13 +1189,13 @@ async function addSubject() {
     return;
   }
 
-  if (!Number.isInteger(sortOrder) || sortOrder < 0) {
-    setStatus("subjectFormStatus","Sort Order সঠিকভাবে লিখুন।");
+  if (subjects.some(item => String(item.subject_code).toUpperCase() === code)) {
+    setStatus("subjectFormStatus","এই Subject Code আগে থেকেই আছে।");
     return;
   }
 
-  if (subjects.some(item => String(item.subject_code).toUpperCase() === code)) {
-    setStatus("subjectFormStatus","এই Subject Code আগে থেকেই আছে।");
+  if (!Number.isInteger(sortOrder) || sortOrder < 0) {
+    setStatus("subjectFormStatus","Sort Order সঠিকভাবে লিখুন।");
     return;
   }
 
@@ -1404,6 +1742,7 @@ $("removeSubjectImageButton").addEventListener("click",removeSubjectImage);
 $("addSubjectButton").addEventListener("click",addSubject);
 $("updateSubjectButton").addEventListener("click",updateSubject);
 $("cancelEditButton").addEventListener("click",resetSubjectForm);
+
 $("editSelectedSubjectButton").addEventListener("click",() => {
   if (selectedSubjectRow) editSubject(selectedSubjectRow.id);
 });
@@ -1415,7 +1754,25 @@ $("backButton").addEventListener("click",back);
 $("logoutButton").addEventListener("click",logout);
 
 $("subjectSelect").addEventListener("change",selectSubject);
-$("subjectSearch").addEventListener("input",renderSubjectList);
+$("subjectSearch").addEventListener("input",() => {
+  renderSubjectList();
+});
+
+$("selectAllSubjects").addEventListener("change",event => {
+  selectAllFilteredSubjects(event.target.checked);
+});
+
+$("clearSubjectSelectionButton").addEventListener("click",clearSubjectSelection);
+
+$("bulkEnableButton").addEventListener("click",() => {
+  bulkUpdateSubjects(true);
+});
+
+$("bulkDisableButton").addEventListener("click",() => {
+  bulkUpdateSubjects(false);
+});
+
+$("bulkDeleteButton").addEventListener("click",bulkDeleteSubjects);
 
 $("password").addEventListener("keydown",event => {
   if (event.key === "Enter") login();
@@ -1427,11 +1784,13 @@ db.auth.onAuthStateChange(event => {
   if (event === "SIGNED_OUT") {
     currentUser = null;
     isAdminVerified = false;
+    selectedSubjectIds.clear();
   }
 });
 
 /* START */
 
+updateSelectionUI();
 restoreSession();
 
 </script>
