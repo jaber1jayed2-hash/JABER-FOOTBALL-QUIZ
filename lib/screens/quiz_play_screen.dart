@@ -74,9 +74,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       case 'country':
         return 'country_quiz';
       case 'club':
-        return 'guess_club';
+        return 'club_quiz';
       case 'player':
-        return 'guess_player';
+        return 'player_quiz';
       default:
         return widget.mode;
     }
@@ -286,7 +286,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         0,
       ).clamp(0, 100000).toInt();
 
-      // নির্বাচিত বিষয় ও মোড অনুযায়ী প্রশ্ন লোড।
+      // প্রথমে নির্দিষ্ট মোডের প্রকাশিত প্রশ্ন লোড।
       dynamic questionQuery = supabase
           .from('quiz_questions')
           .select()
@@ -307,6 +307,50 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       final availableQuestions =
           List<Map<String, dynamic>>.from(questionData);
 
+      // প্রশ্ন না থাকলে এখানেই শেষ।
+      if (availableQuestions.isEmpty) {
+        if (!mounted) return;
+
+        setState(() {
+          questions = [];
+          loading = false;
+        });
+
+        return;
+      }
+
+      // এই কুইজের প্রশ্নগুলোর ID সংগ্রহ।
+      final questionIds = availableQuestions
+          .map((question) => question['id'])
+          .where((id) => id != null)
+          .toList();
+
+      // শুধু এই প্রশ্নগুলোর মধ্যে ব্যবহারকারী আগে কোনগুলো খেলেছেন
+      // তা খুঁজে বের করা।
+      final attemptedRows = await supabase
+          .from('quiz_question_attempts')
+          .select('question_id')
+          .eq('user_id', user.id)
+          .inFilter('question_id', questionIds);
+
+      final attemptedQuestionIds = attemptedRows
+          .map<int>(
+            (row) => (row['question_id'] as num).toInt(),
+          )
+          .toSet();
+
+      // আগে খেলা প্রশ্নগুলো বাদ।
+      availableQuestions.removeWhere((question) {
+        final id = question['id'];
+
+        if (id == null) return true;
+
+        return attemptedQuestionIds.contains(
+          (id as num).toInt(),
+        );
+      });
+
+      // বাকি প্রশ্ন এলোমেলোভাবে সাজানো।
       availableQuestions.shuffle();
 
       final selectedQuestions = availableQuestions
@@ -418,22 +462,31 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     try {
       await createQuizAttempt();
 
-      await supabase.from('quiz_question_attempts').insert({
-        'user_id': userId,
-        'question_id': currentQuestion['id'],
-        'quiz_attempt_id': quizAttemptId,
-        'selected_option': selectedAnswer,
-        'is_correct': isCorrect,
-        'status': timedOut ? 'timed_out' : 'answered',
-        'attempted_at':
-            DateTime.now().toUtc().toIso8601String(),
-      });
+      // একই ব্যবহারকারীর একই প্রশ্ন দ্বিতীয়বার insert হবে না।
+      // আগে থেকে রেকর্ড থাকলে সেটি overwrite করা হবে না।
+      await supabase
+          .from('quiz_question_attempts')
+          .upsert(
+        {
+          'user_id': userId,
+          'question_id': currentQuestion['id'],
+          'quiz_attempt_id': quizAttemptId,
+          'selected_option': selectedAnswer,
+          'is_correct': isCorrect,
+          'status': timedOut ? 'timed_out' : 'answered',
+          'attempted_at':
+              DateTime.now().toUtc().toIso8601String(),
+        },
+        onConflict: 'user_id,question_id',
+        ignoreDuplicates: true,
+      );
 
       if (!mounted) return;
 
       setState(() {
         attemptSaved = true;
         savingAttempt = false;
+        saveError = null;
       });
     } catch (e) {
       if (!mounted) return;
@@ -524,10 +577,10 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
             (profile?['total_points'] as num?)?.toInt() ?? 0;
 
         final newXp =
-            (oldXp + xpEarned).clamp(0, 2147483647);
+            (oldXp + xpEarned).clamp(0, 2147483647).toInt();
 
         final newPoints =
-            (oldPoints + score).clamp(0, 2147483647);
+            (oldPoints + score).clamp(0, 2147483647).toInt();
 
         final newLevel = (newXp ~/ 100) + 1;
 
@@ -592,8 +645,9 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
           child: Padding(
             padding: EdgeInsets.all(25),
             child: Text(
-              'এই কুইজের জন্য এখনো কোনো প্রকাশিত প্রশ্ন নেই। '
-              'Admin Panel থেকে প্রশ্ন যোগ করুন।',
+              'এই কুইজের জন্য নতুন কোনো প্রশ্ন নেই। '
+              'আপনি এই কুইজের সব প্রকাশিত প্রশ্ন আগেই খেলেছেন '
+              'অথবা Admin Panel থেকে এখনো প্রশ্ন যোগ করা হয়নি।',
               textAlign: TextAlign.center,
             ),
           ),
