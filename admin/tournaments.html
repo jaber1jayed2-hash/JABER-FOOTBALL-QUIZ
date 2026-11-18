@@ -1,0 +1,514 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tournament Management - JABER FOOTBALL QUIZ</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;padding:16px;background:#080d0b;color:#fff;
+ font-family:Arial,sans-serif
+}
+.container{max-width:1000px;margin:auto}
+h1{color:#27d66b;font-size:25px}
+h2{font-size:19px}
+.card{
+ background:#151d18;border:1px solid #26382c;
+ border-radius:13px;padding:16px;margin:15px 0
+}
+label{display:block;font-size:14px;color:#c9d8cd;margin-top:9px}
+input,select,textarea{
+ width:100%;padding:12px;margin:7px 0;
+ border-radius:8px;border:1px solid #34483a;
+ background:#0b120e;color:white;font-size:15px
+}
+textarea{min-height:85px;resize:vertical}
+button{
+ border:0;border-radius:8px;padding:11px 15px;
+ background:#27d66b;color:#06150b;
+ font-weight:bold;font-size:14px;cursor:pointer;margin:4px
+}
+button.secondary{background:#35443a;color:white}
+button.danger{background:#e74c3c;color:white}
+button:disabled{opacity:.5;cursor:not-allowed}
+.grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:10px
+}
+.tournament{
+ background:#0d1510;border:1px solid #304536;
+ border-radius:10px;padding:14px;margin:12px 0
+}
+.tournament h3{color:#27d66b;margin:0 0 8px}
+.meta{font-size:13px;color:#b8c8bc;line-height:1.8}
+.status{
+ display:inline-block;padding:5px 9px;border-radius:20px;
+ background:#263c2c;color:#8dffac;font-size:12px
+}
+#message{
+ padding:12px;border-radius:8px;margin:12px 0;
+ display:none;white-space:pre-wrap
+}
+.success{background:#123c25;color:#9cffb8}
+.error{background:#4a1919;color:#ffb4b4}
+#loading{color:#27d66b}
+.actions{margin-top:10px}
+small{color:#9eafa3}
+@media(max-width:600px){
+ .grid{grid-template-columns:1fr}
+ body{padding:10px}
+ h1{font-size:21px}
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>🏆 Tournament Management</h1>
+<p>JABER FOOTBALL QUIZ Admin Panel</p>
+
+<div id="message"></div>
+<div id="loading">লোড হচ্ছে...</div>
+
+<div class="card">
+<h2 id="formTitle">➕ Create New Tournament</h2>
+
+<form id="tournamentForm">
+
+<input type="hidden" id="editId">
+
+<label>Tournament Name *</label>
+<input id="title" type="text" required maxlength="150"
+ placeholder="যেমন: World Cup Quiz 2026">
+
+<label>Description</label>
+<textarea id="description"
+ placeholder="Tournament সম্পর্কে লিখুন"></textarea>
+
+<label>Image URL</label>
+<input id="imageUrl" type="url"
+ placeholder="https://example.com/image.jpg">
+
+<div class="grid">
+<div>
+<label>Quiz Mode *</label>
+<select id="quizMode" required>
+<option value="general_mcq">General MCQ</option>
+<option value="player_quiz">Player Quiz</option>
+<option value="club_quiz">Club Quiz</option>
+<option value="guess_player">Guess the Player</option>
+<option value="guess_club">Guess the Club</option>
+<option value="guess_country">Guess the Country</option>
+<option value="guess_jersey">Guess the Jersey</option>
+<option value="guess_stadium">Guess the Stadium</option>
+<option value="guess_silhouette">Guess the Silhouette</option>
+<option value="guess_clues">Guess the Clues</option>
+</select>
+</div>
+
+<div>
+<label>Question Count *</label>
+<input id="questionCount" type="number"
+ min="1" max="500" value="10" required>
+</div>
+
+<div>
+<label>Maximum Participants *</label>
+<input id="maxParticipants" type="number"
+ min="2" max="10000" value="100" required>
+</div>
+
+<div>
+<label>Status *</label>
+<select id="status" required>
+<option value="draft">Draft</option>
+<option value="published">Published</option>
+<option value="ongoing">Ongoing</option>
+<option value="completed">Completed</option>
+<option value="cancelled">Cancelled</option>
+</select>
+</div>
+</div>
+
+<div class="grid">
+<div>
+<label>Start Date & Time</label>
+<input id="startsAt" type="datetime-local">
+</div>
+<div>
+<label>End Date & Time</label>
+<input id="endsAt" type="datetime-local">
+</div>
+</div>
+
+<button id="saveButton" type="submit">
+💾 Save Tournament
+</button>
+
+<button type="button" class="secondary"
+ id="cancelEdit" style="display:none">
+Cancel Edit
+</button>
+
+</form>
+</div>
+
+<div class="card">
+<h2>📋 All Tournaments</h2>
+<button type="button" onclick="loadTournaments()">
+🔄 Refresh List
+</button>
+<div id="tournamentList"></div>
+</div>
+
+</div>
+
+<script>
+const SUPABASE_URL =
+"https://cuvfoltgtopchiugrbuf.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D";
+
+const db = window.supabase.createClient(
+ SUPABASE_URL,
+ SUPABASE_KEY
+);
+
+const $ = id => document.getElementById(id);
+
+let currentUser = null;
+let isAdmin = false;
+
+function showMessage(message,type="success"){
+ const box=$("message");
+ box.textContent=message;
+ box.className=type;
+ box.style.display="block";
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function hideMessage(){
+ $("message").style.display="none";
+}
+
+function escapeHTML(value){
+ return String(value ?? "").replace(/[&<>"']/g,char=>({
+ "&":"&amp;",
+ "<":"&lt;",
+ ">":"&gt;",
+ '"':"&quot;",
+ "'":"&#39;"
+ })[char]);
+}
+
+function formatDate(value){
+ if(!value)return "নির্ধারিত নয়";
+ const date=new Date(value);
+ if(Number.isNaN(date.getTime()))return "নির্ধারিত নয়";
+ return date.toLocaleString("bn-BD");
+}
+
+function toLocalDate(value){
+ if(!value)return "";
+ const date=new Date(value);
+ if(Number.isNaN(date.getTime()))return "";
+ const pad=n=>String(n).padStart(2,"0");
+ return date.getFullYear()+"-"+
+ pad(date.getMonth()+1)+"-"+
+ pad(date.getDate())+"T"+
+ pad(date.getHours())+":"+
+ pad(date.getMinutes());
+}
+
+async function checkAdmin(){
+ try{
+  const {data,error}=await db.auth.getUser();
+
+  if(error)throw error;
+
+  currentUser=data.user;
+
+  if(!currentUser){
+   $("loading").textContent=
+   "Admin login প্রয়োজন। প্রথমে আপনার Admin Panel থেকে লগইন করুন।";
+   $("tournamentForm").style.display="none";
+   return false;
+  }
+
+  const {data:admin,error:adminError}=await db
+   .from("admin_users")
+   .select("user_id")
+   .eq("user_id",currentUser.id)
+   .maybeSingle();
+
+  if(adminError)throw adminError;
+
+  if(!admin){
+   $("loading").textContent=
+   "আপনার অ্যাকাউন্ট Admin হিসেবে অনুমোদিত নয়।";
+   $("tournamentForm").style.display="none";
+   return false;
+  }
+
+  isAdmin=true;
+  $("loading").textContent="Admin verified ✓";
+  return true;
+
+ }catch(error){
+  $("loading").textContent="Error: "+error.message;
+  return false;
+ }
+}
+
+async function loadTournaments(){
+ if(!isAdmin)return;
+
+ $("tournamentList").innerHTML="লোড হচ্ছে...";
+
+ try{
+  const {data,error}=await db
+   .from("tournaments")
+   .select("*")
+   .order("created_at",{ascending:false});
+
+  if(error)throw error;
+
+  if(!data || data.length===0){
+   $("tournamentList").innerHTML=
+   "<p>এখনো কোনো Tournament তৈরি করা হয়নি।</p>";
+   return;
+  }
+
+  $("tournamentList").innerHTML=data.map(t=>{
+   const id=Number(t.id);
+
+   return `
+   <div class="tournament">
+    <h3>${escapeHTML(t.title)}</h3>
+
+    <div class="meta">
+     <div>${escapeHTML(t.description || "কোনো বিবরণ নেই")}</div>
+     <div>Mode: ${escapeHTML(t.quiz_mode)}</div>
+     <div>Questions: ${escapeHTML(t.question_count)}</div>
+     <div>Maximum Participants:
+       ${escapeHTML(t.max_participants)}</div>
+     <div>Start: ${escapeHTML(formatDate(t.starts_at))}</div>
+     <div>End: ${escapeHTML(formatDate(t.ends_at))}</div>
+     <div>Status:
+      <span class="status">${escapeHTML(t.status)}</span>
+     </div>
+     <div>Created: ${escapeHTML(formatDate(t.created_at))}</div>
+    </div>
+
+    ${t.image_url ? `
+    <p><a href="${escapeHTML(t.image_url)}"
+      target="_blank" rel="noopener"
+      style="color:#27d66b">ছবি দেখুন</a></p>` : ""}
+
+    <div class="actions">
+     <button type="button"
+      onclick="editTournament(${id})">✏️ Edit</button>
+     <button type="button" class="danger"
+      onclick="deleteTournament(${id})">🗑 Delete</button>
+    </div>
+   </div>`;
+  }).join("");
+
+ }catch(error){
+  $("tournamentList").textContent=
+  "Tournament লোড করা যায়নি: "+error.message;
+ }
+}
+
+function resetForm(){
+ $("tournamentForm").reset();
+ $("editId").value="";
+ $("questionCount").value=10;
+ $("maxParticipants").value=100;
+ $("formTitle").textContent="➕ Create New Tournament";
+ $("saveButton").textContent="💾 Save Tournament";
+ $("cancelEdit").style.display="none";
+}
+
+$("cancelEdit").addEventListener("click",()=>{
+ resetForm();
+ hideMessage();
+});
+
+$("tournamentForm").addEventListener("submit",async event=>{
+ event.preventDefault();
+ hideMessage();
+
+ if(!isAdmin){
+  showMessage("Admin permission পাওয়া যায়নি।","error");
+  return;
+ }
+
+ const title=$("title").value.trim();
+ const description=$("description").value.trim();
+ const imageUrl=$("imageUrl").value.trim();
+ const quizMode=$("quizMode").value;
+ const questionCount=Number($("questionCount").value);
+ const maxParticipants=Number($("maxParticipants").value);
+ const status=$("status").value;
+ const startValue=$("startsAt").value;
+ const endValue=$("endsAt").value;
+
+ if(!title){
+  showMessage("Tournament Name লিখুন।","error");
+  return;
+ }
+
+ if(!Number.isInteger(questionCount) ||
+ questionCount<1 || questionCount>500){
+  showMessage("Question Count ১ থেকে ৫০০-এর মধ্যে দিন।","error");
+  return;
+ }
+
+ if(!Number.isInteger(maxParticipants) ||
+ maxParticipants<2 || maxParticipants>10000){
+  showMessage("Maximum Participants ২ থেকে ১০০০০-এর মধ্যে দিন।","error");
+  return;
+ }
+
+ const startsAt=startValue?
+ new Date(startValue).toISOString():null;
+
+ const endsAt=endValue?
+ new Date(endValue).toISOString():null;
+
+ if(startsAt && endsAt &&
+ new Date(endsAt)<=new Date(startsAt)){
+  showMessage("End Date অবশ্যই Start Date-এর পরে হতে হবে।","error");
+  return;
+ }
+
+ const payload={
+  title,
+  description:description||null,
+  image_url:imageUrl||null,
+  quiz_mode:quizMode,
+  question_count:questionCount,
+  max_participants:maxParticipants,
+  starts_at:startsAt,
+  ends_at:endsAt,
+  status
+ };
+
+ const editId=$("editId").value;
+ const saveButton=$("saveButton");
+
+ saveButton.disabled=true;
+ saveButton.textContent="Saving...";
+
+ try{
+  let result;
+
+  if(editId){
+   result=await db
+    .from("tournaments")
+    .update(payload)
+    .eq("id",editId)
+    .select()
+    .single();
+  }else{
+   payload.created_by=currentUser.id;
+
+   result=await db
+    .from("tournaments")
+    .insert(payload)
+    .select()
+    .single();
+  }
+
+  if(result.error)throw result.error;
+
+  showMessage(editId?
+   "Tournament সফলভাবে Update হয়েছে।":
+   "নতুন Tournament সফলভাবে তৈরি হয়েছে।"
+  );
+
+  resetForm();
+  await loadTournaments();
+
+ }catch(error){
+  showMessage("Save করা যায়নি: "+error.message,"error");
+ }finally{
+  saveButton.disabled=false;
+  saveButton.textContent="💾 Save Tournament";
+ }
+});
+
+async function editTournament(id){
+ if(!isAdmin)return;
+
+ try{
+  const {data,error}=await db
+   .from("tournaments")
+   .select("*")
+   .eq("id",id)
+   .single();
+
+  if(error)throw error;
+
+  $("editId").value=data.id;
+  $("title").value=data.title||"";
+  $("description").value=data.description||"";
+  $("imageUrl").value=data.image_url||"";
+  $("quizMode").value=data.quiz_mode||"general_mcq";
+  $("questionCount").value=data.question_count||10;
+  $("maxParticipants").value=data.max_participants||100;
+  $("status").value=data.status||"draft";
+  $("startsAt").value=toLocalDate(data.starts_at);
+  $("endsAt").value=toLocalDate(data.ends_at);
+
+  $("formTitle").textContent="✏️ Edit Tournament";
+  $("saveButton").textContent="💾 Update Tournament";
+  $("cancelEdit").style.display="inline-block";
+
+  window.scrollTo({top:0,behavior:"smooth"});
+
+ }catch(error){
+  showMessage("Tournament পাওয়া যায়নি: "+error.message,"error");
+ }
+}
+
+async function deleteTournament(id){
+ if(!isAdmin)return;
+
+ if(!confirm("আপনি কি এই Tournament মুছে ফেলতে চান?")){
+  return;
+ }
+
+ try{
+  const {error}=await db
+   .from("tournaments")
+   .delete()
+   .eq("id",id);
+
+  if(error)throw error;
+
+  showMessage("Tournament Delete করা হয়েছে।");
+  await loadTournaments();
+
+ }catch(error){
+  showMessage("Delete করা যায়নি: "+error.message,"error");
+ }
+}
+
+(async function init(){
+ const allowed=await checkAdmin();
+
+ if(allowed){
+  await loadTournaments();
+ }
+})();
+</script>
+</body>
+</html>
