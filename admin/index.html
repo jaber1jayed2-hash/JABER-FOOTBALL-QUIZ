@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -163,7 +164,57 @@ async function login(){const email=$("email").value.trim(),password=$("password"
 async function logout(){try{await db.auth.signOut()}catch(e){console.error(e)}currentUser=null;isAdminVerified=false;selectedSubjectRow=null;selectedSubjectIds.clear();hideElement("dashboard");showElement("login");$("password").value="";setStatus("message","আপনি Logout করেছেন।");setText("adminEmail","")}
 async function loadDashboardCounts(){try{const results=await Promise.all(["quiz_questions","player","club","country"].map((v,i)=>i===0?db.from("quiz_questions").select("id",{count:"exact",head:true}):db.from("quiz_subjects").select("id",{count:"exact",head:true}).eq("subject_type",v)));["questionCount","playerCount","clubCount","countryCount"].forEach((id,i)=>{if(!results[i].error)setText(id,results[i].count??0)})}catch(e){console.error(e)}}
 function hidePanels(){["settings","quiz-settings","developer","section","subjectManager"].forEach(hideElement)}
-function show(name){if(!isAdminVerified||!currentUser){alert("প্রথমে Admin Login করুন।");return}if(name==="questions"){location.href="questions.html";return}if(name==="country_questions"){location.href="country_questions.html";return}hidePanels();if(name==="settings"){showElement("settings");return}if(name==="quiz-settings"){showElement("quiz-settings");loadQuizSettings();return}if(name==="developer"){showElement("developer");return}if(["clubs","players","countries"].includes(name)){openSubjectManager(({clubs:"club",players:"player",countries:"country"})[name]);return}const titles={tournaments:"টুর্নামেন্ট পরিচালনা",users:"ব্যবহারকারী পরিচালনা"};setText("sectionTitle",titles[name]||"পরিচালনা");setText("sectionText","এই অংশের সম্পূর্ণ কার্যক্রম এখনো যুক্ত করা হয়নি।");showElement("section")}
+
+/* সংশোধন: Tournament পেজ এখন সরাসরি খুলবে */
+function show(name){
+ if(!isAdminVerified||!currentUser){
+  alert("প্রথমে Admin Login করুন।");
+  return;
+ }
+
+ const pages={
+  questions:"questions.html",
+  country_questions:"country_questions.html",
+  tournaments:"tournaments.html"
+ };
+
+ if(pages[name]){
+  location.href=pages[name];
+  return;
+ }
+
+ hidePanels();
+
+ if(name==="settings"){
+  showElement("settings");
+  return;
+ }
+
+ if(name==="quiz-settings"){
+  showElement("quiz-settings");
+  loadQuizSettings();
+  return;
+ }
+
+ if(name==="developer"){
+  showElement("developer");
+  return;
+ }
+
+ if(["clubs","players","countries"].includes(name)){
+  openSubjectManager(({clubs:"club",players:"player",countries:"country"})[name]);
+  return;
+ }
+
+ const titles={
+  users:"ব্যবহারকারী পরিচালনা"
+ };
+
+ setText("sectionTitle",titles[name]||"পরিচালনা");
+ setText("sectionText","এই অংশের সম্পূর্ণ কার্যক্রম এখনো যুক্ত করা হয়নি।");
+ showElement("section");
+}
+
 function back(){hidePanels();selectedSubjectRow=null;hideElement("selectedSubject");selectedSubjectIds.clear();updateSelectionUI();clearFilePreview("subjectImageFile","newSubjectPreview");$("subjectImageUrl").value="";resetSubjectForm();setStatus("managerStatus","")}
 function imageFolder(){return ({country:"country-flags",club:"club-logos",player:"player-photos"})[activeSubjectType]}
 async function uploadImage(file,folder){if(!isAdminVerified||!currentUser)throw new Error("Admin Login নেই।");const err=validateImage(file);if(err)throw new Error(err);const ext=(file.name.split(".").pop()||"img").toLowerCase().replace(/[^a-z0-9]/g,"")||"img";const path=folder+"/"+Date.now()+"-"+crypto.randomUUID()+"."+ext;const {error}=await db.storage.from(BUCKET).upload(path,file,{cacheControl:"3600",upsert:false,contentType:file.type});if(error)throw error;const {data}=db.storage.from(BUCKET).getPublicUrl(path);if(!data?.publicUrl)throw new Error("ছবির Public URL পাওয়া যায়নি।");return data.publicUrl}
