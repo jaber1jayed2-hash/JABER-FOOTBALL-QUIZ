@@ -19,7 +19,7 @@ width:100%;padding:12px;margin:7px 0;border:0;
 border-radius:7px;font-size:15px
 }
 input,select,textarea{background:#e8eee9;color:#111}
-textarea{min-height:220px;resize:vertical;font-family:monospace}
+textarea{min-height:260px;resize:vertical;font-family:monospace}
 button{background:#16c766;color:#06130a;font-weight:bold;cursor:pointer}
 button:disabled{opacity:.5;cursor:not-allowed}
 .delete{background:#b52d2d;color:white}
@@ -50,6 +50,8 @@ label{display:block;margin-top:10px}
 .pagination button{flex:1}
 .question-select{width:auto!important}
 .mode-note{padding:12px;background:#10291b;border-left:3px solid #16c766;border-radius:7px;line-height:1.6;margin:10px 0}
+.progress{height:10px;background:#304638;border-radius:10px;overflow:hidden;margin:10px 0}
+.progress div{height:100%;background:#20e879;width:0}
 @media(max-width:500px){
  .actions{flex-direction:column}
  .toolbar{grid-template-columns:1fr}
@@ -76,22 +78,17 @@ label{display:block;margin-top:10px}
 <select id="type" required>
 <option value="general_mcq">সাধারণ MCQ</option>
 <option value="country_quiz">দেশভিত্তিক কুইজ</option>
-
-<option value="player_quiz">Player Selection — খেলোয়াড় নির্বাচন</option>
-<option value="club_quiz">Club Selection — ক্লাব নির্বাচন</option>
-
+<option value="player_quiz">Player Quiz — খেলোয়াড় নির্বাচন</option>
+<option value="club_quiz">Club Quiz — ক্লাব নির্বাচন</option>
 <option value="guess_player">Guess the Player — ছবি দেখে খেলোয়াড় চেনা</option>
 <option value="guess_club">Guess the Club — লোগো দেখে ক্লাব চেনা</option>
-
 <option value="guess_jersey">Guess the Jersey</option>
 <option value="guess_stadium">Guess the Stadium</option>
 <option value="guess_silhouette">Guess the Silhouette</option>
 <option value="guess_clues">Guess by Clues</option>
 </select>
 
-<div id="modeNote" class="mode-note">
-সাধারণ MCQ প্রশ্ন তৈরি করুন।
-</div>
+<div id="modeNote" class="mode-note"></div>
 
 <div id="subjectBox" class="subject-box" style="display:none">
 <label id="subjectLabel">বিষয় নির্বাচন করুন</label>
@@ -127,9 +124,7 @@ label{display:block;margin-top:10px}
 
 <label>ছবির URL</label>
 <input id="imageUrl" type="url" placeholder="https://example.com/image.jpg">
-<p class="help" id="imageHelp">
-প্রয়োজনে প্রশ্নের ছবি যোগ করুন।
-</p>
+<p class="help" id="imageHelp">প্রয়োজনে প্রশ্নের ছবি যোগ করুন।</p>
 <img id="singleImagePreview" class="question-image" style="display:none" alt="প্রশ্নের ছবি">
 <div id="singleImageError" class="image-error"></div>
 
@@ -144,38 +139,60 @@ label{display:block;margin-top:10px}
 </div>
 
 <div class="card">
-<h2>📥 একসঙ্গে অনেক প্রশ্ন যোগ করুন</h2>
+<h2>📥 একসঙ্গে হাজারো প্রশ্ন যোগ করুন</h2>
 <p class="help">
-JSON আকারে একসঙ্গে অনেক প্রশ্ন যোগ করতে পারবেন।
-দেশ, ক্লাব ও খেলোয়াড়ের প্রশ্নের জন্য সঠিক subject_type এবং subject_code দিতে হবে।
-প্রশ্ন ১০০টি করে ধাপে ধাপে সংরক্ষণ হবে।
+একটি JSON ফাইল/কোডে একসঙ্গে হাজারো প্রশ্ন দিতে পারবেন।
+প্রশ্নগুলো যাচাই করে ১০০টি করে ব্যাচে সংরক্ষণ করা হবে।
+Player Quiz ও Club Quiz-এর জন্য subject_type এবং subject_code দিতে হবে।
+Guess Mode-এ কোনো Player বা Club নির্বাচন করতে হবে না।
 </p>
 
 <label>প্রশ্নের JSON কোড পেস্ট করুন</label>
 <textarea id="bulkCode" placeholder='[
   {
-    "mode": "country_quiz",
-    "subject_type": "country",
-    "subject_code": "ARG",
-    "question_bn": "আর্জেন্টিনা কতবার বিশ্বকাপ জিতেছে?",
+    "mode": "guess_player",
+    "question_bn": "ছবির খেলোয়াড় কে?",
+    "image_url": "https://example.com/player.jpg",
     "options": {
-      "A": "১ বার",
-      "B": "২ বার",
-      "C": "৩ বার",
-      "D": "৪ বার"
+      "A": "মেসি",
+      "B": "রোনালদো",
+      "C": "নেইমার",
+      "D": "এমবাপ্পে"
     },
-    "correct_option": "C",
-    "explanation_bn": "আর্জেন্টিনা তিনবার বিশ্বকাপ জিতেছে।"
+    "correct_option": "A",
+    "difficulty": "easy",
+    "explanation_bn": "সঠিক উত্তর মেসি।",
+    "is_published": true
+  },
+  {
+    "mode": "player_quiz",
+    "subject_type": "player",
+    "subject_code": "PLY001",
+    "question_bn": "এই খেলোয়াড় কোন দেশের?",
+    "options": {
+      "A": "আর্জেন্টিনা",
+      "B": "ব্রাজিল",
+      "C": "ফ্রান্স",
+      "D": "জার্মানি"
+    },
+    "correct_option": "A",
+    "difficulty": "easy"
   }
 ]'></textarea>
 
 <button type="button" id="previewButton">প্রশ্ন যাচাই করুন ও Preview দেখুন</button>
+
 <div id="bulkStatus" class="status">এখনো কোনো কোড যাচাই করা হয়নি।</div>
 
 <div id="previewArea" style="display:none">
 <h3>Preview: <span id="previewCount" class="count">০</span>টি প্রশ্ন</h3>
 <div id="previewList"></div>
 <button type="button" id="publishAllButton">সব প্রশ্ন সংরক্ষণ করুন</button>
+</div>
+
+<div id="importProgressArea" style="display:none">
+<p id="importProgressText"></p>
+<div class="progress"><div id="importProgressBar"></div></div>
 </div>
 </div>
 
@@ -251,24 +268,18 @@ const allowedModes = [
   'guess_clues'
 ];
 
-/*
-  Player Selection এবং Guess the Player আলাদা Mode।
-  Club Selection এবং Guess the Club আলাদা Mode।
-  তবে চারটি Mode-ই quiz_subjects থেকে বিষয় নির্বাচন করে।
-*/
+// শুধু এই তিনটি কুইজে বিষয় নির্বাচন থাকবে।
 const modeSubjectType = {
   country_quiz:'country',
   player_quiz:'player',
-  club_quiz:'club',
-  guess_player:'player',
-  guess_club:'club'
+  club_quiz:'club'
 };
 
 const modeLabels = {
   general_mcq:'সাধারণ MCQ',
   country_quiz:'দেশভিত্তিক কুইজ',
-  player_quiz:'Player Selection',
-  club_quiz:'Club Selection',
+  player_quiz:'Player Quiz',
+  club_quiz:'Club Quiz',
   guess_player:'Guess the Player',
   guess_club:'Guess the Club',
   guess_jersey:'Guess the Jersey',
@@ -280,11 +291,11 @@ const modeLabels = {
 const modeDescriptions = {
   general_mcq:'সাধারণ ফুটবল MCQ প্রশ্ন তৈরি করুন।',
   country_quiz:'একটি দেশ নির্বাচন করুন। সেই দেশের প্রশ্ন এখানে সংরক্ষিত হবে।',
-  player_quiz:'একটি খেলোয়াড় নির্বাচন করুন। Player Selection-এ সেই খেলোয়াড়ের প্রশ্ন দেখানো হবে।',
-  club_quiz:'একটি ক্লাব নির্বাচন করুন। Club Selection-এ সেই ক্লাবের প্রশ্ন দেখানো হবে।',
-  guess_player:'একজন খেলোয়াড় নির্বাচন করুন। তাঁর ছবি দিন এবং চারটি অপশনে খেলোয়াড়ের নাম দিন।',
-  guess_club:'একটি ক্লাব নির্বাচন করুন। ক্লাবের লোগো দিন এবং চারটি অপশনে ক্লাবের নাম দিন।',
-  guess_jersey:'জার্সির ছবি বা বিবরণ দিয়ে চারটি অপশনে উত্তর তৈরি করুন।',
+  player_quiz:'একটি নির্দিষ্ট খেলোয়াড় নির্বাচন করুন। সেই খেলোয়াড়ের প্রশ্ন Player Quiz-এ ব্যবহৃত হবে।',
+  club_quiz:'একটি নির্দিষ্ট ক্লাব নির্বাচন করুন। সেই ক্লাবের প্রশ্ন Club Quiz-এ ব্যবহৃত হবে।',
+  guess_player:'কোনো খেলোয়াড় নির্বাচন করতে হবে না। খেলোয়াড়ের ছবি, চারটি নাম এবং সঠিক উত্তর দিন। ২০০ জনের বাইরের খেলোয়াড়ও যোগ করতে পারবেন।',
+  guess_club:'কোনো ক্লাব নির্বাচন করতে হবে না। ক্লাবের লোগো, চারটি ক্লাবের নাম এবং সঠিক উত্তর দিন।',
+  guess_jersey:'জার্সির ছবি দিন। চারটি অপশন থেকে সঠিক জার্সির উত্তর নির্বাচন করুন।',
   guess_stadium:'স্টেডিয়ামের ছবি বা বিবরণ দিয়ে চারটি অপশনে উত্তর তৈরি করুন।',
   guess_silhouette:'সিলুয়েটের ছবি দিয়ে চারটি অপশনে উত্তর তৈরি করুন।',
   guess_clues:'ইঙ্গিত বা Clues দিয়ে চারটি অপশনে উত্তর তৈরি করুন।'
@@ -293,7 +304,7 @@ const modeDescriptions = {
 function setStatus(id,message,type=''){
   const el = $(id);
   el.textContent = message;
-  el.className = 'status ' + type;
+  el.className = 'status '+type;
 }
 
 function normalizeQuestion(value){
@@ -306,11 +317,10 @@ function normalizeQuestion(value){
 
 function validImageUrl(value){
   if(!value)return true;
-
   try{
     const url = new URL(value);
     return (
-      (url.protocol === 'https:' || url.protocol === 'http:') &&
+      (url.protocol==='https:' || url.protocol==='http:') &&
       !!url.hostname
     );
   }catch{
@@ -342,24 +352,6 @@ function makeImage(url,alt){
   return wrapper;
 }
 
-function isDuplicate(
-  mode,
-  question,
-  subjectType = null,
-  subjectCode = null,
-  ignoreId = null
-){
-  const normalized = normalizeQuestion(question);
-
-  return questions.some(q =>
-    String(q.mode) === String(mode) &&
-    (q.subject_type || null) === (subjectType || null) &&
-    (q.subject_code || null) === (subjectCode || null) &&
-    normalizeQuestion(q.question_bn) === normalized &&
-    String(q.id) !== String(ignoreId)
-  );
-}
-
 function getQuestionKey(q){
   return [
     q.mode,
@@ -367,6 +359,18 @@ function getQuestionKey(q){
     q.subject_code || '',
     normalizeQuestion(q.question_bn)
   ].join('::');
+}
+
+function isDuplicate(mode,question,subjectType=null,subjectCode=null,ignoreId=null){
+  const normalized = normalizeQuestion(question);
+
+  return questions.some(q =>
+    String(q.mode)===String(mode) &&
+    (q.subject_type || null)===(subjectType || null) &&
+    (q.subject_code || null)===(subjectCode || null) &&
+    normalizeQuestion(q.question_bn)===normalized &&
+    String(q.id)!==String(ignoreId)
+  );
 }
 
 function resetForm(){
@@ -385,7 +389,6 @@ function resetForm(){
   updateModeDescription();
 }
 
-// Admin যাচাই
 async function checkAdmin(){
   try{
     const {data:sessionData,error:sessionError} =
@@ -430,7 +433,6 @@ async function checkAdmin(){
   }
 }
 
-// বিষয় তালিকা লোড
 async function loadSubjects(){
   const {data,error} = await client
     .from('quiz_subjects')
@@ -448,22 +450,24 @@ async function loadSubjects(){
   return true;
 }
 
-// Mode অনুযায়ী ব্যাখ্যা
 function updateModeDescription(){
   const mode = $('type').value;
   $('modeNote').textContent =
     modeDescriptions[mode] || 'প্রশ্ন তৈরি করুন।';
 
-  if(mode==='guess_player' || mode==='guess_club'){
-    $('imageHelp').textContent =
-      'এই Guess Mode-এর জন্য ছবি বা লোগোর URL দেওয়া প্রয়োজন।';
-  }else{
-    $('imageHelp').textContent =
-      'প্রয়োজনে প্রশ্নের ছবি যোগ করুন।';
-  }
+  const imageRequired = [
+    'guess_player',
+    'guess_club',
+    'guess_jersey'
+  ].includes(mode);
+
+  $('imageHelp').textContent = imageRequired
+    ? 'এই কুইজের জন্য ছবির URL বাধ্যতামূলক।'
+    : 'প্রয়োজনে প্রশ্নের ছবি যোগ করুন।';
+
+  $('imageUrl').required = imageRequired;
 }
 
-// Mode অনুযায়ী বিষয় নির্বাচন
 function updateSubjectBox(selectedCode=null){
   const mode = $('type').value;
   const subjectType = modeSubjectType[mode];
@@ -480,26 +484,22 @@ function updateSubjectBox(selectedCode=null){
 
   const labels = {
     country:'দেশ নির্বাচন করুন',
-    club:'ক্লাব নির্বাচন করুন',
-    player:'খেলোয়াড় নির্বাচন করুন'
+    player:'খেলোয়াড় নির্বাচন করুন',
+    club:'ক্লাব নির্বাচন করুন'
   };
 
   $('subjectLabel').textContent = labels[subjectType];
 
   const helpTexts = {
     country:'নির্বাচিত দেশের প্রশ্ন এখানে সংরক্ষিত হবে।',
-    player_quiz:'নির্বাচিত খেলোয়াড়ের নিজস্ব প্রশ্ন Player Selection-এ ব্যবহৃত হবে।',
-    club_quiz:'নির্বাচিত ক্লাবের নিজস্ব প্রশ্ন Club Selection-এ ব্যবহৃত হবে।',
-    guess_player:'যে খেলোয়াড়ের ছবি দেখিয়ে উত্তর জানতে চান, তাঁকে নির্বাচন করুন।',
-    guess_club:'যে ক্লাবের লোগো দেখিয়ে উত্তর জানতে চান, সেই ক্লাব নির্বাচন করুন।'
+    player:'নির্বাচিত খেলোয়াড়ের প্রশ্ন Player Quiz-এ ব্যবহৃত হবে।',
+    club:'নির্বাচিত ক্লাবের প্রশ্ন Club Quiz-এ ব্যবহৃত হবে।'
   };
 
-  $('subjectHelp').textContent =
-    helpTexts[mode] ||
-    'নির্বাচিত বিষয়ের সঙ্গে সম্পর্কিত প্রশ্ন এখানে সংরক্ষিত হবে।';
+  $('subjectHelp').textContent = helpTexts[subjectType];
 
   const matching = subjects.filter(s =>
-    s.subject_type === subjectType
+    s.subject_type===subjectType
   );
 
   select.innerHTML = '';
@@ -531,7 +531,6 @@ $('type').addEventListener('change',()=>{
   updateModeDescription();
 });
 
-// সব প্রশ্ন পেজ ধরে লোড
 async function loadQuestions(){
   if(!isAdmin)return false;
 
@@ -554,8 +553,7 @@ async function loadQuestions(){
       const batch = data || [];
       allQuestions = allQuestions.concat(batch);
 
-      if(batch.length < batchSize)break;
-
+      if(batch.length<batchSize)break;
       from += batchSize;
     }
 
@@ -596,10 +594,8 @@ function getModeLabel(mode){
   return modeLabels[mode] || mode;
 }
 
-// প্রশ্নের তালিকা Filter
 function getFilteredQuestions(){
   const term = normalizeQuestion($('searchQuestions').value);
-
   if(!term)return questions;
 
   return questions.filter(q=>{
@@ -615,7 +611,6 @@ function getFilteredQuestions(){
   });
 }
 
-// প্রশ্ন দেখানো
 function renderQuestions(){
   const list = $('questionList');
   list.innerHTML = '';
@@ -645,11 +640,8 @@ function renderQuestions(){
     checkbox.checked = selectedIds.has(String(q.id));
 
     checkbox.addEventListener('change',()=>{
-      if(checkbox.checked){
-        selectedIds.add(String(q.id));
-      }else{
-        selectedIds.delete(String(q.id));
-      }
+      if(checkbox.checked)selectedIds.add(String(q.id));
+      else selectedIds.delete(String(q.id));
       updateSelectionInfo();
     });
 
@@ -662,7 +654,7 @@ function renderQuestions(){
     const info = document.createElement('p');
     info.textContent =
       'ধরন: '+getModeLabel(q.mode)+
-      ' | Mode Code: '+q.mode+
+      ' | Mode: '+q.mode+
       ' | বিষয়: '+getSubjectName(q)+
       ' | সঠিক উত্তর: '+q.correct_option;
 
@@ -693,7 +685,6 @@ function renderQuestions(){
 
     actions.append(editButton,deleteButton);
     div.append(actions);
-
     list.append(div);
   });
 
@@ -712,7 +703,6 @@ function updateSelectionInfo(){
     selectedIds.size+'টি প্রশ্ন নির্বাচন করা হয়েছে।';
 }
 
-// প্রশ্ন সম্পাদনা
 function editQuestion(q){
   if(!isAdmin)return;
 
@@ -725,7 +715,6 @@ function editQuestion(q){
   $('question').value = q.question_bn || '';
 
   const options = q.options || {};
-
   $('a').value = options.A || '';
   $('b').value = options.B || '';
   $('c').value = options.C || '';
@@ -734,7 +723,7 @@ function editQuestion(q){
   $('answer').value = q.correct_option || 'A';
   $('explanation').value = q.explanation_bn || '';
   $('imageUrl').value = q.image_url || '';
-  $('published').checked = q.is_published === true;
+  $('published').checked = q.is_published===true;
 
   updateSingleImagePreview();
 
@@ -745,10 +734,8 @@ function editQuestion(q){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-// একক প্রশ্ন মুছে ফেলা
 async function deleteQuestion(id){
   if(!isAdmin)return;
-
   if(!confirm('আপনি কি এই প্রশ্নটি মুছে ফেলতে চান?'))return;
 
   setStatus('status','প্রশ্ন মুছে ফেলা হচ্ছে...');
@@ -764,12 +751,10 @@ async function deleteQuestion(id){
   }
 
   selectedIds.delete(String(id));
-
   setStatus('status','প্রশ্ন সফলভাবে মুছে ফেলা হয়েছে।','success');
   await loadQuestions();
 }
 
-// নির্বাচিত প্রশ্নের Bulk Action
 async function updateSelectedQuestions(changes,actionName){
   if(!isAdmin || selectedIds.size===0){
     setStatus('status','প্রথমে প্রশ্ন নির্বাচন করুন।','warning');
@@ -778,9 +763,7 @@ async function updateSelectedQuestions(changes,actionName){
 
   const ids = [...selectedIds];
 
-  if(!confirm(ids.length+'টি প্রশ্ন '+actionName+' করবেন?')){
-    return;
-  }
+  if(!confirm(ids.length+'টি প্রশ্ন '+actionName+' করবেন?'))return;
 
   setStatus('status','নির্বাচিত প্রশ্ন আপডেট হচ্ছে...');
 
@@ -793,13 +776,7 @@ async function updateSelectedQuestions(changes,actionName){
     if(error)throw error;
 
     selectedIds.clear();
-
-    setStatus(
-      'status',
-      ids.length+'টি প্রশ্ন '+actionName+' হয়েছে।',
-      'success'
-    );
-
+    setStatus('status',ids.length+'টি প্রশ্ন '+actionName+' হয়েছে।','success');
     await loadQuestions();
 
   }catch(error){
@@ -815,9 +792,7 @@ async function deleteSelectedQuestions(){
 
   const ids = [...selectedIds];
 
-  if(!confirm('সতর্কতা: '+ids.length+'টি প্রশ্ন স্থায়ীভাবে মুছে ফেলবেন?')){
-    return;
-  }
+  if(!confirm('সতর্কতা: '+ids.length+'টি প্রশ্ন স্থায়ীভাবে মুছে ফেলবেন?'))return;
 
   setStatus('status','প্রশ্নগুলো মুছে ফেলা হচ্ছে...');
 
@@ -830,9 +805,7 @@ async function deleteSelectedQuestions(){
     if(error)throw error;
 
     selectedIds.clear();
-
     setStatus('status',ids.length+'টি প্রশ্ন মুছে ফেলা হয়েছে।','success');
-
     await loadQuestions();
 
   }catch(error){
@@ -843,9 +816,9 @@ async function deleteSelectedQuestions(){
 $('selectPageButton').addEventListener('click',()=>{
   const filtered = getFilteredQuestions();
   const start = (currentPage-1)*PAGE_SIZE;
-  const pageQuestions = filtered.slice(start,start+PAGE_SIZE);
-
-  pageQuestions.forEach(q=>selectedIds.add(String(q.id)));
+  filtered.slice(start,start+PAGE_SIZE).forEach(q=>{
+    selectedIds.add(String(q.id));
+  });
   renderQuestions();
 });
 
@@ -855,17 +828,11 @@ $('clearSelectionButton').addEventListener('click',()=>{
 });
 
 $('publishSelectedButton').addEventListener('click',()=>{
-  updateSelectedQuestions(
-    {is_published:true},
-    'প্রকাশ'
-  );
+  updateSelectedQuestions({is_published:true},'প্রকাশ');
 });
 
 $('unpublishSelectedButton').addEventListener('click',()=>{
-  updateSelectedQuestions(
-    {is_published:false},
-    'অপ্রকাশ'
-  );
+  updateSelectedQuestions({is_published:false},'অপ্রকাশ');
 });
 
 $('deleteSelectedButton').addEventListener('click',deleteSelectedQuestions);
@@ -894,7 +861,6 @@ $('nextPageButton').addEventListener('click',()=>{
   }
 });
 
-// ছবির Preview
 function updateSingleImagePreview(){
   const url = $('imageUrl').value.trim();
   const img = $('singleImagePreview');
@@ -929,69 +895,15 @@ function updateSingleImagePreview(){
 
 $('imageUrl').addEventListener('input',updateSingleImagePreview);
 
-// একক প্রশ্ন সংরক্ষণ
-$('questionForm').addEventListener('submit',async function(e){
-  e.preventDefault();
-
-  if(!isAdmin){
-    alert('আপনার Admin অনুমতি নেই।');
-    return;
-  }
-
-  const imageUrl = $('imageUrl').value.trim();
+function buildSinglePayload(){
   const mode = $('type').value;
-  const question = $('question').value.trim();
-
   const subjectType = modeSubjectType[mode] || null;
-  const subjectCode = subjectType
-    ? $('subjectSelect').value
-    : null;
+  const subjectCode = subjectType ? $('subjectSelect').value : null;
 
-  if(!validImageUrl(imageUrl)){
-    setStatus('status','ছবির URL সঠিক নয়।','error');
-    return;
-  }
-
-  if(
-    (mode==='guess_player' || mode==='guess_club') &&
-    !imageUrl
-  ){
-    setStatus(
-      'status',
-      'Guess the Player ও Guess the Club-এর জন্য ছবি বা লোগোর URL দিতে হবে।',
-      'warning'
-    );
-    return;
-  }
-
-  if(subjectType && !subjectCode){
-    setStatus(
-      'status',
-      'প্রথমে দেশ, ক্লাব অথবা খেলোয়াড় নির্বাচন করুন।',
-      'warning'
-    );
-    return;
-  }
-
-  if(isDuplicate(
-    mode,
-    question,
-    subjectType,
-    subjectCode,
-    editingId
-  )){
-    setStatus(
-      'status',
-      'এই একই বিষয় ও Mode-এ প্রশ্নটি আগে থেকেই আছে।',
-      'warning'
-    );
-    return;
-  }
-
-  const payload = {
+  return {
     mode:mode,
     difficulty:'easy',
-    question_bn:question,
+    question_bn:$('question').value.trim(),
     options:{
       A:$('a').value.trim(),
       B:$('b').value.trim(),
@@ -1000,15 +912,74 @@ $('questionForm').addEventListener('submit',async function(e){
     },
     correct_option:$('answer').value,
     explanation_bn:$('explanation').value.trim(),
-    image_url:imageUrl || null,
+    image_url:$('imageUrl').value.trim() || null,
     is_published:$('published').checked,
     subject_type:subjectType,
     subject_code:subjectCode
   };
+}
+
+function validatePayload(payload){
+  if(!payload.question_bn)throw new Error('প্রশ্ন লিখুন।');
+
+  for(const key of ['A','B','C','D']){
+    if(!payload.options[key]){
+      throw new Error('চারটি অপশন পূরণ করুন।');
+    }
+  }
+
+  if(!['A','B','C','D'].includes(payload.correct_option)){
+    throw new Error('সঠিক উত্তর নির্বাচন করুন।');
+  }
+
+  if(payload.image_url && !validImageUrl(payload.image_url)){
+    throw new Error('ছবির URL সঠিক নয়।');
+  }
+
+  if(
+    ['guess_player','guess_club','guess_jersey'].includes(payload.mode) &&
+    !payload.image_url
+  ){
+    throw new Error('এই Guess কুইজের জন্য ছবির URL বাধ্যতামূলক।');
+  }
+
+  if(payload.subject_type && !payload.subject_code){
+    throw new Error('প্রথমে বিষয় নির্বাচন করুন।');
+  }
+
+  return true;
+}
+
+$('questionForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+
+  if(!isAdmin){
+    alert('আপনার Admin অনুমতি নেই।');
+    return;
+  }
+
+  const payload = buildSinglePayload();
+
+  try{
+    validatePayload(payload);
+
+    if(isDuplicate(
+      payload.mode,
+      payload.question_bn,
+      payload.subject_type,
+      payload.subject_code,
+      editingId
+    )){
+      throw new Error('এই একই বিষয় ও Mode-এ প্রশ্নটি আগে থেকেই আছে।');
+    }
+
+  }catch(error){
+    setStatus('status',error.message,'warning');
+    return;
+  }
 
   const button = $('saveButton');
   button.disabled = true;
-
   setStatus('status','প্রশ্ন সংরক্ষণ করা হচ্ছে...');
 
   try{
@@ -1047,7 +1018,7 @@ $('questionForm').addEventListener('submit',async function(e){
 
 $('cancelButton').addEventListener('click',resetForm);
 
-// Bulk প্রশ্ন যাচাই
+// JSON Bulk Question Validation
 function validateBulkQuestion(item,index){
   const number = index+1;
 
@@ -1071,9 +1042,7 @@ function validateBulkQuestion(item,index){
     throw new Error('প্রশ্ন '+number+': প্রশ্ন ১০০০ অক্ষরের বেশি।');
   }
 
-  if(!item.options ||
-     typeof item.options!=='object' ||
-     Array.isArray(item.options)){
+  if(!item.options || typeof item.options!=='object' || Array.isArray(item.options)){
     throw new Error('প্রশ্ন '+number+': options দিতে হবে।');
   }
 
@@ -1090,31 +1059,26 @@ function validateBulkQuestion(item,index){
     }
   }
 
-  const answer = String(item.correct_option || '')
-    .trim()
-    .toUpperCase();
+  const answer = String(item.correct_option || '').trim().toUpperCase();
 
   if(!['A','B','C','D'].includes(answer)){
-    throw new Error('প্রশ্ন '+number+': সঠিক উত্তর A/B/C/D হতে হবে।');
+    throw new Error('প্রশ্ন '+number+': correct_option A/B/C/D হতে হবে।');
   }
 
   const subjectType = modeSubjectType[mode] || null;
-
   const subjectCode = item.subject_code == null
     ? ''
     : String(item.subject_code).trim();
 
   if(subjectType){
-    if(item.subject_type !== subjectType){
+    if(String(item.subject_type || '').trim()!==subjectType){
       throw new Error(
         'প্রশ্ন '+number+': subject_type হবে '+subjectType
       );
     }
 
     if(!subjectCode){
-      throw new Error(
-        'প্রশ্ন '+number+': subject_code দিতে হবে।'
-      );
+      throw new Error('প্রশ্ন '+number+': subject_code দিতে হবে।');
     }
 
     const found = subjects.some(s =>
@@ -1124,8 +1088,7 @@ function validateBulkQuestion(item,index){
 
     if(!found){
       throw new Error(
-        'প্রশ্ন '+number+
-        ': subject_code quiz_subjects তালিকায় পাওয়া যায়নি।'
+        'প্রশ্ন '+number+': subject_code quiz_subjects তালিকায় পাওয়া যায়নি।'
       );
     }
   }
@@ -1139,26 +1102,32 @@ function validateBulkQuestion(item,index){
   }
 
   if(
-    (mode==='guess_player' || mode==='guess_club') &&
+    ['guess_player','guess_club','guess_jersey'].includes(mode) &&
     !imageUrl
   ){
     throw new Error(
-      'প্রশ্ন '+number+
-      ': Guess Mode-এর জন্য image_url দিতে হবে।'
+      'প্রশ্ন '+number+': এই Guess Mode-এর জন্য image_url বাধ্যতামূলক।'
+    );
+  }
+
+  const difficulty = String(item.difficulty || 'easy').toLowerCase();
+
+  if(!['easy','medium','hard'].includes(difficulty)){
+    throw new Error(
+      'প্রশ্ন '+number+': difficulty easy, medium অথবা hard হতে হবে।'
     );
   }
 
   if(typeof item.is_published!=='undefined' &&
      typeof item.is_published!=='boolean'){
     throw new Error(
-      'প্রশ্ন '+number+
-      ': is_published true অথবা false হতে হবে।'
+      'প্রশ্ন '+number+': is_published true অথবা false হতে হবে।'
     );
   }
 
   return {
     mode:mode,
-    difficulty:'easy',
+    difficulty:difficulty,
     question_bn:question,
     options:options,
     correct_option:answer,
@@ -1170,7 +1139,6 @@ function validateBulkQuestion(item,index){
   };
 }
 
-// Bulk Preview
 function renderBulkPreview(){
   const list = $('previewList');
   list.innerHTML = '';
@@ -1186,24 +1154,17 @@ function renderBulkPreview(){
     mode.textContent =
       'ধরন: '+getModeLabel(q.mode)+
       ' | Mode: '+q.mode+
-      ' | বিষয়: '+getSubjectName(q);
+      ' | বিষয়: '+getSubjectName(q)+
+      ' | Difficulty: '+q.difficulty;
 
     const status = document.createElement('small');
-    status.textContent = q.is_published
-      ? 'Publish হবে'
-      : 'Unpublished থাকবে';
-
-    status.className = q.is_published
-      ? 'published'
-      : 'unpublished';
+    status.textContent = q.is_published ? 'Publish হবে' : 'Unpublished থাকবে';
+    status.className = q.is_published ? 'published' : 'unpublished';
 
     div.append(title,mode,status);
 
     if(q.image_url){
-      div.append(makeImage(
-        q.image_url,
-        'প্রশ্ন '+(index+1)+' এর ছবি'
-      ));
+      div.append(makeImage(q.image_url,'প্রশ্ন '+(index+1)+' এর ছবি'));
     }
 
     const options = document.createElement('p');
@@ -1224,7 +1185,6 @@ function renderBulkPreview(){
   $('previewArea').style.display = 'block';
 }
 
-// Preview বাটন
 $('previewButton').addEventListener('click',async function(){
   if(!isAdmin || publishing)return;
 
@@ -1243,14 +1203,10 @@ $('previewButton').addEventListener('click',async function(){
 
     const raw = $('bulkCode').value.trim();
 
-    if(!raw){
-      throw new Error('আগে JSON কোড পেস্ট করুন।');
-    }
+    if(!raw)throw new Error('আগে JSON কোড পেস্ট করুন।');
 
     const parsed = JSON.parse(raw);
-    const source = Array.isArray(parsed)
-      ? parsed
-      : parsed.questions;
+    const source = Array.isArray(parsed) ? parsed : parsed.questions;
 
     if(!Array.isArray(source) || source.length===0){
       throw new Error('JSON Array অথবা questions Array দিতে হবে।');
@@ -1265,8 +1221,7 @@ $('previewButton').addEventListener('click',async function(){
 
       if(seen.has(key)){
         throw new Error(
-          'প্রশ্ন '+(index+1)+
-          ': Bulk কোডের মধ্যে একই Subject-এ Duplicate প্রশ্ন আছে।'
+          'প্রশ্ন '+(index+1)+': Bulk কোডের মধ্যে Duplicate প্রশ্ন আছে।'
         );
       }
 
@@ -1279,8 +1234,7 @@ $('previewButton').addEventListener('click',async function(){
         q.subject_code
       )){
         throw new Error(
-          'প্রশ্ন '+(index+1)+
-          ': একই Subject-এ প্রশ্নটি আগে থেকেই সংরক্ষিত আছে।'
+          'প্রশ্ন '+(index+1)+': এই প্রশ্ন আগে থেকেই সংরক্ষিত আছে।'
         );
       }
 
@@ -1300,34 +1254,24 @@ $('previewButton').addEventListener('click',async function(){
   }catch(error){
     bulkQuestions = [];
     $('previewArea').style.display = 'none';
-
-    setStatus(
-      'bulkStatus',
-      'কোডে সমস্যা: '+error.message,
-      'error'
-    );
+    setStatus('bulkStatus','কোডে সমস্যা: '+error.message,'error');
 
   }finally{
     button.disabled = false;
   }
 });
 
-// Bulk Import: ১০০টি করে ব্যাচ
+// ১০০টি করে প্রশ্ন সংরক্ষণ
 $('publishAllButton').addEventListener('click',async function(){
   if(!isAdmin || publishing)return;
 
   if(bulkQuestions.length===0){
-    setStatus(
-      'bulkStatus',
-      'প্রথমে প্রশ্নের কোড যাচাই করুন।',
-      'warning'
-    );
+    setStatus('bulkStatus','প্রথমে প্রশ্নের কোড যাচাই করুন।','warning');
     return;
   }
 
   if(!confirm(
-    bulkQuestions.length+
-    'টি প্রশ্ন Supabase-এ সংরক্ষণ করবেন?'
+    bulkQuestions.length+'টি প্রশ্ন Supabase-এ সংরক্ষণ করবেন?'
   ))return;
 
   publishing = true;
@@ -1339,6 +1283,10 @@ $('publishAllButton').addEventListener('click',async function(){
   previewButton.disabled = true;
 
   let savedCount = 0;
+  let failedCount = 0;
+  const total = bulkQuestions.length;
+
+  $('importProgressArea').style.display = 'block';
 
   try{
     const loaded = await loadQuestions();
@@ -1347,7 +1295,7 @@ $('publishAllButton').addEventListener('click',async function(){
       throw new Error('প্রশ্নের তালিকা যাচাই করা যায়নি।');
     }
 
-    for(let i=0;i<bulkQuestions.length;i++){
+    for(let i=0;i<total;i++){
       const q = bulkQuestions[i];
 
       if(isDuplicate(
@@ -1363,8 +1311,6 @@ $('publishAllButton').addEventListener('click',async function(){
       }
     }
 
-    const total = bulkQuestions.length;
-
     for(let start=0;start<total;start+=IMPORT_BATCH_SIZE){
       const batch = bulkQuestions.slice(
         start,
@@ -1376,20 +1322,23 @@ $('publishAllButton').addEventListener('click',async function(){
         'সংরক্ষণ চলছে: '+savedCount+' / '+total+'টি প্রশ্ন...'
       );
 
-      const {data,error} = await client
+      const {error} = await client
         .from('quiz_questions')
-        .insert(batch)
-        .select('id');
+        .insert(batch);
 
       if(error){
+        failedCount = total-savedCount;
         throw new Error(
-          'ব্যাচে সমস্যা হয়েছে। '+savedCount+
-          'টি প্রশ্ন আগে সংরক্ষিত হয়েছে। বিস্তারিত: '+
-          error.message
+          'একটি ব্যাচে সমস্যা হয়েছে: '+error.message
         );
       }
 
-      savedCount += data ? data.length : batch.length;
+      savedCount += batch.length;
+
+      const percent = Math.round((savedCount/total)*100);
+      $('importProgressBar').style.width = percent+'%';
+      $('importProgressText').textContent =
+        'সংরক্ষিত '+savedCount+' / '+total+'টি ('+percent+'%)';
     }
 
     setStatus(
@@ -1407,13 +1356,24 @@ $('publishAllButton').addEventListener('click',async function(){
   }catch(error){
     setStatus(
       'bulkStatus',
-      'Import রিপোর্ট: '+error.message+
-      ' সফলভাবে সংরক্ষিত: '+savedCount+'টি।',
+      'Import থেমেছে: '+error.message+
+      ' | সফল: '+savedCount+
+      'টি | এই সেশনে বাকি/ব্যর্থ: '+failedCount+'টি।',
       'error'
     );
 
-    bulkQuestions = [];
-    $('previewArea').style.display = 'none';
+    // আংশিক Import হলে অবশিষ্ট প্রশ্নগুলো আবার Preview করা যাবে।
+    if(savedCount>0 && savedCount<total){
+      bulkQuestions = bulkQuestions.slice(savedCount);
+      renderBulkPreview();
+      $('previewCount').textContent = bulkQuestions.length;
+      $('bulkStatus').textContent +=
+        ' | অবশিষ্ট প্রশ্নগুলো Preview-তে রাখা হয়েছে।';
+    }else if(savedCount===0){
+      renderBulkPreview();
+    }
+
+    await loadQuestions();
 
   }finally{
     publishing = false;
@@ -1422,10 +1382,8 @@ $('publishAllButton').addEventListener('click',async function(){
   }
 });
 
-// শুরু
 async function start(){
   const authorized = await checkAdmin();
-
   if(!authorized)return;
 
   setStatus(
@@ -1437,7 +1395,6 @@ async function start(){
   updateModeDescription();
 
   const subjectsLoaded = await loadSubjects();
-
   if(!subjectsLoaded)return;
 
   await loadQuestions();
