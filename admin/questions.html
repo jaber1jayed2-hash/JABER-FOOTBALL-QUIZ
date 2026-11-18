@@ -77,11 +77,11 @@ label{display:block;margin-top:10px}
 <label>প্রশ্নের ধরন</label>
 <select id="type" required>
 <option value="general_mcq">সাধারণ MCQ</option>
-<option value="country_quiz">দেশভিত্তিক কুইজ</option>
 <option value="player_quiz">Player Quiz — খেলোয়াড় নির্বাচন</option>
 <option value="club_quiz">Club Quiz — ক্লাব নির্বাচন</option>
 <option value="guess_player">Guess the Player — ছবি দেখে খেলোয়াড় চেনা</option>
 <option value="guess_club">Guess the Club — লোগো দেখে ক্লাব চেনা</option>
+<option value="guess_country">Guess the Country — ছবি দেখে দেশ চেনা</option>
 <option value="guess_jersey">Guess the Jersey</option>
 <option value="guess_stadium">Guess the Stadium</option>
 <option value="guess_silhouette">Guess the Silhouette</option>
@@ -144,31 +144,16 @@ label{display:block;margin-top:10px}
 একটি JSON ফাইল/কোডে একসঙ্গে হাজারো প্রশ্ন দিতে পারবেন।
 প্রশ্নগুলো যাচাই করে ১০০টি করে ব্যাচে সংরক্ষণ করা হবে।
 Player Quiz ও Club Quiz-এর জন্য subject_type এবং subject_code দিতে হবে।
-Guess Mode-এ কোনো Player বা Club নির্বাচন করতে হবে না।
+Guess Mode-এ কোনো Player, Club বা Country নির্বাচন করতে হবে না।
+Guess the Country-এর জন্য image_url বাধ্যতামূলক।
 </p>
 
 <label>প্রশ্নের JSON কোড পেস্ট করুন</label>
 <textarea id="bulkCode" placeholder='[
   {
-    "mode": "guess_player",
-    "question_bn": "ছবির খেলোয়াড় কে?",
-    "image_url": "https://example.com/player.jpg",
-    "options": {
-      "A": "মেসি",
-      "B": "রোনালদো",
-      "C": "নেইমার",
-      "D": "এমবাপ্পে"
-    },
-    "correct_option": "A",
-    "difficulty": "easy",
-    "explanation_bn": "সঠিক উত্তর মেসি।",
-    "is_published": true
-  },
-  {
-    "mode": "player_quiz",
-    "subject_type": "player",
-    "subject_code": "PLY001",
-    "question_bn": "এই খেলোয়াড় কোন দেশের?",
+    "mode": "guess_country",
+    "question_bn": "ছবিতে কোন দেশের পতাকা দেখা যাচ্ছে?",
+    "image_url": "https://example.com/argentina-flag.jpg",
     "options": {
       "A": "আর্জেন্টিনা",
       "B": "ব্রাজিল",
@@ -176,7 +161,9 @@ Guess Mode-এ কোনো Player বা Club নির্বাচন কর�
       "D": "জার্মানি"
     },
     "correct_option": "A",
-    "difficulty": "easy"
+    "difficulty": "easy",
+    "explanation_bn": "এটি আর্জেন্টিনার পতাকা।",
+    "is_published": true
   }
 ]'></textarea>
 
@@ -257,31 +244,29 @@ const IMPORT_BATCH_SIZE = 100;
 
 const allowedModes = [
   'general_mcq',
-  'country_quiz',
   'player_quiz',
   'club_quiz',
   'guess_player',
   'guess_club',
+  'guess_country',
   'guess_jersey',
   'guess_stadium',
   'guess_silhouette',
   'guess_clues'
 ];
 
-// শুধু এই তিনটি কুইজে বিষয় নির্বাচন থাকবে।
 const modeSubjectType = {
-  country_quiz:'country',
   player_quiz:'player',
   club_quiz:'club'
 };
 
 const modeLabels = {
   general_mcq:'সাধারণ MCQ',
-  country_quiz:'দেশভিত্তিক কুইজ',
   player_quiz:'Player Quiz',
   club_quiz:'Club Quiz',
   guess_player:'Guess the Player',
   guess_club:'Guess the Club',
+  guess_country:'Guess the Country',
   guess_jersey:'Guess the Jersey',
   guess_stadium:'Guess the Stadium',
   guess_silhouette:'Guess the Silhouette',
@@ -290,11 +275,11 @@ const modeLabels = {
 
 const modeDescriptions = {
   general_mcq:'সাধারণ ফুটবল MCQ প্রশ্ন তৈরি করুন।',
-  country_quiz:'একটি দেশ নির্বাচন করুন। সেই দেশের প্রশ্ন এখানে সংরক্ষিত হবে।',
   player_quiz:'একটি নির্দিষ্ট খেলোয়াড় নির্বাচন করুন। সেই খেলোয়াড়ের প্রশ্ন Player Quiz-এ ব্যবহৃত হবে।',
   club_quiz:'একটি নির্দিষ্ট ক্লাব নির্বাচন করুন। সেই ক্লাবের প্রশ্ন Club Quiz-এ ব্যবহৃত হবে।',
-  guess_player:'কোনো খেলোয়াড় নির্বাচন করতে হবে না। খেলোয়াড়ের ছবি, চারটি নাম এবং সঠিক উত্তর দিন। ২০০ জনের বাইরের খেলোয়াড়ও যোগ করতে পারবেন।',
+  guess_player:'কোনো খেলোয়াড় নির্বাচন করতে হবে না। খেলোয়াড়ের ছবি, চারটি নাম এবং সঠিক উত্তর দিন।',
   guess_club:'কোনো ক্লাব নির্বাচন করতে হবে না। ক্লাবের লোগো, চারটি ক্লাবের নাম এবং সঠিক উত্তর দিন।',
+  guess_country:'কোনো দেশ নির্বাচন করতে হবে না। দেশের পতাকা বা ছবি, চারটি দেশের নাম এবং সঠিক উত্তর দিন।',
   guess_jersey:'জার্সির ছবি দিন। চারটি অপশন থেকে সঠিক জার্সির উত্তর নির্বাচন করুন।',
   guess_stadium:'স্টেডিয়ামের ছবি বা বিবরণ দিয়ে চারটি অপশনে উত্তর তৈরি করুন।',
   guess_silhouette:'সিলুয়েটের ছবি দিয়ে চারটি অপশনে উত্তর তৈরি করুন।',
@@ -458,6 +443,7 @@ function updateModeDescription(){
   const imageRequired = [
     'guess_player',
     'guess_club',
+    'guess_country',
     'guess_jersey'
   ].includes(mode);
 
@@ -483,7 +469,6 @@ function updateSubjectBox(selectedCode=null){
   box.style.display = 'block';
 
   const labels = {
-    country:'দেশ নির্বাচন করুন',
     player:'খেলোয়াড় নির্বাচন করুন',
     club:'ক্লাব নির্বাচন করুন'
   };
@@ -491,7 +476,6 @@ function updateSubjectBox(selectedCode=null){
   $('subjectLabel').textContent = labels[subjectType];
 
   const helpTexts = {
-    country:'নির্বাচিত দেশের প্রশ্ন এখানে সংরক্ষিত হবে।',
     player:'নির্বাচিত খেলোয়াড়ের প্রশ্ন Player Quiz-এ ব্যবহৃত হবে।',
     club:'নির্বাচিত ক্লাবের প্রশ্ন Club Quiz-এ ব্যবহৃত হবে।'
   };
@@ -937,7 +921,7 @@ function validatePayload(payload){
   }
 
   if(
-    ['guess_player','guess_club','guess_jersey'].includes(payload.mode) &&
+    ['guess_player','guess_club','guess_country','guess_jersey'].includes(payload.mode) &&
     !payload.image_url
   ){
     throw new Error('এই Guess কুইজের জন্য ছবির URL বাধ্যতামূলক।');
@@ -1018,7 +1002,6 @@ $('questionForm').addEventListener('submit',async function(e){
 
 $('cancelButton').addEventListener('click',resetForm);
 
-// JSON Bulk Question Validation
 function validateBulkQuestion(item,index){
   const number = index+1;
 
@@ -1102,7 +1085,7 @@ function validateBulkQuestion(item,index){
   }
 
   if(
-    ['guess_player','guess_club','guess_jersey'].includes(mode) &&
+    ['guess_player','guess_club','guess_country','guess_jersey'].includes(mode) &&
     !imageUrl
   ){
     throw new Error(
@@ -1261,7 +1244,6 @@ $('previewButton').addEventListener('click',async function(){
   }
 });
 
-// ১০০টি করে প্রশ্ন সংরক্ষণ
 $('publishAllButton').addEventListener('click',async function(){
   if(!isAdmin || publishing)return;
 
@@ -1362,7 +1344,6 @@ $('publishAllButton').addEventListener('click',async function(){
       'error'
     );
 
-    // আংশিক Import হলে অবশিষ্ট প্রশ্নগুলো আবার Preview করা যাবে।
     if(savedCount>0 && savedCount<total){
       bulkQuestions = bulkQuestions.slice(savedCount);
       renderBulkPreview();
