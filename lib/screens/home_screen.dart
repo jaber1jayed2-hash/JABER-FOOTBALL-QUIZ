@@ -72,21 +72,41 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void openFeature(String title) {
     String? category;
+    String? mode;
 
-    if (title == 'দেশভিত্তিক কুইজ') {
-      category = 'country';
-    } else if (title == 'ক্লাব কুইজ') {
-      category = 'club';
-    } else if (title == 'খেলোয়াড় কুইজ') {
-      category = 'player';
+    switch (title) {
+      case 'দেশভিত্তিক কুইজ':
+        category = 'country';
+        break;
+
+      case 'প্লেয়ার কুইজ':
+        category = 'player';
+        break;
+
+      case 'ক্লাব কুইজ':
+        category = 'club';
+        break;
+
+      case 'Guess the Player':
+        mode = 'guess_player';
+        break;
+
+      case 'Guess the Club':
+        mode = 'guess_club';
+        break;
+
+      case 'Guess the Jersey':
+        mode = 'guess_jersey';
+        break;
     }
 
-    if (category != null) {
+    if (category != null || mode != null) {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => QuizScreen(
             initialCategory: category,
+            initialMode: mode,
           ),
         ),
       );
@@ -99,15 +119,19 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'লিডারবোর্ড':
         message = 'লিডারবোর্ড পেজ পরবর্তী ধাপে চালু করা হবে।';
         break;
+
       case 'বন্ধুদের সঙ্গে':
         message = 'বন্ধুদের ফিচার পরবর্তী ধাপে চালু করা হবে।';
         break;
+
       case 'টুর্নামেন্ট':
         message = 'টুর্নামেন্ট পেজ পরবর্তী ধাপে চালু করা হবে।';
         break;
+
       case 'মাল্টিপ্লেয়ার':
         message = 'মাল্টিপ্লেয়ার পেজ পরবর্তী ধাপে চালু করা হবে।';
         break;
+
       default:
         message = 'ফিচারটি শিগগিরই চালু হবে।';
     }
@@ -284,36 +308,70 @@ class _HomeScreenState extends State<HomeScreen> {
               spacing: 10,
               runSpacing: 10,
               children: [
+                // 1. Country Quiz
                 _HomeTile(
                   icon: Icons.flag,
                   title: 'দেশভিত্তিক কুইজ',
                   onTap: () => openFeature('দেশভিত্তিক কুইজ'),
                 ),
+
+                // 2. Player Quiz
+                _HomeTile(
+                  icon: Icons.person,
+                  title: 'প্লেয়ার কুইজ',
+                  onTap: () => openFeature('প্লেয়ার কুইজ'),
+                ),
+
+                // 3. Club Quiz
                 _HomeTile(
                   icon: Icons.shield,
                   title: 'ক্লাব কুইজ',
                   onTap: () => openFeature('ক্লাব কুইজ'),
                 ),
+
+                // 4. Guess the Player
                 _HomeTile(
-                  icon: Icons.person,
-                  title: 'খেলোয়াড় কুইজ',
-                  onTap: () => openFeature('খেলোয়াড় কুইজ'),
+                  icon: Icons.person_search,
+                  title: 'Guess the Player',
+                  onTap: () => openFeature('Guess the Player'),
                 ),
+
+                // 5. Guess the Club
+                _HomeTile(
+                  icon: Icons.sports_soccer,
+                  title: 'Guess the Club',
+                  onTap: () => openFeature('Guess the Club'),
+                ),
+
+                // 6. Guess the Jersey
+                _HomeTile(
+                  icon: Icons.checkroom,
+                  title: 'Guess the Jersey',
+                  onTap: () => openFeature('Guess the Jersey'),
+                ),
+
+                // 7. Leaderboard
                 _HomeTile(
                   icon: Icons.leaderboard,
                   title: 'লিডারবোর্ড',
                   onTap: () => openFeature('লিডারবোর্ড'),
                 ),
+
+                // 8. Friends
                 _HomeTile(
                   icon: Icons.groups,
                   title: 'বন্ধুদের সঙ্গে',
                   onTap: () => openFeature('বন্ধুদের সঙ্গে'),
                 ),
+
+                // 9. Tournament
                 _HomeTile(
                   icon: Icons.emoji_events,
                   title: 'টুর্নামেন্ট',
                   onTap: () => openFeature('টুর্নামেন্ট'),
                 ),
+
+                // 10. Multiplayer
                 _HomeTile(
                   icon: Icons.sports_esports,
                   title: 'মাল্টিপ্লেয়ার',
