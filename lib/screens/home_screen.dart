@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'quiz_screen.dart';
+import 'tournament_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -71,6 +72,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void openFeature(String title) {
+    if (title == 'টুর্নামেন্ট') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const TournamentScreen(),
+        ),
+      );
+      return;
+    }
+
     String? category;
     String? mode;
 
@@ -122,10 +133,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
       case 'বন্ধুদের সঙ্গে':
         message = 'বন্ধুদের ফিচার পরবর্তী ধাপে চালু করা হবে।';
-        break;
-
-      case 'টুর্নামেন্ট':
-        message = 'টুর্নামেন্ট পেজ পরবর্তী ধাপে চালু করা হবে।';
         break;
 
       case 'মাল্টিপ্লেয়ার':
@@ -308,70 +315,51 @@ class _HomeScreenState extends State<HomeScreen> {
               spacing: 10,
               runSpacing: 10,
               children: [
-                // 1. Country Quiz
                 _HomeTile(
                   icon: Icons.flag,
                   title: 'দেশভিত্তিক কুইজ',
                   onTap: () => openFeature('দেশভিত্তিক কুইজ'),
                 ),
-
-                // 2. Player Quiz
                 _HomeTile(
                   icon: Icons.person,
                   title: 'প্লেয়ার কুইজ',
                   onTap: () => openFeature('প্লেয়ার কুইজ'),
                 ),
-
-                // 3. Club Quiz
                 _HomeTile(
                   icon: Icons.shield,
                   title: 'ক্লাব কুইজ',
                   onTap: () => openFeature('ক্লাব কুইজ'),
                 ),
-
-                // 4. Guess the Player
                 _HomeTile(
                   icon: Icons.person_search,
                   title: 'Guess the Player',
                   onTap: () => openFeature('Guess the Player'),
                 ),
-
-                // 5. Guess the Club
                 _HomeTile(
                   icon: Icons.sports_soccer,
                   title: 'Guess the Club',
                   onTap: () => openFeature('Guess the Club'),
                 ),
-
-                // 6. Guess the Jersey
                 _HomeTile(
                   icon: Icons.checkroom,
                   title: 'Guess the Jersey',
                   onTap: () => openFeature('Guess the Jersey'),
                 ),
-
-                // 7. Leaderboard
                 _HomeTile(
                   icon: Icons.leaderboard,
                   title: 'লিডারবোর্ড',
                   onTap: () => openFeature('লিডারবোর্ড'),
                 ),
-
-                // 8. Friends
                 _HomeTile(
                   icon: Icons.groups,
                   title: 'বন্ধুদের সঙ্গে',
                   onTap: () => openFeature('বন্ধুদের সঙ্গে'),
                 ),
-
-                // 9. Tournament
                 _HomeTile(
                   icon: Icons.emoji_events,
                   title: 'টুর্নামেন্ট',
                   onTap: () => openFeature('টুর্নামেন্ট'),
                 ),
-
-                // 10. Multiplayer
                 _HomeTile(
                   icon: Icons.sports_esports,
                   title: 'মাল্টিপ্লেয়ার',
@@ -383,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 20),
 
             const Text(
-              'নোট: লাইভ ডেটা ও অনলাইন ফিচার ব্যাকএন্ড/API যুক্ত করার পর চালু হবে।',
+              'নোট: লাইভ ডেটা ও অনলাইন ফিচার ব্যাকএন্ড/API সংযোগের পর চালু হবে।',
               style: TextStyle(
                 color: Colors.white54,
                 fontSize: 12,
