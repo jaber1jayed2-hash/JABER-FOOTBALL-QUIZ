@@ -74,6 +74,80 @@ jobs:
           print("Manifest configured successfully.")
           PY
 
+      - name: Apply Admin App Name to Android Launcher
+        run: |
+          python3 - <<'PY'
+          import json
+          import re
+          import urllib.request
+          from pathlib import Path
+          from xml.sax.saxutils import quoteattr
+
+          base = "https://cuvfoltgtopchiugrbuf.supabase.co"
+          key = "sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D"
+
+          url = (
+              base
+              + "/rest/v1/app_settings"
+              + "?select=value&key=eq.home_app_name"
+          )
+
+          req = urllib.request.Request(
+              url,
+              headers={
+                  "apikey": key,
+                  "Authorization": "Bearer " + key
+              }
+          )
+
+          with urllib.request.urlopen(req, timeout=30) as response:
+              data = json.loads(response.read().decode())
+
+          app_name = "JABER FOOTBALL QUIZ"
+
+          if data and data[0].get("value"):
+              app_name = str(data[0]["value"]).strip()
+
+          if not app_name:
+              app_name = "JABER FOOTBALL QUIZ"
+
+          if len(app_name) > 100:
+              raise Exception("App name is too long. Maximum 100 characters.")
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          content = manifest.read_text()
+
+          match = re.search(r"<application\b[^>]*>", content, re.DOTALL)
+
+          if not match:
+              raise Exception("Android application tag not found.")
+
+          application_tag = match.group(0)
+
+          label_attribute = "android:label=" + quoteattr(app_name)
+
+          if re.search(r'\bandroid:label\s*=\s*"[^"]*"', application_tag):
+              application_tag = re.sub(
+                  r'\bandroid:label\s*=\s*"[^"]*"',
+                  lambda _: label_attribute,
+                  application_tag,
+                  count=1
+              )
+          else:
+              application_tag = application_tag[:-1] + " " + label_attribute + ">"
+
+          content = (
+              content[:match.start()]
+              + application_tag
+              + content[match.end():]
+          )
+
+          manifest.write_text(content)
+
+          print("Android Launcher Name configured successfully.")
+          print("App Name:", app_name)
+          PY
+
       - name: Configure Android Release Lint
         run: |
           python3 - <<'PY'
@@ -173,4 +247,3 @@ jobs:
         with:
           name: JABER-FOOTBALL-QUIZ-APK
           path: build/app/outputs/flutter-apk/app-release.apk
-          
