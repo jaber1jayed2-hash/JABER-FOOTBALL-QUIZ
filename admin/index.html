@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -108,7 +107,13 @@ button:disabled{opacity:.55;cursor:not-allowed}.grid{display:grid;grid-template-
 <div id="subjectList" class="status">তালিকা লোড হচ্ছে...</div><p id="managerStatus" class="status"></p>
 </div>
 
-<div id="settings" class="card hidden"><h2>অ্যাপ সেটিংস</h2>
+<div id="settings" class="card hidden">
+<h2>অ্যাপ সেটিংস</h2>
+
+<label>Android App Name (অ্যাপ আইকনের নিচে যে নাম দেখাবে)</label>
+<input type="text" id="appName" maxlength="100" placeholder="JABER FOOTBALL QUIZ">
+<small>এখানে নাম পরিবর্তন করে Save App Settings চাপুন। পরবর্তী APK Build করার সময় নতুন নাম যুক্ত হবে।</small>
+
 <label>Home Cover Image</label><input type="file" id="coverFile" accept="image/*"><img id="coverPreview" class="preview hidden" alt="Home Cover">
 <label>Home Logo</label><input type="file" id="logoFile" accept="image/*"><img id="logoPreview" class="preview hidden" alt="Home Logo">
 <label>App Icon</label><input type="file" id="iconFile" accept="image/*"><img id="iconPreview" class="preview hidden" alt="App Icon">
@@ -165,7 +170,7 @@ async function logout(){try{await db.auth.signOut()}catch(e){console.error(e)}cu
 async function loadDashboardCounts(){try{const results=await Promise.all(["quiz_questions","player","club","country"].map((v,i)=>i===0?db.from("quiz_questions").select("id",{count:"exact",head:true}):db.from("quiz_subjects").select("id",{count:"exact",head:true}).eq("subject_type",v)));["questionCount","playerCount","clubCount","countryCount"].forEach((id,i)=>{if(!results[i].error)setText(id,results[i].count??0)})}catch(e){console.error(e)}}
 function hidePanels(){["settings","quiz-settings","developer","section","subjectManager"].forEach(hideElement)}
 
-/* সংশোধন: Tournament পেজ এখন সরাসরি খুলবে */
+/* Tournament পেজ সরাসরি খুলবে */
 function show(name){
  if(!isAdminVerified||!currentUser){
   alert("প্রথমে Admin Login করুন।");
@@ -242,8 +247,77 @@ function setupPreview(inputId,previewId){$(inputId).addEventListener("change",fu
 setupPreview("subjectImageFile","newSubjectPreview");setupPreview("newSubjectImageFile","newSubjectImagePreview");setupPreview("coverFile","coverPreview");setupPreview("logoFile","logoPreview");setupPreview("iconFile","iconPreview");setupPreview("developerPhotoFile","developerPreview");
 async function saveSetting(key,value){if(!isAdminVerified||!currentUser)throw new Error("Admin অনুমতি নেই।");const {error}=await db.from("app_settings").upsert({key,value:String(value),updated_at:new Date().toISOString()},{onConflict:"key"});if(error)throw error}
 function setRemotePreview(id,url){if(url){$(id).src=url;showElement(id)}else{$(id).removeAttribute("src");hideElement(id)}}
-async function loadSettings(){try{const {data,error}=await db.from("app_settings").select("key,value");if(error)throw error;const s={};(data||[]).forEach(x=>s[x.key]=x.value);$("developerName").value=s.developer_name||"";$("developerPhone").value=s.developer_phone||"";$("whatsappLink").value=s.whatsapp_link||"";setRemotePreview("coverPreview",s.home_cover_url);setRemotePreview("logoPreview",s.home_logo_url);setRemotePreview("iconPreview",s.app_icon_url);setRemotePreview("developerPreview",s.developer_photo_url);fillQuizSettings(s)}catch(e){console.error("Settings Load Error:",e.message)}}
-async function saveAppSettings(){const b=$("saveAppButton");b.disabled=true;setStatus("appStatus","সংরক্ষণ হচ্ছে...");try{for(const [input,folder,key,preview] of [["coverFile","home-cover","home_cover_url","coverPreview"],["logoFile","home-logo","home_logo_url","logoPreview"],["iconFile","app-icon","app_icon_url","iconPreview"]]){const f=$(input).files[0];if(f){const url=await uploadImage(f,folder);await saveSetting(key,url);clearFilePreview(input,preview);setRemotePreview(preview,url)}}setStatus("appStatus","App Settings সফলভাবে সংরক্ষিত হয়েছে।")}catch(e){setStatus("appStatus","Error: "+e.message)}finally{b.disabled=false}}
+
+/* App Settings লোড */
+async function loadSettings(){
+ try{
+  const {data,error}=await db.from("app_settings").select("key,value");
+  if(error)throw error;
+
+  const s={};
+  (data||[]).forEach(x=>s[x.key]=x.value);
+
+  $("appName").value=s.home_app_name||"JABER FOOTBALL QUIZ";
+
+  $("developerName").value=s.developer_name||"";
+  $("developerPhone").value=s.developer_phone||"";
+  $("whatsappLink").value=s.whatsapp_link||"";
+
+  setRemotePreview("coverPreview",s.home_cover_url);
+  setRemotePreview("logoPreview",s.home_logo_url);
+  setRemotePreview("iconPreview",s.app_icon_url);
+  setRemotePreview("developerPreview",s.developer_photo_url);
+
+  fillQuizSettings(s);
+ }catch(e){
+  console.error("Settings Load Error:",e.message);
+ }
+}
+
+/* App Name + Cover + Logo + Icon সংরক্ষণ */
+async function saveAppSettings(){
+ const b=$("saveAppButton");
+ const appName=$("appName").value.trim();
+
+ if(!appName){
+  setStatus("appStatus","অ্যাপের নাম লিখুন।");
+  return;
+ }
+
+ if(appName.length>100){
+  setStatus("appStatus","অ্যাপের নাম সর্বোচ্চ ১০০ অক্ষরের হতে পারবে।");
+  return;
+ }
+
+ b.disabled=true;
+ setStatus("appStatus","App Settings সংরক্ষণ হচ্ছে...");
+
+ try{
+  await saveSetting("home_app_name",appName);
+
+  for(const [input,folder,key,preview] of [
+   ["coverFile","home-cover","home_cover_url","coverPreview"],
+   ["logoFile","home-logo","home_logo_url","logoPreview"],
+   ["iconFile","app-icon","app_icon_url","iconPreview"]
+  ]){
+   const f=$(input).files[0];
+
+   if(f){
+    const url=await uploadImage(f,folder);
+    await saveSetting(key,url);
+    clearFilePreview(input,preview);
+    setRemotePreview(preview,url);
+   }
+  }
+
+  setStatus("appStatus","App Name, Cover, Logo এবং Icon সফলভাবে সংরক্ষিত হয়েছে।");
+ }catch(e){
+  setStatus("appStatus","Error: "+e.message);
+ }finally{
+  b.disabled=false;
+ }
+}
+
 function fillQuizSettings(s){$("quizMin").value=s.quiz_min_questions??5;$("quizMax").value=s.quiz_max_questions??50;$("quizDefault").value=s.quiz_default_questions??10;$("quizTimer").value=s.quiz_timer_seconds??20;$("quizCorrectXP").value=s.quiz_correct_xp??5;$("quizWrongXP").value=s.quiz_wrong_xp??-2;$("quizCorrectPoints").value=s.quiz_correct_points??5;$("quizWrongPoints").value=s.quiz_wrong_points??0}
 async function loadQuizSettings(){setStatus("quizStatus","সেটিংস লোড হচ্ছে...");try{const {data,error}=await db.from("app_settings").select("key,value").like("key","quiz_%");if(error)throw error;const s={};(data||[]).forEach(x=>s[x.key]=x.value);fillQuizSettings(s);setStatus("quizStatus","Quiz Settings লোড হয়েছে।")}catch(e){setStatus("quizStatus","Load Error: "+e.message)}}
 async function saveQuizSettings(){const vals={quiz_min_questions:+$("quizMin").value,quiz_max_questions:+$("quizMax").value,quiz_default_questions:+$("quizDefault").value,quiz_timer_seconds:+$("quizTimer").value,quiz_correct_xp:+$("quizCorrectXP").value,quiz_wrong_xp:+$("quizWrongXP").value,quiz_correct_points:+$("quizCorrectPoints").value,quiz_wrong_points:+$("quizWrongPoints").value};if(Object.values(vals).some(x=>!Number.isInteger(x)))return setStatus("quizStatus","সব ঘরে পূর্ণসংখ্যা লিখুন।");if(vals.quiz_min_questions<1||vals.quiz_max_questions<vals.quiz_min_questions||vals.quiz_max_questions>500||vals.quiz_default_questions<vals.quiz_min_questions||vals.quiz_default_questions>vals.quiz_max_questions||vals.quiz_timer_seconds<1||vals.quiz_timer_seconds>300||vals.quiz_correct_xp<0||vals.quiz_correct_xp>10000||vals.quiz_wrong_xp>0||vals.quiz_wrong_xp< -10000||vals.quiz_correct_points<0||vals.quiz_correct_points>10000||vals.quiz_wrong_points<0||vals.quiz_wrong_points>10000)return setStatus("quizStatus","সেটিংসের মান সঠিক নয়।");const b=$("saveQuizButton");b.disabled=true;try{for(const [k,v] of Object.entries(vals))await saveSetting(k,v);setStatus("quizStatus","Quiz Settings সফলভাবে সংরক্ষিত হয়েছে।")}catch(e){setStatus("quizStatus","Save Error: "+e.message)}finally{b.disabled=false}}
