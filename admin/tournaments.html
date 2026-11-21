@@ -165,6 +165,8 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 <h3 id="matchFormTitle">নতুন ম্যাচ তৈরি করুন</h3>
 <input type="hidden" id="matchEditId">
 <div class="grid">
+<div><label>Stage (ঐচ্ছিক)</label><select id="matchStage"><option value="">Stage নির্বাচন করুন</option></select></div>
+<div><label>Stage Round (ঐচ্ছিক)</label><select id="matchStageRound"><option value="">Round নির্বাচন করুন</option></select></div>
 <div><label>Round Number</label><input id="roundNumber" type="number" min="1" value="1"></div>
 <div><label>Match Number</label><input id="matchNumber" type="number" min="1" value="1"></div>
 </div>
@@ -242,7 +244,7 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 </div>
 <div class="stage-toolbar">
 <button type="button" id="loadStagesButton">🔄 Stage Refresh</button>
-<button type="button" class="secondary" id="createStagesButton">➕ Default 6 Stages তৈরি</button>
+<button type="button" class="secondary" id="createStagesButton">➕ Default 7 Stages তৈরি</button>
 </div>
 <div id="stagesList">Stage লোড হচ্ছে...</div>
 <hr>
@@ -250,6 +252,21 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 <div id="stageEditor" class="hidden">
 <h3 id="activeStageTitle">Stage Quiz Management</h3>
 <p id="activeStageInfo" class="meta"></p>
+
+<div class="item" id="roundManager">
+<h3>🔢 এই Stage-এর Round Management</h3>
+<div class="note">Group Stage-এ Round 1, Round 2, Round 3—এভাবে যতগুলো প্রয়োজন তৈরি করুন। প্রতিটি Round-এর প্রশ্ন, ফলাফল, ম্যাচ ও অনুমোদন আলাদা থাকবে। পরবর্তী Round-এ কেউ স্বয়ংক্রিয়ভাবে যাবে না; Admin-কে অনুমোদন দিতে হবে।</div>
+<div class="grid">
+<div><label>Round Number</label><input id="newRoundNumber" type="number" min="1" max="1000" value="1"></div>
+<div><label>Round Name</label><input id="newRoundName" maxlength="100" placeholder="Round 1"></div>
+</div>
+<label>Round Status</label>
+<select id="newRoundStatus"><option value="locked">Locked</option><option value="open" selected>Open</option><option value="completed">Completed</option></select>
+<button type="button" id="createRoundButton">➕ Round তৈরি করুন</button>
+<label>বর্তমানে যে Round পরিচালনা করবেন</label>
+<select id="activeRoundSelect"><option value="">Round নির্বাচন করুন</option></select>
+<div id="roundsList">Round লোড হচ্ছে...</div>
+</div>
 
 <div class="item">
 <h3>⚙️ Stage Settings</h3>
@@ -371,6 +388,17 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 <button type="button" id="loadStageResultsButton">🔄 Results Refresh</button>
 <div id="stageResultsList"></div>
 </div>
+<div class="item" id="roundApprovalBox">
+<h3>✅ পরবর্তী Round-এ ম্যানুয়াল অনুমোদন</h3>
+<div class="note">উপরের নির্বাচিত Round-এ খেলোয়াড়কে Admin নিজে অনুমোদন করবেন। কোনো পয়েন্ট বা ফলাফলের ভিত্তিতে স্বয়ংক্রিয়ভাবে কাউকে Round-এ নেওয়া হবে না। আগে প্রতিটি ম্যাচের Answered, Correct, Wrong ও Points যাচাই করুন।</div>
+<label>এই Round-এ অনুমোদনের জন্য খেলোয়াড় নির্বাচন করুন</label>
+<select id="roundApprovePlayer"><option value="">Player নির্বাচন করুন</option></select>
+<label>Admin Note</label>
+<textarea id="roundApprovalNote" placeholder="কেন অনুমোদন করা হলো (ঐচ্ছিক)"></textarea>
+<button type="button" id="approveRoundPlayerButton">✅ এই Round-এ Approve করুন</button>
+<div id="roundApprovalsList"></div>
+</div>
+
 <div class="item">
 <h3>✅ পরবর্তী Stage-এ যাওয়ার অনুমতি</h3>
 <div class="note">প্রতিটি খেলোয়াড়ের Result যাচাই করে আলাদাভাবে Approve করুন। Approve না করা পর্যন্ত পরবর্তী Stage-এ যাওয়ার অনুমতি তৈরি হবে না।</div>
@@ -404,14 +432,16 @@ let tournaments=[],activeTournament=null;
 let participants=[],matches=[],results=[],matchResults=[];
 let profileNames={};
 let stages=[],activeStage=null,stageQuestions=[],stageResults=[],advancements=[];
+let stageRounds=[],activeRound=null,roundAdvancements=[];
 
 const DEFAULT_STAGES=[
  {stage_key:"group_stage",stage_name:"Group Stage",stage_order:1},
- {stage_key:"round_of_16",stage_name:"Round of 16",stage_order:2},
- {stage_key:"quarter_final",stage_name:"Quarter Final",stage_order:3},
- {stage_key:"semi_final",stage_name:"Semi Final",stage_order:4},
- {stage_key:"third_place",stage_name:"Third Place",stage_order:5},
- {stage_key:"final",stage_name:"Final",stage_order:6}
+ {stage_key:"round_of_32",stage_name:"Round of 32",stage_order:2},
+ {stage_key:"round_of_16",stage_name:"Round of 16",stage_order:3},
+ {stage_key:"quarter_final",stage_name:"Quarter Final",stage_order:4},
+ {stage_key:"semi_final",stage_name:"Semi Final",stage_order:5},
+ {stage_key:"third_place",stage_name:"Third Place",stage_order:6},
+ {stage_key:"final",stage_name:"Final",stage_order:7}
 ];
 
 function message(text,type="success"){
@@ -581,10 +611,11 @@ async function manageTournament(id){
  $("selectedTournamentInfo").textContent="ID: "+activeTournament.id+" • Status: "+activeTournament.status;
  window.scrollTo({top:$("management").offsetTop-10,behavior:"smooth"});
  await Promise.all([loadParticipants(),loadMatches(),loadResults(),loadMatchResults()]);
+ try{await refreshStageChoices();}catch(e){console.warn(e.message)}
 }
 function closeManagement(){
  activeTournament=null;participants=[];matches=[];results=[];matchResults=[];
- stages=[];activeStage=null;stageQuestions=[];stageResults=[];advancements=[];
+ stages=[];activeStage=null;stageQuestions=[];stageResults=[];advancements=[];stageRounds=[];activeRound=null;roundAdvancements=[];
  $("management").classList.add("hidden");$("stageEditor").classList.add("hidden");
 }
 $("closeManagement").onclick=closeManagement;
@@ -619,7 +650,7 @@ async function loadParticipants(){
   if(!participants.length)$("participantsList").innerHTML="<p>এখনো কেউ Join করেনি।</p>";
   else $("participantsList").innerHTML=`
    <div class="table-wrap"><table>
-   <thead><tr><th>#</th><th>নাম</th><th>User ID</th><th>Join Date</th><th>Status</th></tr></thead>
+   <thead><tr><th>#</th><th>নাম</th><th>User ID</th><th>Join Date</th><th>Status</th><th>Action</th></tr></thead>
    <tbody>${participants.map((p,i)=>`<tr>
    <td>${i+1}</td><td>${escapeHTML(playerName(p.user_id))}</td>
    <td>${escapeHTML(p.user_id)}</td><td>${escapeHTML(dateText(p.joined_at))}</td>
@@ -750,12 +781,12 @@ function renderMatchHistory(){
  const matchMap={};matches.forEach(m=>matchMap[m.id]=m);
  $("matchHistoryList").innerHTML=`
  <div class="table-wrap"><table>
- <thead><tr><th>Round / Match</th><th>Player</th><th>Answered</th><th>Correct</th><th>Points</th><th>Action</th></tr></thead>
+ <thead><tr><th>Round / Match</th><th>Player</th><th>Answered</th><th>Correct</th><th>Wrong</th><th>Points</th><th>Action</th></tr></thead>
  <tbody>${matchResults.map(r=>{
   const m=matchMap[r.match_id];
   return `<tr><td>${m?"Round "+m.round_number+" / Match "+m.match_number:"Match #"+r.match_id}</td>
   <td>${escapeHTML(playerName(r.user_id))}</td><td>${r.questions_answered}</td>
-  <td>${r.correct_answers}</td><td><strong>${r.points}</strong></td>
+  <td>${r.correct_answers}</td><td>${Math.max(0,Number(r.questions_answered||0)-Number(r.correct_answers||0))}</td><td><strong>${r.points}</strong></td>
   <td><button class="secondary" onclick="editMatchResult(${r.id})">Edit</button></td></tr>`;
  }).join("")}</tbody></table></div>`;
 }
@@ -883,19 +914,38 @@ async function createDefaultStages(){
  const {data:existing,error}=await db.from("tournament_stages")
   .select("id,stage_key").eq("tournament_id",activeTournament.id);
  if(error)throw error;
- const existingKeys=new Set((existing||[]).map(x=>x.stage_key));
- const newRows=DEFAULT_STAGES.filter(s=>!existingKeys.has(s.stage_key)).map(s=>({
-  tournament_id:activeTournament.id,
-  stage_key:s.stage_key,
-  stage_name:s.stage_name,
-  stage_order:s.stage_order,
+ const byKey=new Map((existing||[]).map(x=>[x.stage_key,x]));
+ const newRows=DEFAULT_STAGES.filter(s=>!byKey.has(s.stage_key)).map(s=>({
+  tournament_id:activeTournament.id,stage_key:s.stage_key,
+  stage_name:s.stage_name,stage_order:s.stage_order,
   status:s.stage_order===1?"open":"locked",
   quiz_mode:activeTournament.quiz_mode||"general_mcq",
   question_count:activeTournament.question_count||10
  }));
- if(newRows.length){
-  const {error:insertError}=await db.from("tournament_stages").insert(newRows);
-  if(insertError)throw insertError;
+ if(newRows.length){const {error:ie}=await db.from("tournament_stages").insert(newRows);if(ie)throw ie;}
+ const {data:all,error:ae}=await db.from("tournament_stages").select("id,stage_key,stage_name,stage_order")
+  .eq("tournament_id",activeTournament.id);
+ if(ae)throw ae;
+ for(const def of DEFAULT_STAGES){
+  const row=(all||[]).find(x=>x.stage_key===def.stage_key);
+  if(row&&(row.stage_name!==def.stage_name||Number(row.stage_order)!==def.stage_order)){
+   const {error:ue}=await db.from("tournament_stages").update({stage_name:def.stage_name,stage_order:def.stage_order,updated_at:new Date().toISOString()}).eq("id",row.id);
+   if(ue)throw ue;
+  }
+ }
+ // Every stage gets a Round 1 if it does not already have one.
+ const {data:allStages,error:se}=await db.from("tournament_stages").select("id").eq("tournament_id",activeTournament.id);
+ if(se)throw se;
+ for(const st of (allStages||[])){
+  const {data:rs,error:re}=await db.from("tournament_stage_rounds").select("id").eq("stage_id",st.id).order("round_number").limit(1);
+  if(re)throw re;
+  if(!rs?.length){
+   const {data:created,error:ce}=await db.from("tournament_stage_rounds").insert({tournament_id:activeTournament.id,stage_id:st.id,round_number:1,round_name:"Round 1",status:st.id===(allStages||[])[0]?.id?"open":"locked"}).select("id").single();
+   if(ce)throw ce;
+   // Keep previously-added stage questions/results visible by assigning them to Round 1.
+   const {error:qe}=await db.from("tournament_stage_questions").update({round_id:created.id}).eq("stage_id",st.id).is("round_id",null);if(qe)throw qe;
+   const {error:re2}=await db.from("tournament_stage_results").update({round_id:created.id}).eq("stage_id",st.id).is("round_id",null);if(re2)throw re2;
+  }
  }
 }
 async function loadStages(){
@@ -907,7 +957,7 @@ async function loadStages(){
   if(error)throw error;
   stages=data||[];
   if(!stages.length){
-   $("stagesList").innerHTML="<p>এই Tournament-এর Stage এখনো তৈরি হয়নি। নিচের Create Default 6 Stages বাটনে চাপ দিন।</p>";
+   $("stagesList").innerHTML="<p>এই Tournament-এর Stage এখনো তৈরি হয়নি। নিচের Create Default 7 Stages বাটনে চাপ দিন।</p>";
    return;
   }
   renderStages();
@@ -952,7 +1002,8 @@ async function openStage(id){
  $("sqExistingImage").value="";
  resetStageQuestionForm();
  renderStages();
- await Promise.all([loadStageQuestions(),loadStageResults(),loadAdvancements()]);
+ await loadStageRounds();
+ await Promise.all([loadStageQuestions(),loadStageResults(),loadAdvancements(),loadRoundAdvancements()]);
  $("stageEditor").scrollIntoView({behavior:"smooth"});
 }
 async function renameStage(id){
@@ -1299,6 +1350,246 @@ async function revokeAdvancement(id){
   message("Advancement Approval বাতিল হয়েছে।");await loadAdvancements();
  }catch(e){message("Revoke Error: "+e.message,"error")}
 }
+
+/* ROUND-BY-ROUND TOURNAMENT EXTENSIONS */
+function roundLabel(r){return `${r.round_name||("Round "+r.round_number)} (R${r.round_number})`;}
+function selectedRoundId(){return activeRound?Number(activeRound.id):null;}
+async function loadStageRounds(preferredId=null){
+ if(!activeStage)return;
+ $("roundsList").textContent="Round লোড হচ্ছে...";
+ const {data,error}=await db.from("tournament_stage_rounds").select("*")
+  .eq("tournament_id",activeTournament.id).eq("stage_id",activeStage.id).order("round_number");
+ if(error)throw error;
+ stageRounds=data||[];
+ if(!stageRounds.length){
+  const {data:created,error:ce}=await db.from("tournament_stage_rounds").insert({
+   tournament_id:activeTournament.id,stage_id:activeStage.id,round_number:1,round_name:"Round 1",status:"open"
+  }).select("*").single();
+  if(ce)throw ce;stageRounds=[created];
+  const {error:qe}=await db.from("tournament_stage_questions").update({round_id:created.id}).eq("stage_id",activeStage.id).is("round_id",null);if(qe)throw qe;
+  const {error:re}=await db.from("tournament_stage_results").update({round_id:created.id}).eq("stage_id",activeStage.id).is("round_id",null);if(re)throw re;
+ }
+ const wanted=preferredId||activeRound?.id;
+ activeRound=stageRounds.find(r=>Number(r.id)===Number(wanted))||stageRounds[0];
+ $("activeRoundSelect").innerHTML=stageRounds.map(r=>`<option value="${r.id}">${escapeHTML(roundLabel(r))} — ${escapeHTML(r.status)}</option>`).join("");
+ $("activeRoundSelect").value=String(activeRound.id);
+ $("roundsList").innerHTML=`<div class="table-wrap"><table><thead><tr><th>Round</th><th>Status</th><th>Created</th><th>Action</th></tr></thead><tbody>${stageRounds.map(r=>`<tr><td>${escapeHTML(roundLabel(r))}</td><td>${escapeHTML(r.status)}</td><td>${escapeHTML(dateText(r.created_at))}</td><td><button class="secondary" onclick="selectStageRound(${Number(r.id)})">Manage</button></td></tr>`).join("")}</tbody></table></div>`;
+ updateMatchStageOptions();
+}
+async function selectStageRound(id){
+ const found=stageRounds.find(r=>Number(r.id)===Number(id));if(!found)return;
+ activeRound=found;$("activeRoundSelect").value=String(found.id);
+ await Promise.all([loadStageQuestions(),loadStageResults(),loadRoundAdvancements()]);
+ message("এখন "+roundLabel(found)+" পরিচালনা করছেন।");
+}
+$("activeRoundSelect").addEventListener("change",()=>selectStageRound($("activeRoundSelect").value));
+$("createRoundButton").onclick=async()=>{
+ if(!activeStage)return;
+ const b=$("createRoundButton");b.disabled=true;
+ try{
+  const number=validNumber("newRoundNumber",1,1000),name=$("newRoundName").value.trim()||("Round "+number);
+  if(stageRounds.some(r=>Number(r.round_number)===number))throw new Error("এই Round Number আগে থেকেই আছে।");
+  const {data,error}=await db.from("tournament_stage_rounds").insert({
+   tournament_id:activeTournament.id,stage_id:activeStage.id,round_number:number,
+   round_name:name,status:$("newRoundStatus").value
+  }).select("*").single();
+  if(error)throw error;
+  $("newRoundNumber").value=number+1;$("newRoundName").value="";
+  await loadStageRounds(data.id);await Promise.all([loadStageQuestions(),loadStageResults(),loadRoundAdvancements()]);
+  message(name+" তৈরি হয়েছে।");
+ }catch(e){message("Round Create Error: "+e.message,"error")}
+ finally{b.disabled=false}
+};
+
+async function loadRoundAdvancements(){
+ if(!activeStage||!activeRound)return;
+ $("roundApprovePlayer").innerHTML='<option value="">Player নির্বাচন করুন</option>'+participants.filter(p=>p.status==="joined").map(p=>`<option value="${escapeHTML(p.user_id)}">${escapeHTML(playerName(p.user_id))}</option>`).join("");
+ $("roundApprovalsList").textContent="Round Approval লোড হচ্ছে...";
+ const {data,error}=await db.from("tournament_round_advancements").select("*")
+  .eq("tournament_id",activeTournament.id).eq("stage_id",activeStage.id).eq("round_id",activeRound.id)
+  .order("created_at",{ascending:false});
+ if(error)throw error;roundAdvancements=data||[];
+ const ids=roundAdvancements.map(x=>x.user_id).filter(Boolean);
+ if(ids.length){const {data:ps,error:pe}=await db.from("profiles").select("id,display_name").in("id",ids);if(pe)throw pe;(ps||[]).forEach(p=>profileNames[p.id]=p.display_name||"নাম নেই");}
+ if(!roundAdvancements.length){$("roundApprovalsList").innerHTML="<p>এই Round-এ এখনো কাউকে অনুমোদন দেওয়া হয়নি।</p>";return;}
+ $("roundApprovalsList").innerHTML=`<div class="table-wrap"><table><thead><tr><th>Player</th><th>Approval</th><th>Admin Note</th><th>Date</th><th>Action</th></tr></thead><tbody>${roundAdvancements.map(a=>`<tr><td>${escapeHTML(playerName(a.user_id))}</td><td>${escapeHTML(a.approval_status)}</td><td>${escapeHTML(a.admin_note||"")}</td><td>${escapeHTML(dateText(a.approved_at))}</td><td><button class="danger" onclick="revokeRoundApproval(${Number(a.id)})">Revoke</button></td></tr>`).join("")}</tbody></table></div>`;
+}
+$("approveRoundPlayerButton").onclick=async()=>{
+ if(!activeStage||!activeRound)return;
+ const b=$("approveRoundPlayerButton");b.disabled=true;
+ try{
+  const userId=$("roundApprovePlayer").value;if(!userId)throw new Error("Player নির্বাচন করুন।");
+  const payload={tournament_id:activeTournament.id,stage_id:activeStage.id,round_id:activeRound.id,user_id:userId,
+   approval_status:"approved",admin_note:$("roundApprovalNote").value.trim()||null,
+   approved_by:currentUser.id,approved_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  const {error}=await db.from("tournament_round_advancements").upsert(payload,{onConflict:"stage_id,round_id,user_id"});
+  if(error)throw error;
+  $("roundApprovalNote").value="";message(playerName(userId)+"-কে "+roundLabel(activeRound)+"-এ ম্যানুয়ালি Approve করা হয়েছে।");
+  await loadRoundAdvancements();
+ }catch(e){message("Round Approval Error: "+e.message,"error")}
+ finally{b.disabled=false}
+};
+async function revokeRoundApproval(id){
+ if(!confirm("এই Round-এর Approval বাতিল করবেন?"))return;
+ try{const {error}=await db.from("tournament_round_advancements").update({approval_status:"revoked",approved_at:null,approved_by:null,updated_at:new Date().toISOString()}).eq("id",id).eq("round_id",activeRound.id);if(error)throw error;message("Round Approval বাতিল হয়েছে।");await loadRoundAdvancements();}
+ catch(e){message("Revoke Error: "+e.message,"error")}
+}
+
+// Round-scoped question and result queries; existing stage-wide tools remain available.
+loadStageQuestions=async function(){
+ if(!activeStage)return;
+ $("stageQuestionsList").textContent="প্রশ্ন লোড হচ্ছে...";
+ try{
+  let q=db.from("tournament_stage_questions").select("*").eq("tournament_id",activeTournament.id).eq("stage_id",activeStage.id);
+  if(activeRound)q=q.eq("round_id",activeRound.id);
+  const {data,error}=await q.order("question_order");if(error)throw error;stageQuestions=data||[];renderStageQuestions();
+ }catch(e){$("stageQuestionsList").textContent="Question Error: "+e.message}
+};
+loadStageResults=async function(){
+ if(!activeStage)return;
+ $("stageResultsList").textContent="Stage Results লোড হচ্ছে...";
+ try{
+  let q=db.from("tournament_stage_results").select("*").eq("tournament_id",activeTournament.id).eq("stage_id",activeStage.id);
+  if(activeRound)q=q.eq("round_id",activeRound.id);
+  const {data,error}=await q.order("points",{ascending:false}).order("correct_answers",{ascending:false});
+  if(error)throw error;stageResults=data||[];
+  const ids=stageResults.map(r=>r.user_id);
+  if(ids.length){const {data:ps,error:pe}=await db.from("profiles").select("id,display_name").in("id",ids);if(pe)throw pe;(ps||[]).forEach(p=>profileNames[p.id]=p.display_name||"নাম নেই");}
+  if(!stageResults.length){$("stageResultsList").innerHTML="<p>এই Round-এর কোনো Result এখনো জমা হয়নি।</p>";return;}
+  $("stageResultsList").innerHTML=`<div class="table-wrap"><table><thead><tr><th>Rank</th><th>Player</th><th>Answered</th><th>Correct</th><th>Wrong</th><th>Points</th><th>Submitted</th></tr></thead><tbody>${stageResults.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHTML(playerName(r.user_id))}</td><td>${Number(r.questions_answered)||0}</td><td>${Number(r.correct_answers)||0}</td><td>${Number(r.wrong_answers)||0}</td><td><strong>${Number(r.points)||0}</strong></td><td>${escapeHTML(dateText(r.submitted_at))}</td></tr>`).join("")}</tbody></table></div>`;
+ }catch(e){$("stageResultsList").textContent="Stage Results Error: "+e.message}
+};
+
+// Ensure newly saved, edited, copied and bulk-imported questions belong to the selected round.
+const originalSaveStageQuestion=$("saveStageQuestionButton").onclick;
+$("saveStageQuestionButton").onclick=async()=>{
+ if(!activeRound){message("আগে একটি Round নির্বাচন করুন।","error");return;}
+ const oldId=$("stageQuestionEditId").value;
+ const originalInsert= db.from;
+ // Existing form validation/upload logic is retained, with round_id added to the saved record.
+ const question=$("sqQuestion").value.trim();
+ const options=[$("sqA").value.trim(),$("sqB").value.trim(),$("sqC").value.trim(),$("sqD").value.trim()];
+ if(!question){message("প্রশ্ন লিখুন।","error");return;}
+ if(options.some(x=>!x)){message("চারটি Option পূরণ করুন।","error");return;}
+ const b=$("saveStageQuestionButton");b.disabled=true;
+ try{
+  let imageUrl=$("sqExistingImage").value||null;const file=$("sqImage").files[0];if(file)imageUrl=await uploadStageImage(file);
+  const payload={tournament_id:activeTournament.id,stage_id:activeStage.id,round_id:activeRound.id,mode:$("sqMode").value,
+   question_bn:question,options,correct_option:$("sqCorrect").value,explanation_bn:$("sqExplanation").value.trim()||null,
+   image_url:imageUrl,is_published:true,updated_at:new Date().toISOString()};
+  let result;
+  if(oldId)result=await db.from("tournament_stage_questions").update(payload).eq("id",oldId).eq("stage_id",activeStage.id).select().single();
+  else{payload.question_order=stageQuestions.reduce((m,q)=>Math.max(m,Number(q.question_order)||0),0)+1;result=await db.from("tournament_stage_questions").insert(payload).select().single();}
+  if(result.error)throw result.error;message(oldId?"Round Question Update হয়েছে।":"Round Question Save হয়েছে।");resetStageQuestionForm();await loadStageQuestions();
+ }catch(e){message("Question Save Error: "+e.message,"error")}
+ finally{b.disabled=false}
+};
+const originalImportStageJson=$("importStageJsonButton").onclick;
+$("importStageJsonButton").onclick=async()=>{
+ if(!activeStage||!activeRound){message("আগে Stage ও Round নির্বাচন করুন।","error");return;}
+ const b=$("importStageJsonButton");b.disabled=true;
+ try{
+  const raw=$("stageJsonText").value.trim();if(!raw)throw new Error("JSON Paste করুন অথবা File নির্বাচন করুন।");
+  const parsed=JSON.parse(raw),list=Array.isArray(parsed)?parsed:(Array.isArray(parsed.questions)?parsed.questions:null);
+  if(!list?.length)throw new Error("JSON-এ প্রশ্নের Array পাওয়া যায়নি।");if(list.length>5000)throw new Error("একবারে সর্বোচ্চ ৫০০০টি প্রশ্ন Import করুন।");
+  const startOrder=stageQuestions.reduce((m,q)=>Math.max(m,Number(q.question_order)||0),0);
+  const payload=list.map((q,i)=>{
+   const opts=Array.isArray(q.options)?q.options:(q.options&&typeof q.options==="object"?[q.options.A,q.options.B,q.options.C,q.options.D]:null);
+   if(!opts||opts.length!==4||opts.some(x=>!String(x??"").trim()))throw new Error("প্রশ্ন "+(i+1)+": চারটি Option পূরণ করুন।");
+   let correct=String(q.correct_option??q.correct_answer??"").trim().toUpperCase();if(["1","2","3","4"].includes(correct))correct=["A","B","C","D"][Number(correct)-1];
+   if(!["A","B","C","D"].includes(correct))throw new Error("প্রশ্ন "+(i+1)+": correct_option A/B/C/D হতে হবে。");
+   const question=String(q.question_bn??q.question??"").trim();if(!question)throw new Error("প্রশ্ন "+(i+1)+": question_bn ফাঁকা。");
+   return {tournament_id:activeTournament.id,stage_id:activeStage.id,round_id:activeRound.id,mode:String(q.mode||activeStage.quiz_mode||"general_mcq"),
+    question_bn:question,options:opts.map(String),correct_option:correct,explanation_bn:q.explanation_bn?String(q.explanation_bn):null,
+    image_url:q.image_url?String(q.image_url):null,question_order:startOrder+i+1,is_published:q.is_published!==false};
+  });
+  let inserted=0;for(let i=0;i<payload.length;i+=200){const {error}=await db.from("tournament_stage_questions").insert(payload.slice(i,i+200));if(error)throw error;inserted+=Math.min(200,payload.length-i);}
+  $("stageJsonText").value="";$("stageJsonFile").value="";message(inserted+"টি প্রশ্ন এই Round-এ Import হয়েছে।");await loadStageQuestions();
+ }catch(e){message("JSON Import Error: "+e.message,"error")}
+ finally{b.disabled=false}
+};
+
+// Copy legacy questions into the currently selected round.
+const originalCopyOldQuestion=copyOldQuestion;
+copyOldQuestion=async function(id){
+ if(!activeStage||!activeRound)return message("আগে একটি Round নির্বাচন করুন।","error");
+ const q=(window.oldStageQuestions||[]).find(x=>Number(x.id)===Number(id));if(!q)return;
+ try{const nextOrder=stageQuestions.reduce((m,x)=>Math.max(m,Number(x.question_order)||0),0)+1;
+  const {error}=await db.from("tournament_stage_questions").insert({tournament_id:activeTournament.id,stage_id:activeStage.id,round_id:activeRound.id,source_question_id:q.id,mode:q.mode,question_bn:q.question_bn,options:q.options,correct_option:q.correct_option,explanation_bn:q.explanation_bn,image_url:q.image_url,question_order:nextOrder,is_published:true});
+  if(error)throw error;message("পুরোনো প্রশ্নটি নির্বাচিত Round-এ Copy হয়েছে।");await loadStageQuestions();await loadOldQuestions();
+ }catch(e){message("Copy Error: "+e.message,"error")}
+};
+
+// Participant kick action; the participant row is retained for audit/history.
+loadParticipants=async function(){
+ if(!activeTournament)return;$("participantsList").textContent="লোড হচ্ছে...";
+ try{
+  const {data,error}=await db.from("tournament_participants").select("id,user_id,joined_at,status,kicked_at,kick_reason").eq("tournament_id",activeTournament.id).order("joined_at",{ascending:true});
+  if(error)throw error;participants=data||[];const ids=participants.map(p=>p.user_id);profileNames={};
+  if(ids.length){const {data:profiles,error:pe}=await db.from("profiles").select("id,display_name").in("id",ids);if(pe)throw pe;(profiles||[]).forEach(p=>profileNames[p.id]=p.display_name||"নাম নেই");}
+  $("participantCount").textContent="মোট "+participants.length+" জন / সর্বোচ্চ "+activeTournament.max_participants+" জন";
+  if(!participants.length){$("participantsList").innerHTML="<p>এখনো কেউ Join করেনি।</p>";}
+  else $("participantsList").innerHTML=`<div class="table-wrap"><table><thead><tr><th>#</th><th>নাম</th><th>User ID</th><th>Join Date</th><th>Status</th><th>Action</th></tr></thead><tbody>${participants.map((p,i)=>`<tr><td>${i+1}</td><td>${escapeHTML(playerName(p.user_id))}</td><td>${escapeHTML(p.user_id)}</td><td>${escapeHTML(dateText(p.joined_at))}</td><td>${escapeHTML(p.status)}${p.kick_reason?" — "+escapeHTML(p.kick_reason):""}</td><td>${p.status==="joined"?`<button class="danger" onclick="kickParticipant(${Number(p.id)})">Kick</button>`:"—"}</td></tr>`).join("")}</tbody></table></div>`;
+  updatePlayerOptions();
+ }catch(e){$("participantsList").textContent="Participants Error: "+e.message}
+};
+async function kickParticipant(id){
+ const p=participants.find(x=>Number(x.id)===Number(id));if(!p)return;
+ const reason=prompt("Kick করার কারণ লিখুন (ঐচ্ছিক):","");if(reason===null)return;
+ if(!confirm(playerName(p.user_id)+"-কে Tournament থেকে Kick করবেন?"))return;
+ try{const {error}=await db.from("tournament_participants").update({status:"kicked",kicked_at:new Date().toISOString(),kick_reason:reason.trim()||null}).eq("id",id).eq("tournament_id",activeTournament.id);if(error)throw error;message("অংশগ্রহণকারীকে Kick করা হয়েছে।");await loadParticipants();}
+ catch(e){message("Kick Error: "+e.message,"error")}
+}
+
+// Stage/round selectors for matches. Opponents are always selected manually by Admin.
+function updateMatchStageOptions(){
+ const sel=$("matchStage");if(!sel)return;
+ const keep=sel.value;sel.innerHTML='<option value="">Stage নির্বাচন করুন</option>'+stages.map(st=>`<option value="${st.id}">${escapeHTML(st.stage_name)}</option>`).join("");
+ if(stages.some(st=>String(st.id)===keep))sel.value=keep;
+ updateMatchRoundOptions();
+}
+async function updateMatchRoundOptions(){
+ const stageId=$("matchStage")?.value,sel=$("matchStageRound");if(!sel)return;
+ sel.innerHTML='<option value="">Round নির্বাচন করুন</option>';if(!stageId)return;
+ try{const {data,error}=await db.from("tournament_stage_rounds").select("id,round_number,round_name,status").eq("stage_id",stageId).order("round_number");if(error)throw error;
+  sel.innerHTML='<option value="">Round নির্বাচন করুন</option>'+(data||[]).map(r=>`<option value="${r.id}">${escapeHTML(roundLabel(r))}</option>`).join("");
+ }catch(e){message("Match Round Load Error: "+e.message,"error")}
+}
+$("matchStage").addEventListener("change",updateMatchRoundOptions);
+async function refreshStageChoices(){
+ if(!activeTournament)return;
+ const {data,error}=await db.from("tournament_stages").select("*").eq("tournament_id",activeTournament.id).order("stage_order");if(error)throw error;stages=data||[];updateMatchStageOptions();
+}
+const originalSaveMatchClick=$("saveMatchButton").onclick;
+$("saveMatchButton").onclick=async()=>{
+ if(!activeTournament)return;
+ const b=$("saveMatchButton");b.disabled=true;
+ try{
+  const round=validNumber("roundNumber",1,1000),number=validNumber("matchNumber",1,10000),s1=validNumber("score1",0,100000),s2=validNumber("score2",0,100000);
+  const p1=$("player1").value,p2=$("player2").value;if(!p1||!p2)throw new Error("দুইজন অংশগ্রহণকারী নির্বাচন করুন।");if(p1===p2)throw new Error("একই খেলোয়াড়কে দুই পাশে নির্বাচন করা যাবে না।");
+  const status=$("matchStatus").value,winner=status==="completed"?(s1>s2?p1:s2>s1?p2:null):null;
+  const stageId=$("matchStage").value||null,roundId=$("matchStageRound").value||null;
+  const payload={tournament_id:activeTournament.id,stage_id:stageId?Number(stageId):null,round_id:roundId?Number(roundId):null,
+   round_number:round,match_number:number,player1_id:p1,player2_id:p2,player1_score:s1,player2_score:s2,winner_id:winner,status,
+   scheduled_at:isoDate($("matchDate").value),completed_at:status==="completed"?new Date().toISOString():null};
+  const id=$("matchEditId").value;const result=id?await db.from("tournament_matches").update(payload).eq("id",id).select().single():await db.from("tournament_matches").insert(payload).select().single();
+  if(result.error)throw result.error;message(id?"Match Update হয়েছে।":"নতুন Match তৈরি হয়েছে।");resetMatchForm();await loadMatches();await loadOverview();await loadMatchResults();
+ }catch(e){message("Match Save Error: "+e.message,"error")}
+ finally{b.disabled=false}
+};
+const originalEditMatch=editMatch;
+editMatch=async function(id){
+ const m=matches.find(x=>Number(x.id)===Number(id));if(!m)return;
+ $("matchEditId").value=m.id;$("roundNumber").value=m.round_number;$("matchNumber").value=m.match_number;
+ await refreshStageChoices();$("matchStage").value=m.stage_id?String(m.stage_id):"";await updateMatchRoundOptions();$("matchStageRound").value=m.round_id?String(m.round_id):"";
+ $("player1").value=m.player1_id||"";$("player2").value=m.player2_id||"";$("score1").value=m.player1_score;$("score2").value=m.player2_score;$("matchStatus").value=m.status;$("matchDate").value=localDate(m.scheduled_at);
+ $("matchFormTitle").textContent="✏️ Match পরিবর্তন করুন";$("saveMatchButton").textContent="Update Match";$("cancelMatchEdit").classList.remove("hidden");$("matchFormTitle").scrollIntoView({behavior:"smooth"});
+};
+const originalLoadMatches=loadMatches;
+loadMatches=async function(){
+ await originalLoadMatches();
+ if(activeTournament){try{await refreshStageChoices();}catch(e){console.warn(e.message)}}
+};
 
 /* INITIALIZATION */
 $("refreshButton").onclick=loadTournaments;
