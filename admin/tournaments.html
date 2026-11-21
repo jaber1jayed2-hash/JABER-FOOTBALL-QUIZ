@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tournament Management - JABER FOOTBALL QUIZ</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
 *{box-sizing:border-box}
 body{margin:0;padding:14px;background:#080d0b;color:#fff;font-family:Arial,sans-serif}
@@ -65,17 +64,14 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 }
 </style>
 </head>
-
 <body>
 <div class="container">
-
 <h1>🏆 Tournament Management</h1>
 <p>JABER FOOTBALL QUIZ Admin Panel</p>
 <div id="message"></div>
 <div id="loading">Admin যাচাই হচ্ছে...</div>
 
 <div id="main" class="hidden">
-
 <div class="card">
 <h2>📊 Tournament Overview</h2>
 <div class="stats">
@@ -90,16 +86,12 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 <h2 id="formTitle">➕ Create Tournament</h2>
 <form id="tournamentForm">
 <input type="hidden" id="editId">
-
 <label>Tournament Name *</label>
 <input id="title" required maxlength="150" placeholder="World Cup Quiz">
-
 <label>Description</label>
 <textarea id="description" placeholder="Tournament সম্পর্কে লিখুন"></textarea>
-
 <label>Image URL</label>
 <input id="imageUrl" type="url" placeholder="https://example.com/image.jpg">
-
 <div class="grid">
 <div>
 <label>Quiz Mode *</label>
@@ -135,18 +127,10 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 </select>
 </div>
 </div>
-
 <div class="grid">
-<div>
-<label>Start Date & Time</label>
-<input id="startsAt" type="datetime-local">
+<div><label>Start Date & Time</label><input id="startsAt" type="datetime-local"></div>
+<div><label>End Date & Time</label><input id="endsAt" type="datetime-local"></div>
 </div>
-<div>
-<label>End Date & Time</label>
-<input id="endsAt" type="datetime-local">
-</div>
-</div>
-
 <button id="saveButton" type="submit">💾 Save Tournament</button>
 <button type="button" class="secondary hidden" id="cancelEdit">Cancel Edit</button>
 </form>
@@ -161,7 +145,6 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 <div id="management" class="card hidden">
 <h2 id="selectedTournamentTitle">Tournament Management</h2>
 <p id="selectedTournamentInfo" class="meta"></p>
-
 <div class="tabs">
 <button class="active" data-tab="participantsPanel">👥 Participants</button>
 <button data-tab="matchesPanel">⚽ Matches</button>
@@ -169,38 +152,30 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 <button data-tab="stagesPanel">🎯 Stages & Quiz</button>
 </div>
 
-<!-- PARTICIPANTS -->
 <div id="participantsPanel" class="panel active">
 <h3>অংশগ্রহণকারীদের তালিকা</h3>
 <p id="participantCount" class="meta"></p>
 <div id="participantsList">লোড হচ্ছে...</div>
 </div>
 
-<!-- MATCHES -->
 <div id="matchesPanel" class="panel">
 <h3>⚽ Match Management</h3>
 <div class="note">একই Tournament-এ একই Round ও Match Number দুবার ব্যবহার করা যাবে না। ম্যাচের স্কোর এবং কুইজ পয়েন্ট আলাদা তথ্য।</div>
-
 <div class="item">
 <h3 id="matchFormTitle">নতুন ম্যাচ তৈরি করুন</h3>
 <input type="hidden" id="matchEditId">
-
 <div class="grid">
 <div><label>Round Number</label><input id="roundNumber" type="number" min="1" value="1"></div>
 <div><label>Match Number</label><input id="matchNumber" type="number" min="1" value="1"></div>
 </div>
-
 <label>Player 1</label>
 <select id="player1"><option value="">অংশগ্রহণকারী নির্বাচন করুন</option></select>
-
 <label>Player 2</label>
 <select id="player2"><option value="">অংশগ্রহণকারী নির্বাচন করুন</option></select>
-
 <div class="grid">
 <div><label>Player 1 Match Score</label><input id="score1" type="number" min="0" value="0"></div>
 <div><label>Player 2 Match Score</label><input id="score2" type="number" min="0" value="0"></div>
 </div>
-
 <label>Match Status</label>
 <select id="matchStatus">
 <option value="scheduled">Scheduled</option>
@@ -208,55 +183,42 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 <option value="completed">Completed</option>
 <option value="cancelled">Cancelled</option>
 </select>
-
 <label>Scheduled Date & Time</label>
 <input id="matchDate" type="datetime-local">
-
 <button type="button" id="saveMatchButton">💾 Save Match</button>
 <button type="button" class="secondary hidden" id="cancelMatchEdit">Cancel Edit</button>
 </div>
-
 <h3>সকল Match</h3>
 <div id="matchesList"></div>
 </div>
 
-<!-- RESULTS -->
 <div id="resultsPanel" class="panel">
 <h3>📝 ম্যাচভিত্তিক পয়েন্ট সংরক্ষণ</h3>
 <div class="note">এখানে প্রতিটি ম্যাচের জন্য খেলোয়াড়ের কুইজ পয়েন্ট, উত্তর দেওয়া প্রশ্ন এবং সঠিক উত্তরের সংখ্যা সংরক্ষণ করবেন। এটি Match Score থেকে আলাদা।</div>
-
 <div class="item">
 <h3>Player Match Result যোগ / পরিবর্তন</h3>
-
 <label>Match নির্বাচন করুন</label>
 <select id="matchResultMatch"><option value="">প্রথমে Match তৈরি করুন</option></select>
-
 <label>Player নির্বাচন করুন</label>
 <select id="matchResultPlayer"><option value="">অংশগ্রহণকারী নির্বাচন করুন</option></select>
-
 <div class="grid">
 <div><label>Questions Answered</label><input id="mrAnswered" type="number" min="0" value="0"></div>
 <div><label>Correct Answers</label><input id="mrCorrect" type="number" min="0" value="0"></div>
 <div><label>Points Earned</label><input id="mrPoints" type="number" min="0" value="0"></div>
 </div>
-
 <button type="button" id="saveMatchResultButton">💾 Save Match Result</button>
 <button type="button" class="secondary" id="resetMatchResultButton">Reset</button>
 </div>
-
 <h3>📊 Match-wise Player History</h3>
 <div id="matchHistoryList">লোড হচ্ছে...</div>
 <hr>
-
 <h3>🏆 Tournament Summary / Leaderboard</h3>
 <div class="note">এখানে Tournament-এর মোট ম্যাচ, জয়-ড্র-হার এবং মোট পয়েন্টের সারাংশ দেখা যাবে। Summary আপডেট করতে নিচের Sync বাটন ব্যবহার করুন।</div>
 <button type="button" id="syncSummaryButton">🔄 Match Results থেকে Summary আপডেট</button>
-
 <div class="item">
 <h3>পুরোনো Result যোগ / পরিবর্তন</h3>
 <label>Player</label>
 <select id="resultPlayer"><option value="">অংশগ্রহণকারী নির্বাচন করুন</option></select>
-
 <div class="grid">
 <div><label>Matches Played</label><input id="rPlayed" type="number" min="0" value="0"></div>
 <div><label>Wins</label><input id="rWins" type="number" min="0" value="0"></div>
@@ -267,28 +229,22 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 </div>
 <button type="button" id="saveResultButton">💾 Save Summary</button>
 </div>
-
 <h3>Leaderboard</h3>
 <div id="resultsList"></div>
 </div>
 
-<!-- NEW STAGE MANAGEMENT -->
 <div id="stagesPanel" class="panel">
 <h3>🎯 Tournament Stage Management</h3>
-
 <div class="note">
-প্রতিটি Stage-এর প্রশ্ন আলাদা থাকবে। Stage-এর ফলাফল যাচাই করে Admin নিজে খেলোয়াড়কে পরবর্তী Stage-এ অনুমতি দেবেন। কোনো খেলোয়াড় স্বয়ংক্রিয়ভাবে পরবর্তী Stage-এ যাবে না।
+প্রতিটি Stage-এর প্রশ্ন আলাদা থাকবে। Tournament-এর কোনো Stage বা প্রশ্নে Difficulty থাকবে না। Stage-এর ফলাফল যাচাই করে Admin নিজে খেলোয়াড়কে পরবর্তী Stage-এ অনুমতি দেবেন। কোনো খেলোয়াড় স্বয়ংক্রিয়ভাবে পরবর্তী Stage-এ যাবে না।
 <br><br>
 এই Stage-এর পয়েন্ট পুরোনো Match Results বা Tournament Summary-তে স্বয়ংক্রিয়ভাবে যোগ হবে না।
 </div>
-
 <div class="stage-toolbar">
 <button type="button" id="loadStagesButton">🔄 Stage Refresh</button>
 <button type="button" class="secondary" id="createStagesButton">➕ Default 6 Stages তৈরি</button>
 </div>
-
 <div id="stagesList">Stage লোড হচ্ছে...</div>
-
 <hr>
 
 <div id="stageEditor" class="hidden">
@@ -299,7 +255,6 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 <h3>⚙️ Stage Settings</h3>
 <label>Stage Name</label>
 <input id="stageNameInput" maxlength="100">
-
 <div class="grid">
 <div>
 <label>Quiz Mode</label>
@@ -321,34 +276,20 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 <input id="stageQuestionCount" type="number" min="1" max="500" value="10">
 </div>
 </div>
-
 <label>Stage Status</label>
 <select id="stageStatus">
 <option value="locked">Locked</option>
 <option value="open">Open</option>
 <option value="completed">Completed</option>
 </select>
-
 <button type="button" id="saveStageSettingsButton">💾 Stage Settings Save</button>
 </div>
 
 <div class="item">
 <h3>➕ নতুন প্রশ্ন তৈরি করুন</h3>
 <input type="hidden" id="stageQuestionEditId">
-
 <label>প্রশ্ন *</label>
 <textarea id="sqQuestion" placeholder="প্রশ্ন লিখুন"></textarea>
-
-<div class="grid">
-<div>
-<label>Difficulty</label>
-<select id="sqDifficulty">
-<option value="easy">Easy</option>
-<option value="medium">Medium</option>
-<option value="hard">Hard</option>
-</select>
-</div>
-<div>
 <label>Mode</label>
 <select id="sqMode">
 <option value="general_mcq">General MCQ</option>
@@ -362,30 +303,21 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 <option value="guess_silhouette">Guess the Silhouette</option>
 <option value="guess_clues">Guess the Clues</option>
 </select>
-</div>
-</div>
-
 <label>Option A *</label><input id="sqA" placeholder="Option A">
 <label>Option B *</label><input id="sqB" placeholder="Option B">
 <label>Option C *</label><input id="sqC" placeholder="Option C">
 <label>Option D *</label><input id="sqD" placeholder="Option D">
-
 <label>সঠিক উত্তর</label>
 <select id="sqCorrect">
-<option value="A">A</option>
-<option value="B">B</option>
-<option value="C">C</option>
-<option value="D">D</option>
+<option value="A">A</option><option value="B">B</option>
+<option value="C">C</option><option value="D">D</option>
 </select>
-
 <label>ব্যাখ্যা (ঐচ্ছিক)</label>
 <textarea id="sqExplanation" placeholder="সঠিক উত্তরের ব্যাখ্যা"></textarea>
-
 <label>প্রশ্নের ছবি (Gallery থেকে)</label>
 <input id="sqImage" type="file" accept="image/*">
 <div id="sqImagePreview"></div>
 <input id="sqExistingImage" type="hidden">
-
 <button type="button" id="saveStageQuestionButton">💾 প্রশ্ন Save করুন</button>
 <button type="button" class="secondary" id="resetStageQuestionButton">Reset</button>
 </div>
@@ -393,29 +325,25 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 <div class="item">
 <h3>📥 JSON দিয়ে Bulk Import</h3>
 <div class="note">
-একসঙ্গে অনেক প্রশ্ন Import করতে পারবেন। প্রতিটি প্রশ্নে question_bn, options, correct_option ব্যবহার করুন। JSON ফাইলে image_url দিলে সেই ছবির URL ব্যবহার হবে। Gallery থেকে ছবি Upload করার জন্য প্রশ্ন Edit করে ছবি নির্বাচন করুন।
+একসঙ্গে সর্বোচ্চ ৫,০০০টি প্রশ্ন Import করতে পারবেন। প্রতিটি প্রশ্নে question_bn, options, correct_option ব্যবহার করুন। JSON ফাইলে image_url দিলে সেই ছবির URL ব্যবহার হবে। Gallery থেকে ছবি Upload করার জন্য প্রশ্ন Edit করে ছবি নির্বাচন করুন। JSON-এ কোনো Difficulty তথ্য প্রয়োজন নেই; থাকলেও Import-এর সময় তা ব্যবহার করা হবে না।
 </div>
-
 <label>JSON ফাইল নির্বাচন করুন</label>
 <input type="file" id="stageJsonFile" accept=".json,application/json">
-
 <label>অথবা JSON এখানে Paste করুন</label>
 <textarea id="stageJsonText" class="json-box" placeholder='[
  {
   "question_bn":"বাংলাদেশের রাজধানী কোনটি?",
   "options":["ঢাকা","চট্টগ্রাম","খুলনা","রাজশাহী"],
   "correct_option":"A",
-  "difficulty":"easy",
   "explanation_bn":"ঢাকা বাংলাদেশের রাজধানী।"
  }
 ]'></textarea>
-
 <button type="button" id="importStageJsonButton">📥 JSON Import করুন</button>
 </div>
 
 <div class="item">
 <h3>📚 পুরোনো Quiz Questions থেকে নির্বাচন</h3>
-<div class="note">আপনার আগের quiz_questions টেবিলের প্রশ্নগুলো এখানে দেখাবে। পছন্দের প্রশ্ন Stage-এ কপি করতে পারবেন। পুরোনো প্রশ্ন মুছে যাবে না বা পরিবর্তন হবে না।</div>
+<div class="note">আপনার আগের quiz_questions টেবিলের Published প্রশ্নগুলো এখানে দেখাবে। পছন্দের প্রশ্ন Stage-এ কপি করতে পারবেন। পুরোনো প্রশ্ন মুছে যাবে না বা পরিবর্তন হবে না।</div>
 <label>Mode Filter</label>
 <select id="oldQuestionMode">
 <option value="">সব Mode</option>
@@ -436,23 +364,18 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 
 <h3>📝 এই Stage-এর প্রশ্নসমূহ</h3>
 <div id="stageQuestionsList">প্রশ্ন লোড হচ্ছে...</div>
-
 <hr>
-
 <div class="item">
 <h3>📊 Stage Results</h3>
 <div class="note">এই Stage-এর Quiz Results আলাদা করে দেখা যাবে। Answered, Correct, Wrong ও Points দেখা যাবে। পুরোনো Tournament Summary পরিবর্তন হবে না।</div>
 <button type="button" id="loadStageResultsButton">🔄 Results Refresh</button>
 <div id="stageResultsList"></div>
 </div>
-
 <div class="item">
 <h3>✅ পরবর্তী Stage-এ যাওয়ার অনুমতি</h3>
 <div class="note">প্রতিটি খেলোয়াড়ের Result যাচাই করে আলাদাভাবে Approve করুন। Approve না করা পর্যন্ত পরবর্তী Stage-এ যাওয়ার অনুমতি তৈরি হবে না।</div>
 <label>পরবর্তী Stage-এর জন্য খেলোয়াড় নির্বাচন করুন</label>
-<select id="advancementPlayer">
-<option value="">Player নির্বাচন করুন</option>
-</select>
+<select id="advancementPlayer"><option value="">Player নির্বাচন করুন</option></select>
 <label>Admin Note</label>
 <textarea id="advancementNote" placeholder="অনুমোদন সম্পর্কে নোট (ঐচ্ছিক)"></textarea>
 <button type="button" id="approveAdvancementButton">✅ Approve Advancement</button>
@@ -460,7 +383,6 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 </div>
 </div>
 </div>
-
 <button type="button" class="secondary" id="closeManagement">বন্ধ করুন</button>
 </div>
 </div>
@@ -481,9 +403,7 @@ let currentUser=null,isAdmin=false;
 let tournaments=[],activeTournament=null;
 let participants=[],matches=[],results=[],matchResults=[];
 let profileNames={};
-
 let stages=[],activeStage=null,stageQuestions=[],stageResults=[],advancements=[];
-let editingImageUrl="";
 
 const DEFAULT_STAGES=[
  {stage_key:"group_stage",stage_name:"Group Stage",stage_order:1},
@@ -543,7 +463,7 @@ async function checkAdmin(){
  }catch(e){$("loading").textContent=e.message;return false}
 }
 
-/* TOURNAMENT CRUD - EXISTING */
+/* TOURNAMENT CRUD */
 async function loadTournaments(){
  if(!isAdmin)return;
  $("tournamentList").textContent="লোড হচ্ছে...";
@@ -639,7 +559,7 @@ async function deleteTournament(id){
  }catch(e){message("Delete Error: "+e.message,"error")}
 }
 
-/* OVERVIEW - EXISTING */
+/* OVERVIEW */
 async function loadOverview(){
  try{
   const [p,m]=await Promise.all([
@@ -678,7 +598,7 @@ document.querySelectorAll("[data-tab]").forEach(btn=>{
  });
 });
 
-/* PARTICIPANTS - EXISTING */
+/* PARTICIPANTS */
 async function loadParticipants(){
  if(!activeTournament)return;
  $("participantsList").textContent="লোড হচ্ছে...";
@@ -716,7 +636,7 @@ function updatePlayerOptions(){
  $("advancementPlayer").innerHTML=options;
 }
 
-/* MATCHES - EXISTING */
+/* MATCHES */
 function resetMatchForm(){
  $("matchEditId").value="";$("roundNumber").value=1;$("matchNumber").value=1;
  $("player1").value="";$("player2").value="";
@@ -808,7 +728,7 @@ async function deleteMatch(id){
  }catch(e){message("Delete Error: "+e.message,"error")}
 }
 
-/* MATCH RESULTS - EXISTING */
+/* MATCH RESULTS */
 $("matchResultMatch").addEventListener("change",()=>{$("matchResultPlayer").value=""});
 function resetMatchResultForm(){
  $("matchResultMatch").value="";$("matchResultPlayer").value="";
@@ -871,7 +791,7 @@ async function editMatchResult(id){
  $("mrPoints").value=r.points;$("matchResultMatch").scrollIntoView({behavior:"smooth"});
 }
 
-/* SUMMARY SYNC - EXISTING; STAGE RESULTS ARE NOT INCLUDED */
+/* SUMMARY SYNC - STAGE RESULTS NOT INCLUDED */
 $("syncSummaryButton").onclick=async()=>{
  if(!activeTournament)return;
  const b=$("syncSummaryButton");b.disabled=true;
@@ -914,7 +834,7 @@ $("syncSummaryButton").onclick=async()=>{
  finally{b.disabled=false}
 };
 
-/* TOURNAMENT SUMMARY - EXISTING */
+/* TOURNAMENT SUMMARY */
 async function loadResults(){
  if(!activeTournament)return;
  $("resultsList").textContent="লোড হচ্ছে...";
@@ -957,17 +877,14 @@ $("saveResultButton").onclick=async()=>{
  finally{b.disabled=false}
 };
 
-/* =========================================================
-   NEW STAGE MANAGEMENT
-   ========================================================= */
-
+/* STAGE MANAGEMENT */
 async function createDefaultStages(){
  if(!activeTournament)return;
  const {data:existing,error}=await db.from("tournament_stages")
   .select("id,stage_key").eq("tournament_id",activeTournament.id);
  if(error)throw error;
  const existingKeys=new Set((existing||[]).map(x=>x.stage_key));
- const newRows=DEFAULT_STAGES.filter(s=>!existingKeys.has(s.stage_key)).map((s,i)=>({
+ const newRows=DEFAULT_STAGES.filter(s=>!existingKeys.has(s.stage_key)).map(s=>({
   tournament_id:activeTournament.id,
   stage_key:s.stage_key,
   stage_name:s.stage_name,
@@ -981,7 +898,6 @@ async function createDefaultStages(){
   if(insertError)throw insertError;
  }
 }
-
 async function loadStages(){
  if(!activeTournament)return;
  $("stagesList").textContent="Stage লোড হচ্ছে...";
@@ -997,7 +913,6 @@ async function loadStages(){
   renderStages();
  }catch(e){$("stagesList").textContent="Stage Error: "+e.message}
 }
-
 function renderStages(){
  $("stagesList").innerHTML=stages.map(s=>`
  <div class="stage-card ${s.status==="locked"?"locked":""} ${activeStage&&Number(activeStage.id)===Number(s.id)?"selected":""}">
@@ -1013,7 +928,6 @@ function renderStages(){
   </div>
  </div>`).join("");
 }
-
 $("createStagesButton").onclick=async()=>{
  const b=$("createStagesButton");b.disabled=true;
  try{
@@ -1036,11 +950,11 @@ async function openStage(id){
  $("stageQuestionEditId").value="";
  $("sqImagePreview").innerHTML="";
  $("sqExistingImage").value="";
+ resetStageQuestionForm();
  renderStages();
  await Promise.all([loadStageQuestions(),loadStageResults(),loadAdvancements()]);
  $("stageEditor").scrollIntoView({behavior:"smooth"});
 }
-
 async function renameStage(id){
  const s=stages.find(x=>Number(x.id)===Number(id));if(!s)return;
  const name=prompt("Stage-এর নতুন নাম লিখুন:",s.stage_name);
@@ -1057,7 +971,6 @@ async function renameStage(id){
   }
  }catch(e){message("Rename Error: "+e.message,"error")}
 }
-
 $("saveStageSettingsButton").onclick=async()=>{
  if(!activeStage)return;
  const b=$("saveStageSettingsButton");b.disabled=true;
@@ -1079,7 +992,7 @@ $("saveStageSettingsButton").onclick=async()=>{
  finally{b.disabled=false}
 };
 
-/* IMAGE UPLOAD */
+/* GALLERY IMAGE UPLOAD */
 async function uploadStageImage(file){
  if(!file)return null;
  if(!file.type.startsWith("image/"))throw new Error("শুধু Image ফাইল Upload করা যাবে।");
@@ -1100,13 +1013,13 @@ $("sqImage").addEventListener("change",()=>{
  $("sqImagePreview").innerHTML=`<img class="question-image" src="${url}" alt="ছবির Preview">`;
 });
 
-/* QUESTION FORM */
+/* STAGE QUESTION FORM - NO DIFFICULTY FIELD */
 function resetStageQuestionForm(){
  $("stageQuestionEditId").value="";
  $("sqQuestion").value="";
  $("sqA").value="";$("sqB").value="";$("sqC").value="";$("sqD").value="";
  $("sqCorrect").value="A";$("sqExplanation").value="";
- $("sqDifficulty").value="easy";$("sqMode").value=activeStage?.quiz_mode||"general_mcq";
+ $("sqMode").value=activeStage?.quiz_mode||"general_mcq";
  $("sqImage").value="";$("sqExistingImage").value="";
  $("sqImagePreview").innerHTML="";
  $("saveStageQuestionButton").textContent="💾 প্রশ্ন Save করুন";
@@ -1129,7 +1042,7 @@ $("saveStageQuestionButton").onclick=async()=>{
   if(file)imageUrl=await uploadStageImage(file);
   const payload={
    tournament_id:activeTournament.id,stage_id:activeStage.id,
-   mode:$("sqMode").value,difficulty:$("sqDifficulty").value,
+   mode:$("sqMode").value,
    question_bn:question,options,correct_option:$("sqCorrect").value,
    explanation_bn:$("sqExplanation").value.trim()||null,
    image_url:imageUrl,is_published:true,updated_at:new Date().toISOString()
@@ -1172,7 +1085,6 @@ function renderStageQuestions(){
    C. ${escapeHTML(q.options?.[2]||"")}<br>
    D. ${escapeHTML(q.options?.[3]||"")}<br>
    Correct: ${escapeHTML(q.correct_option)}<br>
-   Difficulty: ${escapeHTML(q.difficulty||"")}<br>
    Explanation: ${escapeHTML(q.explanation_bn||"নেই")}
   </div>
   <div class="actions">
@@ -1189,7 +1101,6 @@ async function editStageQuestion(id){
  $("sqC").value=q.options?.[2]||"";$("sqD").value=q.options?.[3]||"";
  $("sqCorrect").value=q.correct_option||"A";
  $("sqExplanation").value=q.explanation_bn||"";
- $("sqDifficulty").value=q.difficulty||"easy";
  $("sqMode").value=q.mode||"general_mcq";
  $("sqExistingImage").value=q.image_url||"";
  $("sqImage").value="";
@@ -1207,7 +1118,7 @@ async function deleteStageQuestion(id){
  }catch(e){message("Question Delete Error: "+e.message,"error")}
 }
 
-/* JSON BULK IMPORT */
+/* JSON BULK IMPORT - DIFFICULTY DATA IGNORED */
 $("stageJsonFile").addEventListener("change",async()=>{
  const file=$("stageJsonFile").files[0];if(!file)return;
  try{$("stageJsonText").value=await file.text()}
@@ -1240,7 +1151,6 @@ $("importStageJsonButton").onclick=async()=>{
    return {
     tournament_id:activeTournament.id,stage_id:activeStage.id,
     mode:String(q.mode||activeStage.quiz_mode||"general_mcq"),
-    difficulty:String(q.difficulty||"medium"),
     question_bn:question,options:options.map(String),correct_option:correct,
     explanation_bn:q.explanation_bn?String(q.explanation_bn):null,
     image_url:q.image_url?String(q.image_url):null,
@@ -1261,7 +1171,7 @@ $("importStageJsonButton").onclick=async()=>{
  finally{b.disabled=false}
 };
 
-/* SELECT EXISTING QUESTIONS */
+/* SELECT EXISTING QUESTIONS - LEGACY QUESTION DIFFICULTY IGNORED */
 $("loadOldQuestionsButton").onclick=loadOldQuestions;
 async function loadOldQuestions(){
  if(!activeStage)return;
@@ -1276,7 +1186,7 @@ async function loadOldQuestions(){
   $("oldQuestionsList").innerHTML=data.map(q=>`
    <div class="question-card">
     <strong>${escapeHTML(q.question_bn)}</strong>
-    <div class="meta">Mode: ${escapeHTML(q.mode)} • Difficulty: ${escapeHTML(q.difficulty)}</div>
+    <div class="meta">Mode: ${escapeHTML(q.mode)}</div>
     ${already.has(String(q.id))?'<span class="status">এই Stage-এ যোগ করা আছে</span>':
     `<button onclick="copyOldQuestion(${q.id})">➕ এই Stage-এ যোগ করুন</button>`}
    </div>`).join("");
@@ -1290,7 +1200,7 @@ async function copyOldQuestion(id){
   const nextOrder=stageQuestions.reduce((m,x)=>Math.max(m,Number(x.question_order)||0),0)+1;
   const {error}=await db.from("tournament_stage_questions").insert({
    tournament_id:activeTournament.id,stage_id:activeStage.id,
-   source_question_id:q.id,mode:q.mode,difficulty:q.difficulty,
+   source_question_id:q.id,mode:q.mode,
    question_bn:q.question_bn,options:q.options,
    correct_option:q.correct_option,explanation_bn:q.explanation_bn,
    image_url:q.image_url,question_order:nextOrder,is_published:true
@@ -1354,7 +1264,6 @@ async function loadAdvancements(){
   </tr>`).join("")}</tbody></table></div>`;
  }catch(e){$("advancementList").textContent="Approval Error: "+e.message}
 }
-
 $("approveAdvancementButton").onclick=async()=>{
  if(!activeStage)return;
  const b=$("approveAdvancementButton");b.disabled=true;
@@ -1380,7 +1289,6 @@ $("approveAdvancementButton").onclick=async()=>{
  }catch(e){message("Approval Error: "+e.message,"error")}
  finally{b.disabled=false}
 };
-
 async function revokeAdvancement(id){
  if(!confirm("এই Player-এর Advancement Approval বাতিল করবেন?"))return;
  try{
