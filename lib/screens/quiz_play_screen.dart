@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -11,6 +10,12 @@ class QuizPlayScreen extends StatefulWidget {
   final String? subjectCode;
   final String? subjectType;
 
+  // Tournament quiz-এর জন্য এগুলো দিতে হবে।
+  final int? tournamentId;
+  final int? matchId;
+  final int? stageId;
+  final int? roundId;
+
   const QuizPlayScreen({
     super.key,
     required this.mode,
@@ -18,6 +23,10 @@ class QuizPlayScreen extends StatefulWidget {
     required this.quizName,
     this.subjectCode,
     this.subjectType,
+    this.tournamentId,
+    this.matchId,
+    this.stageId,
+    this.roundId,
   });
 
   @override
@@ -28,24 +37,20 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   final supabase = Supabase.instance.client;
 
   List<Map<String, dynamic>> questions = [];
-
   int currentIndex = 0;
   int correctCount = 0;
   int wrongCount = 0;
-
   int score = 0;
   int xpEarned = 0;
 
   int timerSeconds = 20;
   int remainingSeconds = 20;
-
   int correctPoints = 5;
   int wrongPoints = 0;
   int correctXp = 5;
   int wrongXp = 0;
 
   int? quizAttemptId;
-
   String? selectedAnswer;
 
   bool answered = false;
@@ -56,13 +61,18 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   bool summarySaved = false;
   bool profileUpdated = false;
   bool timedOut = false;
+  bool tournamentResultSaved = false;
 
   String? error;
   String? saveError;
-
   Timer? quizTimer;
 
   String get userId => supabase.auth.currentUser!.id;
+  bool get isTournamentQuiz =>
+      widget.tournamentId != null &&
+      widget.matchId != null &&
+      widget.stageId != null &&
+      widget.roundId != null;
 
   bool get isSubjectQuiz =>
       widget.subjectType != null &&
@@ -82,8 +92,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     }
   }
 
-  Map<String, dynamic> get currentQuestion =>
-      questions[currentIndex];
+  Map<String, dynamic> get currentQuestion => questions[currentIndex];
 
   @override
   void initState() {
@@ -97,13 +106,8 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     super.dispose();
   }
 
-  int readSetting(
-    Map<String, dynamic> settings,
-    String key,
-    int fallback,
-  ) {
-    return int.tryParse(settings[key]?.toString() ?? '') ??
-        fallback;
+  int readSetting(Map<String, dynamic> settings, String key, int fallback) {
+    return int.tryParse(settings[key]?.toString() ?? '') ?? fallback;
   }
 
   Map<String, String> readOptions(dynamic rawOptions) {
@@ -114,7 +118,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       for (final entry in rawOptions.entries) {
         final key = entry.key.toString().trim().toUpperCase();
         final value = entry.value?.toString() ?? '';
-
         if (keys.contains(key) && value.trim().isNotEmpty) {
           result[key] = value;
         }
@@ -122,50 +125,33 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     } else if (rawOptions is List) {
       for (int i = 0; i < rawOptions.length && i < 4; i++) {
         final value = rawOptions[i]?.toString() ?? '';
-
-        if (value.trim().isNotEmpty) {
-          result[keys[i]] = value;
-        }
+        if (value.trim().isNotEmpty) result[keys[i]] = value;
       }
     }
-
     return result;
   }
 
   String getCorrectOptionKey(Map<String, dynamic> question) {
     final options = readOptions(question['options']);
-
-    final rawCorrect =
-        question['correct_option']?.toString().trim() ?? '';
-
-    final normalized = rawCorrect.toUpperCase();
-
-    if (options.containsKey(normalized)) {
-      return normalized;
-    }
+    final raw = question['correct_option']?.toString().trim() ?? '';
+    final normalized = raw.toUpperCase();
+    if (options.containsKey(normalized)) return normalized;
 
     for (final entry in options.entries) {
-      if (entry.value.trim().toLowerCase() ==
-          rawCorrect.toLowerCase()) {
+      if (entry.value.trim().toLowerCase() == raw.toLowerCase()) {
         return entry.key;
       }
     }
-
     return normalized;
   }
 
-  bool isCorrectAnswer(String? answer) {
-    return answer != null &&
-        answer == getCorrectOptionKey(currentQuestion);
-  }
+  bool isCorrectAnswer(String? answer) =>
+      answer != null && answer == getCorrectOptionKey(currentQuestion);
 
   Widget buildQuestionImage(String imageUrl) {
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(
-        maxHeight: 260,
-        minHeight: 120,
-      ),
+      constraints: const BoxConstraints(maxHeight: 260, minHeight: 120),
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: const Color(0xFF151D18),
@@ -180,13 +166,10 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         fit: BoxFit.contain,
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
-
           return const SizedBox(
             height: 180,
             child: Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF27D66B),
-              ),
+              child: CircularProgressIndicator(color: Color(0xFF27D66B)),
             ),
           );
         },
@@ -197,16 +180,11 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.broken_image_outlined,
-                    color: Colors.white54,
-                    size: 35,
-                  ),
+                  Icon(Icons.broken_image_outlined,
+                      color: Colors.white54, size: 35),
                   SizedBox(height: 8),
-                  Text(
-                    'ছবিটি লোড করা যায়নি',
-                    style: TextStyle(color: Colors.white54),
-                  ),
+                  Text('ছবিটি লোড করা যায়নি',
+                      style: TextStyle(color: Colors.white54)),
                 ],
               ),
             ),
@@ -219,26 +197,22 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   Future<void> loadQuiz() async {
     try {
       final user = supabase.auth.currentUser;
-
-      if (user == null) {
-        throw Exception('প্রথমে লগইন করুন।');
-      }
+      if (user == null) throw Exception('প্রথমে লগইন করুন।');
 
       if (widget.subjectType != null &&
-          (widget.subjectCode == null ||
-              widget.subjectCode!.trim().isEmpty)) {
-        throw Exception(
-          'কোনো বিষয় নির্বাচন করা হয়নি। আবার নির্বাচন করুন।',
-        );
+          (widget.subjectCode == null || widget.subjectCode!.trim().isEmpty)) {
+        throw Exception('কোনো বিষয় নির্বাচন করা হয়নি। আবার নির্বাচন করুন।');
       }
-
       if (widget.subjectType != null &&
-          !['country', 'club', 'player']
-              .contains(widget.subjectType)) {
+          !['country', 'club', 'player'].contains(widget.subjectType)) {
         throw Exception('কুইজের বিষয় সঠিক নয়।');
       }
 
-      // Admin Panel থেকে কুইজ সেটিংস।
+      // Tournament হলে আগে ম্যাচ, খেলোয়াড়, Stage ও Round যাচাই।
+      if (isTournamentQuiz) {
+        await validateTournamentAccess();
+      }
+
       final settingsData = await supabase
           .from('app_settings')
           .select('key, value')
@@ -251,125 +225,94 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       ]);
 
       final settings = <String, dynamic>{};
-
       for (final item in settingsData) {
         settings[item['key'].toString()] = item['value'];
       }
 
-      timerSeconds = readSetting(
-        settings,
-        'quiz_timer_seconds',
-        20,
-      ).clamp(1, 300).toInt();
+      timerSeconds = readSetting(settings, 'quiz_timer_seconds', 20)
+          .clamp(1, 300).toInt();
+      correctPoints = readSetting(settings, 'quiz_correct_points', 5)
+          .clamp(0, 100000).toInt();
+      wrongPoints = readSetting(settings, 'quiz_wrong_points', 0)
+          .clamp(0, 100000).toInt();
+      correctXp = readSetting(settings, 'quiz_correct_xp', 5)
+          .clamp(0, 100000).toInt();
+      wrongXp = readSetting(settings, 'quiz_wrong_xp', 0)
+          .clamp(0, 100000).toInt();
 
-      correctPoints = readSetting(
-        settings,
-        'quiz_correct_points',
-        5,
-      ).clamp(0, 100000).toInt();
+      List<Map<String, dynamic>> selectedQuestions;
 
-      wrongPoints = readSetting(
-        settings,
-        'quiz_wrong_points',
-        0,
-      ).clamp(0, 100000).toInt();
+      if (isTournamentQuiz) {
+        // একই Match-এর দুই খেলোয়াড় একই প্রশ্ন একই ক্রমে পাবে।
+        final rows = await supabase
+            .from('tournament_stage_questions')
+            .select()
+            .eq('tournament_id', widget.tournamentId!)
+            .eq('stage_id', widget.stageId!)
+            .eq('round_id', widget.roundId!)
+            .eq('is_published', true)
+            .order('question_order', ascending: true);
 
-      correctXp = readSetting(
-        settings,
-        'quiz_correct_xp',
-        5,
-      ).clamp(0, 100000).toInt();
+        final available = List<Map<String, dynamic>>.from(rows);
+        if (available.isEmpty) {
+          throw Exception('এই Stage/Round-এ কোনো প্রকাশিত প্রশ্ন পাওয়া যায়নি।');
+        }
+        selectedQuestions = available.take(widget.questionCount).toList();
+      } else {
+        dynamic query = supabase
+            .from('quiz_questions')
+            .select()
+            .eq('is_published', true)
+            .eq('mode', questionMode);
 
-      wrongXp = readSetting(
-        settings,
-        'quiz_wrong_xp',
-        0,
-      ).clamp(0, 100000).toInt();
+        if (isSubjectQuiz) {
+          query = query
+              .eq('subject_type', widget.subjectType!)
+              .eq('subject_code', widget.subjectCode!.trim().toUpperCase());
+        }
 
-      // প্রথমে নির্দিষ্ট মোডের প্রকাশিত প্রশ্ন লোড।
-      dynamic questionQuery = supabase
-          .from('quiz_questions')
-          .select()
-          .eq('is_published', true)
-          .eq('mode', questionMode);
+        final data = await query;
+        final available = List<Map<String, dynamic>>.from(data);
 
-      if (isSubjectQuiz) {
-        questionQuery = questionQuery
-            .eq('subject_type', widget.subjectType!)
-            .eq(
-              'subject_code',
-              widget.subjectCode!.trim().toUpperCase(),
-            );
+        if (available.isEmpty) {
+          if (!mounted) return;
+          setState(() {
+            questions = [];
+            loading = false;
+          });
+          return;
+        }
+
+        final ids = available
+            .map((q) => q['id'])
+            .where((id) => id != null)
+            .toList();
+
+        final attemptedRows = await supabase
+            .from('quiz_question_attempts')
+            .select('question_id')
+            .eq('user_id', user.id)
+            .inFilter('question_id', ids);
+
+        final attemptedIds = attemptedRows
+            .map<int>((row) => (row['question_id'] as num).toInt())
+            .toSet();
+
+        available.removeWhere((q) =>
+            q['id'] == null ||
+            attemptedIds.contains((q['id'] as num).toInt()));
+        available.shuffle();
+        selectedQuestions = available.take(widget.questionCount).toList();
       }
-
-      final questionData = await questionQuery;
-
-      final availableQuestions =
-          List<Map<String, dynamic>>.from(questionData);
-
-      // প্রশ্ন না থাকলে এখানেই শেষ।
-      if (availableQuestions.isEmpty) {
-        if (!mounted) return;
-
-        setState(() {
-          questions = [];
-          loading = false;
-        });
-
-        return;
-      }
-
-      // এই কুইজের প্রশ্নগুলোর ID সংগ্রহ।
-      final questionIds = availableQuestions
-          .map((question) => question['id'])
-          .where((id) => id != null)
-          .toList();
-
-      // শুধু এই প্রশ্নগুলোর মধ্যে ব্যবহারকারী আগে কোনগুলো খেলেছেন
-      // তা খুঁজে বের করা।
-      final attemptedRows = await supabase
-          .from('quiz_question_attempts')
-          .select('question_id')
-          .eq('user_id', user.id)
-          .inFilter('question_id', questionIds);
-
-      final attemptedQuestionIds = attemptedRows
-          .map<int>(
-            (row) => (row['question_id'] as num).toInt(),
-          )
-          .toSet();
-
-      // আগে খেলা প্রশ্নগুলো বাদ।
-      availableQuestions.removeWhere((question) {
-        final id = question['id'];
-
-        if (id == null) return true;
-
-        return attemptedQuestionIds.contains(
-          (id as num).toInt(),
-        );
-      });
-
-      // বাকি প্রশ্ন এলোমেলোভাবে সাজানো।
-      availableQuestions.shuffle();
-
-      final selectedQuestions = availableQuestions
-          .take(widget.questionCount)
-          .toList();
 
       if (!mounted) return;
-
       setState(() {
         questions = selectedQuestions;
         loading = false;
       });
-
-      if (selectedQuestions.isNotEmpty) {
-        startTimer();
-      }
+      if (selectedQuestions.isNotEmpty) startTimer();
     } catch (e) {
       if (!mounted) return;
-
       setState(() {
         error = e.toString();
         loading = false;
@@ -377,65 +320,116 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     }
   }
 
+  Future<void> validateTournamentAccess() async {
+    final match = await supabase
+        .from('tournament_matches')
+        .select('id, tournament_id, player1_id, player2_id, status, stage_id, round_id')
+        .eq('id', widget.matchId!)
+        .eq('tournament_id', widget.tournamentId!)
+        .maybeSingle();
+
+    if (match == null) throw Exception('নির্ধারিত ম্যাচ পাওয়া যায়নি।');
+
+    final assigned = match['player1_id']?.toString() == userId ||
+        match['player2_id']?.toString() == userId;
+    if (!assigned) throw Exception('এই ম্যাচটি আপনার জন্য নির্ধারিত নয়।');
+
+    final matchStatus = match['status']?.toString().toLowerCase();
+    if (!['scheduled', 'ongoing'].contains(matchStatus)) {
+      throw Exception('এই ম্যাচটি এখন খেলার জন্য উন্মুক্ত নয়।');
+    }
+
+    if ((match['stage_id'] as num?)?.toInt() != widget.stageId ||
+        (match['round_id'] as num?)?.toInt() != widget.roundId) {
+      throw Exception('ম্যাচের Stage/Round তথ্য মেলেনি।');
+    }
+
+    final participant = await supabase
+        .from('tournament_participants')
+        .select('status')
+        .eq('tournament_id', widget.tournamentId!)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    if (participant == null ||
+        participant['status']?.toString().toLowerCase() != 'joined') {
+      throw Exception('আপনার Tournament অংশগ্রহণ সক্রিয় নেই।');
+    }
+
+    final round = await supabase
+        .from('tournament_stage_rounds')
+        .select('status')
+        .eq('id', widget.roundId!)
+        .eq('stage_id', widget.stageId!)
+        .eq('tournament_id', widget.tournamentId!)
+        .maybeSingle();
+
+    if (round == null ||
+        round['status']?.toString().toLowerCase() != 'open') {
+      throw Exception('এই Round এখন খেলার জন্য Open নয়।');
+    }
+
+    final stage = await supabase
+        .from('tournament_stages')
+        .select('status, question_count')
+        .eq('id', widget.stageId!)
+        .eq('tournament_id', widget.tournamentId!)
+        .maybeSingle();
+
+    if (stage == null ||
+        stage['status']?.toString().toLowerCase() != 'open') {
+      throw Exception('এই Stage এখন খেলার জন্য Open নয়।');
+    }
+
+    final existing = await supabase
+        .from('tournament_match_results')
+        .select('id')
+        .eq('match_id', widget.matchId!)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    if (existing != null) {
+      throw Exception('আপনি এই ম্যাচের কুইজ ইতিমধ্যে জমা দিয়েছেন।');
+    }
+  }
+
   Future<void> createQuizAttempt() async {
     if (quizAttemptId != null) return;
-
-    final data = await supabase
-        .from('quiz_attempts')
-        .insert({
-          'user_id': userId,
-          'quiz_mode': widget.mode,
-          'question_count': questions.length,
-          'correct_count': 0,
-          'wrong_count': 0,
-          'points': 0,
-          'xp_earned': 0,
-          'completed_at':
-              DateTime.now().toUtc().toIso8601String(),
-        })
-        .select('id')
-        .single();
-
+    final data = await supabase.from('quiz_attempts').insert({
+      'user_id': userId,
+      'quiz_mode': widget.mode,
+      'question_count': questions.length,
+      'correct_count': 0,
+      'wrong_count': 0,
+      'points': 0,
+      'xp_earned': 0,
+      'completed_at': DateTime.now().toUtc().toIso8601String(),
+    }).select('id').single();
     quizAttemptId = (data['id'] as num).toInt();
   }
 
   void startTimer() {
     quizTimer?.cancel();
-
     remainingSeconds = timerSeconds;
-
-    quizTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      (timer) {
-        if (!mounted || answered) {
-          timer.cancel();
-          return;
-        }
-
-        if (remainingSeconds > 1) {
-          setState(() {
-            remainingSeconds--;
-          });
-        } else {
-          timer.cancel();
-          _answer(null, isTimeout: true);
-        }
-      },
-    );
-
+    quizTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted || answered) {
+        timer.cancel();
+        return;
+      }
+      if (remainingSeconds > 1) {
+        setState(() => remainingSeconds--);
+      } else {
+        timer.cancel();
+        _answer(null, isTimeout: true);
+      }
+    });
     if (mounted) setState(() {});
   }
 
-  Future<void> _answer(
-    String? option, {
-    bool isTimeout = false,
-  }) async {
+  Future<void> _answer(String? option, {bool isTimeout = false}) async {
     if (answered || savingAttempt) return;
-
     quizTimer?.cancel();
-
-    final isCorrect =
-        !isTimeout && isCorrectAnswer(option);
+    final correct = !isTimeout && isCorrectAnswer(option);
 
     setState(() {
       selectedAnswer = option;
@@ -443,8 +437,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       timedOut = isTimeout;
       savingAttempt = true;
       saveError = null;
-
-      if (isCorrect) {
+      if (correct) {
         correctCount++;
         score += correctPoints;
         xpEarned += correctXp;
@@ -455,34 +448,33 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       }
     });
 
-    await saveQuestionAttempt(isCorrect);
+    if (isTournamentQuiz) {
+      // Tournament প্রশ্নের উত্তর ব্যক্তিগত history-তে নয়;
+      // Match-এর মোট ফল একবারে জমা হবে।
+      if (!mounted) return;
+      setState(() {
+        attemptSaved = true;
+        savingAttempt = false;
+      });
+    } else {
+      await saveQuestionAttempt(correct);
+    }
   }
 
   Future<void> saveQuestionAttempt(bool isCorrect) async {
     try {
       await createQuizAttempt();
-
-      // একই ব্যবহারকারীর একই প্রশ্ন দ্বিতীয়বার insert হবে না।
-      // আগে থেকে রেকর্ড থাকলে সেটি overwrite করা হবে না।
-      await supabase
-          .from('quiz_question_attempts')
-          .upsert(
-        {
-          'user_id': userId,
-          'question_id': currentQuestion['id'],
-          'quiz_attempt_id': quizAttemptId,
-          'selected_option': selectedAnswer,
-          'is_correct': isCorrect,
-          'status': timedOut ? 'timed_out' : 'answered',
-          'attempted_at':
-              DateTime.now().toUtc().toIso8601String(),
-        },
-        onConflict: 'user_id,question_id',
-        ignoreDuplicates: true,
-      );
+      await supabase.from('quiz_question_attempts').upsert({
+        'user_id': userId,
+        'question_id': currentQuestion['id'],
+        'quiz_attempt_id': quizAttemptId,
+        'selected_option': selectedAnswer,
+        'is_correct': isCorrect,
+        'status': timedOut ? 'timed_out' : 'answered',
+        'attempted_at': DateTime.now().toUtc().toIso8601String(),
+      }, onConflict: 'user_id,question_id', ignoreDuplicates: true);
 
       if (!mounted) return;
-
       setState(() {
         attemptSaved = true;
         savingAttempt = false;
@@ -490,32 +482,25 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-
       setState(() {
         savingAttempt = false;
-        saveError =
-            'উত্তর সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।\n$e';
+        saveError = 'উত্তর সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।\n$e';
       });
     }
   }
 
   Future<void> retrySaveAttempt() async {
     if (savingAttempt || attemptSaved) return;
-
     setState(() {
       savingAttempt = true;
       saveError = null;
     });
-
-    final isCorrect =
-        !timedOut && isCorrectAnswer(selectedAnswer);
-
-    await saveQuestionAttempt(isCorrect);
+    final correct = !timedOut && isCorrectAnswer(selectedAnswer);
+    await saveQuestionAttempt(correct);
   }
 
   void nextQuestion() {
     if (!attemptSaved || savingAttempt) return;
-
     if (currentIndex < questions.length - 1) {
       setState(() {
         currentIndex++;
@@ -525,7 +510,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         timedOut = false;
         saveError = null;
       });
-
       startTimer();
     } else {
       finishQuiz();
@@ -534,79 +518,74 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
 
   Future<void> finishQuiz() async {
     if (finishing) return;
-
     setState(() {
       finishing = true;
       saveError = null;
     });
 
     try {
-      if (!summarySaved) {
-        if (quizAttemptId == null) {
-          throw Exception('কুইজের রেকর্ড পাওয়া যায়নি।');
+      if (isTournamentQuiz) {
+        if (!tournamentResultSaved) {
+          // Unique Index: match_id,user_id — একই খেলোয়াড়ের একটিই ফল।
+          await supabase.from('tournament_match_results').upsert({
+            'tournament_id': widget.tournamentId,
+            'match_id': widget.matchId,
+            'user_id': userId,
+            'questions_answered': questions.length,
+            'correct_answers': correctCount,
+            'points': score,
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          }, onConflict: 'match_id,user_id');
+          tournamentResultSaved = true;
+        }
+      } else {
+        if (!summarySaved) {
+          if (quizAttemptId == null) {
+            throw Exception('কুইজের রেকর্ড পাওয়া যায়নি।');
+          }
+          await supabase.from('quiz_attempts').update({
+            'question_count': questions.length,
+            'correct_count': correctCount,
+            'wrong_count': wrongCount,
+            'points': score,
+            'xp_earned': xpEarned,
+            'completed_at': DateTime.now().toUtc().toIso8601String(),
+          }).eq('id', quizAttemptId!).eq('user_id', userId);
+          summarySaved = true;
         }
 
-        await supabase
-            .from('quiz_attempts')
-            .update({
-          'question_count': questions.length,
-          'correct_count': correctCount,
-          'wrong_count': wrongCount,
-          'points': score,
-          'xp_earned': xpEarned,
-          'completed_at':
-              DateTime.now().toUtc().toIso8601String(),
-        })
-            .eq('id', quizAttemptId!)
-            .eq('user_id', userId);
-
-        summarySaved = true;
-      }
-
-      if (!profileUpdated) {
-        final profile = await supabase
-            .from('profiles')
-            .select('xp, total_points')
-            .eq('id', userId)
-            .maybeSingle();
-
-        final oldXp =
-            (profile?['xp'] as num?)?.toInt() ?? 0;
-
-        final oldPoints =
-            (profile?['total_points'] as num?)?.toInt() ?? 0;
-
-        final newXp =
-            (oldXp + xpEarned).clamp(0, 2147483647).toInt();
-
-        final newPoints =
-            (oldPoints + score).clamp(0, 2147483647).toInt();
-
-        final newLevel = (newXp ~/ 100) + 1;
-
-        await supabase.from('profiles').upsert({
-          'id': userId,
-          'xp': newXp,
-          'total_points': newPoints,
-          'level': newLevel,
-        });
-
-        profileUpdated = true;
+        if (!profileUpdated) {
+          final profile = await supabase
+              .from('profiles')
+              .select('xp, total_points')
+              .eq('id', userId)
+              .maybeSingle();
+          final oldXp = (profile?['xp'] as num?)?.toInt() ?? 0;
+          final oldPoints =
+              (profile?['total_points'] as num?)?.toInt() ?? 0;
+          final newXp = (oldXp + xpEarned).clamp(0, 2147483647).toInt();
+          final newPoints =
+              (oldPoints + score).clamp(0, 2147483647).toInt();
+          await supabase.from('profiles').upsert({
+            'id': userId,
+            'xp': newXp,
+            'total_points': newPoints,
+            'level': (newXp ~/ 100) + 1,
+          });
+          profileUpdated = true;
+        }
       }
 
       if (!mounted) return;
-
       setState(() {
         currentIndex = questions.length;
         finishing = false;
       });
     } catch (e) {
       if (!mounted) return;
-
       setState(() {
         finishing = false;
-        saveError =
-            'ফলাফল সংরক্ষণে সমস্যা হয়েছে। আবার চেষ্টা করুন।\n$e';
+        saveError = 'ফলাফল সংরক্ষণে সমস্যা হয়েছে। আবার চেষ্টা করুন।\n$e';
       });
     }
   }
@@ -616,9 +595,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
     if (loading) {
       return const Scaffold(
         body: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFF27D66B),
-          ),
+          child: CircularProgressIndicator(color: Color(0xFF27D66B)),
         ),
       );
     }
@@ -629,10 +606,8 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Text(
-              'কুইজ লোড করা যায়নি:\n$error',
-              textAlign: TextAlign.center,
-            ),
+            child: Text('কুইজ লোড করা যায়নি:\n$error',
+                textAlign: TextAlign.center),
           ),
         ),
       );
@@ -655,16 +630,12 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       );
     }
 
-    if (currentIndex >= questions.length) {
-      return resultScreen();
-    }
+    if (currentIndex >= questions.length) return resultScreen();
 
     final question = currentQuestion;
     final options = readOptions(question['options']);
     final correct = getCorrectOptionKey(question);
-
-    final imageUrl =
-        question['image_url']?.toString().trim() ?? '';
+    final imageUrl = question['image_url']?.toString().trim() ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -677,102 +648,66 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'প্রশ্ন ${currentIndex + 1} / ${questions.length}',
-                style: const TextStyle(
-                  color: Color(0xFF27D66B),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
+              Text('প্রশ্ন ${currentIndex + 1} / ${questions.length}',
+                  style: const TextStyle(
+                    color: Color(0xFF27D66B),
+                    fontWeight: FontWeight.bold,
+                  )),
               const SizedBox(height: 10),
-
               LinearProgressIndicator(
                 value: (currentIndex + 1) / questions.length,
                 color: const Color(0xFF27D66B),
                 backgroundColor: Colors.white12,
               ),
-
               const SizedBox(height: 18),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'সময় বাকি',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    '$remainingSeconds সেকেন্ড',
-                    style: TextStyle(
-                      color: remainingSeconds <= 5
-                          ? Colors.redAccent
-                          : const Color(0xFF27D66B),
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  const Text('সময় বাকি',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('$remainingSeconds সেকেন্ড',
+                      style: TextStyle(
+                        color: remainingSeconds <= 5
+                            ? Colors.redAccent
+                            : const Color(0xFF27D66B),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      )),
                 ],
               ),
-
               const SizedBox(height: 22),
-
-              Text(
-                question['question_bn']?.toString() ?? '',
-                style: const TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
+              Text(question['question_bn']?.toString() ?? '',
+                  style: const TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                  )),
               const SizedBox(height: 16),
-
-              if (imageUrl.isNotEmpty)
-                buildQuestionImage(imageUrl),
-
+              if (imageUrl.isNotEmpty) buildQuestionImage(imageUrl),
               ...['A', 'B', 'C', 'D'].map((key) {
                 final value = options[key] ?? '';
-
-                if (value.isEmpty) {
-                  return const SizedBox.shrink();
-                }
-
+                if (value.isEmpty) return const SizedBox.shrink();
                 final isOptionCorrect = key == correct;
                 final isSelected = key == selectedAnswer;
-
                 Color? tileColor;
-
                 if (answered && isOptionCorrect) {
                   tileColor = Colors.green.withOpacity(0.25);
-                } else if (answered &&
-                    isSelected &&
-                    !isOptionCorrect) {
+                } else if (answered && isSelected && !isOptionCorrect) {
                   tileColor = Colors.red.withOpacity(0.25);
                 }
-
                 return Card(
                   color: tileColor,
                   child: ListTile(
-                    leading: CircleAvatar(
-                      child: Text(key),
-                    ),
+                    leading: CircleAvatar(child: Text(key)),
                     title: Text(value),
                     trailing: answered && isOptionCorrect
-                        ? const Icon(
-                            Icons.check_circle,
-                            color: Colors.green,
-                          )
+                        ? const Icon(Icons.check_circle, color: Colors.green)
                         : null,
-                    onTap: answered || savingAttempt
-                        ? null
-                        : () => _answer(key),
+                    onTap: answered || savingAttempt ? null : () => _answer(key),
                   ),
                 );
               }),
-
               if (answered) ...[
                 const SizedBox(height: 12),
-
                 Text(
                   timedOut
                       ? 'সময় শেষ! উত্তর দেওয়া হয়নি।'
@@ -789,9 +724,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                     fontSize: 17,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 Text(
                   'সঠিক উত্তর: $correct'
                   '${options[correct] != null ? ' — ${options[correct]}' : ''}',
@@ -800,50 +733,31 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
-                Text(
-                  question['explanation_bn']?.toString() ??
-                      'কোনো ব্যাখ্যা দেওয়া হয়নি।',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                  ),
-                ),
-
+                Text(question['explanation_bn']?.toString() ??
+                    'কোনো ব্যাখ্যা দেওয়া হয়নি।',
+                    style: const TextStyle(color: Colors.white70)),
                 if (savingAttempt)
                   const Padding(
                     padding: EdgeInsets.all(10),
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
+                    child: Center(child: CircularProgressIndicator()),
                   ),
-
                 if (saveError != null) ...[
                   const SizedBox(height: 8),
-                  Text(
-                    saveError!,
-                    style: const TextStyle(
-                      color: Colors.redAccent,
+                  Text(saveError!,
+                      style: const TextStyle(color: Colors.redAccent)),
+                  if (!isTournamentQuiz)
+                    ElevatedButton(
+                      onPressed: retrySaveAttempt,
+                      child: const Text('আবার সংরক্ষণ করুন'),
                     ),
-                  ),
-                  ElevatedButton(
-                    onPressed: retrySaveAttempt,
-                    child: const Text('আবার সংরক্ষণ করুন'),
-                  ),
                 ],
-
                 const SizedBox(height: 18),
-
                 ElevatedButton(
-                  onPressed: attemptSaved && !savingAttempt
-                      ? nextQuestion
-                      : null,
-                  child: Text(
-                    currentIndex == questions.length - 1
-                        ? 'ফলাফল দেখুন'
-                        : 'পরবর্তী প্রশ্ন',
-                  ),
+                  onPressed: attemptSaved && !savingAttempt ? nextQuestion : null,
+                  child: Text(currentIndex == questions.length - 1
+                      ? 'ফলাফল দেখুন'
+                      : 'পরবর্তী প্রশ্ন'),
                 ),
               ],
             ],
@@ -865,73 +779,64 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.emoji_events,
-                size: 75,
-                color: Color(0xFF27D66B),
-              ),
-
+              const Icon(Icons.emoji_events,
+                  size: 75, color: Color(0xFF27D66B)),
               const SizedBox(height: 20),
-
-              const Text(
-                'কুইজ সম্পন্ন!',
-                style: TextStyle(
-                  fontSize: 25,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
+              Text(isTournamentQuiz ? 'ম্যাচ কুইজ সম্পন্ন!' : 'কুইজ সম্পন্ন!',
+                  style: const TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                  )),
               const SizedBox(height: 20),
-
               Text('মোট প্রশ্ন: ${questions.length}'),
               Text('সঠিক উত্তর: $correctCount'),
               Text('ভুল উত্তর: $wrongCount'),
-
               const SizedBox(height: 12),
-
-              Text(
-                'মোট পয়েন্ট: $score',
-                style: const TextStyle(
-                  fontSize: 23,
-                  color: Color(0xFF27D66B),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              Text(
-                'XP অর্জন: $xpEarned',
-                style: const TextStyle(fontSize: 18),
-              ),
-
-              const SizedBox(height: 20),
-
-              if (finishing)
-                const CircularProgressIndicator(),
-
-              if (saveError != null) ...[
-                Text(
-                  saveError!,
-                  textAlign: TextAlign.center,
+              Text('মোট পয়েন্ট: $score',
                   style: const TextStyle(
-                    color: Colors.redAccent,
+                    fontSize: 23,
+                    color: Color(0xFF27D66B),
+                    fontWeight: FontWeight.bold,
+                  )),
+              if (!isTournamentQuiz)
+                Text('XP অর্জন: $xpEarned',
+                    style: const TextStyle(fontSize: 18)),
+              if (isTournamentQuiz)
+                const Padding(
+                  padding: EdgeInsets.only(top: 12),
+                  child: Text(
+                    'আপনার ম্যাচের ফলাফল Admin Panel-এ জমা হয়েছে। '
+                    'পরবর্তী রাউন্ডে যাওয়ার সিদ্ধান্ত Admin নেবেন।',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white70),
                   ),
                 ),
+              const SizedBox(height: 20),
+              if (finishing) const CircularProgressIndicator(),
+              if (saveError != null) ...[
+                Text(saveError!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.redAccent)),
                 const SizedBox(height: 12),
                 ElevatedButton(
                   onPressed: finishQuiz,
                   child: const Text('আবার চেষ্টা করুন'),
                 ),
               ],
-
-              if (!summarySaved &&
+              if ((!isTournamentQuiz && !summarySaved ||
+                      isTournamentQuiz && !tournamentResultSaved) &&
                   !finishing &&
                   saveError == null)
                 ElevatedButton(
                   onPressed: finishQuiz,
                   child: const Text('ফলাফল সংরক্ষণ করুন'),
                 ),
-
-              if (summarySaved && profileUpdated)
+              if (isTournamentQuiz && tournamentResultSaved)
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('ফিরে যান'),
+                ),
+              if (!isTournamentQuiz && summarySaved && profileUpdated)
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   child: const Text('আবার কুইজ নির্বাচন করুন'),
