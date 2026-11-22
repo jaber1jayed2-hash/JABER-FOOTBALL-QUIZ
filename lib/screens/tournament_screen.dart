@@ -34,10 +34,12 @@ class _TournamentScreenState extends State<TournamentScreen> {
   }
 
   Future<void> loadTournaments() async {
-    setState(() {
-      loading = true;
-      errorMessage = null;
-    });
+    if (mounted) {
+      setState(() {
+        loading = true;
+        errorMessage = null;
+      });
+    }
 
     try {
       final response = await db
@@ -74,8 +76,12 @@ class _TournamentScreenState extends State<TournamentScreen> {
 
         for (final row in rows as List) {
           final id = row['tournament_id'].toString();
-          if (row['status'] == 'joined') joined.add(id);
-          if (row['status'] == 'kicked') kicked.add(id);
+          if (row['status']?.toString().toLowerCase() == 'joined') {
+            joined.add(id);
+          }
+          if (row['status']?.toString().toLowerCase() == 'kicked') {
+            kicked.add(id);
+          }
         }
       }
 
@@ -312,8 +318,8 @@ class _TournamentScreenState extends State<TournamentScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void openTournament(Map<String, dynamic> tournament) {
-    Navigator.push(
+  Future<void> openTournament(Map<String, dynamic> tournament) async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => TournamentInsideScreen(
@@ -321,6 +327,10 @@ class _TournamentScreenState extends State<TournamentScreen> {
         ),
       ),
     );
+
+    if (mounted) {
+      await loadTournaments();
+    }
   }
 
   void showTournamentDetails(Map<String, dynamic> tournament) {
@@ -725,10 +735,12 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
   }
 
   Future<void> loadMatches() async {
-    setState(() {
-      loading = true;
-      error = null;
-    });
+    if (mounted) {
+      setState(() {
+        loading = true;
+        error = null;
+      });
+    }
 
     try {
       final user = db.auth.currentUser;
@@ -787,7 +799,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
       final roundMap = <String, String>{};
       final rounds = await db
           .from('tournament_stage_rounds')
-          .select('id,round_name,round_number,status')
+          .select('id,stage_id,round_name,round_number,status')
           .eq('tournament_id', widget.tournament['id']);
 
       for (final round in rounds as List) {
@@ -904,6 +916,57 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
     return '$stage · $round';
   }
 
+  // Stage এবং Round সরাসরি Supabase থেকে যাচাই করা হচ্ছে।
+  Future<Map<String, dynamic>> fetchMatchStage(
+    int stageId,
+    int roundId,
+    int tournamentIdValue,
+  ) async {
+    final stage = await db
+        .from('tournament_stages')
+        .select('id,tournament_id,stage_name,quiz_mode,question_count,status')
+        .eq('id', stageId)
+        .eq('tournament_id', tournamentIdValue)
+        .maybeSingle();
+
+    if (stage == null) {
+      throw Exception(
+        'Stage পাওয়া যায়নি। Stage ID: $stageId, Tournament ID: $tournamentIdValue। '
+        'Supabase RLS Policy এবং tournament_id মিলিয়ে দেখুন।',
+      );
+    }
+
+    final round = await db
+        .from('tournament_stage_rounds')
+        .select('id,tournament_id,stage_id,round_name,round_number,status')
+        .eq('id', roundId)
+        .eq('tournament_id', tournamentIdValue)
+        .eq('stage_id', stageId)
+        .maybeSingle();
+
+    if (round == null) {
+      throw Exception(
+        'Round পাওয়া যায়নি। Round ID: $roundId, Stage ID: $stageId।',
+      );
+    }
+
+    final stageStatus = stage['status']?.toString().trim().toLowerCase();
+    final roundStatus = round['status']?.toString().trim().toLowerCase();
+
+    if (stageStatus != 'open') {
+      throw Exception('এই Stage এখন খোলা নেই। Stage status: ${stage['status']}');
+    }
+
+    if (roundStatus != 'open') {
+      throw Exception('এই Round এখন খোলা নেই। Round status: ${round['status']}');
+    }
+
+    return {
+      'stage': Map<String, dynamic>.from(stage),
+      'round': Map<String, dynamic>.from(round),
+    };
+  }
+
   Future<void> startMatchQuiz(Map<String, dynamic> match) async {
     final user = db.auth.currentUser;
 
@@ -917,7 +980,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
       return;
     }
 
-    final status = match['status']?.toString().toLowerCase();
+    final status = match['status']?.toString().trim().toLowerCase();
 
     if (status != 'scheduled' && status != 'ongoing') {
       showMessage('এই ম্যাচে এখন কুইজ খেলা যাবে না।');
@@ -937,49 +1000,61 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
       return;
     }
 
-    final stage = stageData[stageId.toString()];
-    if (stage == null) {
-      showMessage('স্টেজের তথ্য পাওয়া যায়নি।');
-      return;
-    }
-
-    final mode = stage['quiz_mode']?.toString().trim().isNotEmpty == true
-        ? stage['quiz_mode'].toString()
-        : widget.tournament['quiz_mode']?.toString() ?? 'general_mcq';
-
-    final questionCount = int.tryParse(
-          stage['question_count']?.toString() ?? '',
-        ) ??
-        int.tryParse(
-          widget.tournament['question_count']?.toString() ?? '',
-        ) ??
-        10;
-
-    final quizName =
-        '${widget.tournament['title']} - ${stage['stage_name'] ?? 'Tournament Match'}';
-
     final alreadySubmitted = results.containsKey('${match['id']}_${user.id}');
     if (alreadySubmitted) {
       showMessage('আপনি এই ম্যাচের কুইজ ইতিমধ্যে জমা দিয়েছেন।');
       return;
     }
 
-    if (!mounted) return;
+    try {
+      // ক্যাশ করা stageData নয়, সরাসরি database থেকে তথ্য নেওয়া হচ্ছে।
+      final matchInfo = await fetchMatchStage(
+        stageId,
+        roundId,
+        tournamentIdValue,
+      );
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => QuizPlayScreen(
-          mode: mode,
-          questionCount: questionCount,
-          quizName: quizName,
-          tournamentId: tournamentIdValue,
-          matchId: matchId,
-          stageId: stageId,
-          roundId: roundId,
+      final stage = matchInfo['stage'] as Map<String, dynamic>;
+
+      final mode = stage['quiz_mode']?.toString().trim().isNotEmpty == true
+          ? stage['quiz_mode'].toString().trim()
+          : widget.tournament['quiz_mode']?.toString() ?? 'general_mcq';
+
+      final questionCount = int.tryParse(
+            stage['question_count']?.toString() ?? '',
+          ) ??
+          int.tryParse(
+            widget.tournament['question_count']?.toString() ?? '',
+          ) ??
+          10;
+
+      final quizName =
+          '${widget.tournament['title']} - ${stage['stage_name'] ?? 'Tournament Match'}';
+
+      if (!mounted) return;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => QuizPlayScreen(
+            mode: mode,
+            questionCount: questionCount,
+            quizName: quizName,
+            tournamentId: tournamentIdValue,
+            matchId: matchId,
+            stageId: stageId,
+            roundId: roundId,
+          ),
         ),
-      ),
-    );
+      );
+
+      // কুইজ থেকে ফিরে এলে ফলাফলসহ সব ম্যাচ আবার লোড হবে।
+      if (mounted) {
+        await loadMatches();
+      }
+    } catch (e) {
+      showMessage('ম্যাচ শুরু করা যায়নি: $e');
+    }
   }
 
   void showMessage(String message) {
@@ -997,6 +1072,10 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
 
     final result1 = results['${match['id']}_$p1'];
     final result2 = results['${match['id']}_$p2'];
+    final mine = isMyMatch(match, userId);
+
+    final myResult = userId == p1 ? result1 : result2;
+    final opponentResult = userId == p1 ? result2 : result1;
 
     showModalBottomSheet(
       context: context,
@@ -1006,9 +1085,6 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
       builder: (sheetContext) {
-        final myResult = userId == p1 ? result1 : result2;
-        final opponentResult = userId == p1 ? result2 : result1;
-
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -1073,21 +1149,38 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                     ],
                   ),
                   const Divider(color: Colors.white24, height: 25),
-                  const Text(
-                    'আপনার ফলাফল',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  resultDetails(myResult),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'অন্য খেলোয়াড়ের ফলাফল',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  resultDetails(opponentResult),
+
+                  if (mine) ...[
+                    const Text(
+                      'আপনার ফলাফল',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    resultDetails(myResult),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'অন্য খেলোয়াড়ের ফলাফল',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    resultDetails(opponentResult),
+                  ] else ...[
+                    Text(
+                      '${playerNames[p1] ?? 'খেলোয়াড় ১'}-এর ফলাফল',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    resultDetails(result1),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${playerNames[p2] ?? 'খেলোয়াড় ২'}-এর ফলাফল',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    resultDetails(result2),
+                  ],
+
                   const SizedBox(height: 15),
-                  if (isMyMatch(match, userId) &&
-                      (match['status']?.toString() == 'scheduled' ||
-                          match['status']?.toString() == 'ongoing'))
+                  if (mine &&
+                      (match['status']?.toString().toLowerCase() == 'scheduled' ||
+                          match['status']?.toString().toLowerCase() == 'ongoing') &&
+                      myResult == null)
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -1270,8 +1363,8 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
             ],
             const SizedBox(height: 12),
             if (mine &&
-                (status?.toString() == 'scheduled' ||
-                    status?.toString() == 'ongoing') &&
+                (status?.toString().toLowerCase() == 'scheduled' ||
+                    status?.toString().toLowerCase() == 'ongoing') &&
                 myResult == null)
               SizedBox(
                 width: double.infinity,
