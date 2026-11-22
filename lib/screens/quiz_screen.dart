@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'quiz_play_screen.dart';
+import 'tournament_screen.dart';
 
 class QuizScreen extends StatefulWidget {
   final String? initialCategory;
@@ -312,9 +313,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 22),
-
                     const Text(
                       'প্রশ্নের সংখ্যা নির্বাচন করুন',
                       style: TextStyle(
@@ -322,9 +321,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         fontSize: 15,
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
                     DropdownButtonFormField<int>(
                       value: selectedCount,
                       isExpanded: true,
@@ -363,9 +360,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         });
                       },
                     ),
-
                     const SizedBox(height: 12),
-
                     Text(
                       'সর্বনিম্ন: $minQuestions টি  •  সর্বোচ্চ: $maxQuestions টি',
                       textAlign: TextAlign.center,
@@ -374,9 +369,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         fontSize: 12,
                       ),
                     ),
-
                     const SizedBox(height: 24),
-
                     SizedBox(
                       height: 52,
                       child: ElevatedButton.icon(
@@ -428,6 +421,254 @@ class _QuizScreenState extends State<QuizScreen> {
           },
         );
       },
+    );
+  }
+
+  void openTournamentQuiz() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const TournamentQuizSectionsScreen(),
+      ),
+    );
+  }
+
+  void openQuizMode({
+    required String name,
+    required String mode,
+  }) {
+    openQuestionCountSheet(quizName: name, mode: mode);
+  }
+
+  Widget buildQuizModeCard({
+    required IconData icon,
+    required String title,
+    required String description,
+    required String mode,
+  }) {
+    return Card(
+      color: const Color(0xFF151D18),
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.white.withOpacity(0.07)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: loadingSettings
+            ? () => showMessage('কুইজ সেটিংস লোড হচ্ছে। একটু অপেক্ষা করুন।')
+            : () => openQuizMode(name: title, mode: mode),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF164B2C),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  icon,
+                  color: const Color(0xFF27D66B),
+                  size: 29,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Color(0xFF27D66B),
+                size: 17,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildTournamentQuizCard() {
+    return Card(
+      color: const Color(0xFF151D18),
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: const Color(0xFF27D66B).withOpacity(0.35),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: openTournamentQuiz,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF164B2C),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.emoji_events,
+                  color: Color(0xFF27D66B),
+                  size: 30,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tournament Quiz',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      'My Quizzes এবং Other Quiz থেকে নির্বাচন করুন।',
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Color(0xFF27D66B),
+                size: 17,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildQuizMenu() {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(18),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF164B2C),
+                Color(0xFF102018),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.sports_soccer,
+                color: Color(0xFF27D66B),
+                size: 35,
+              ),
+              SizedBox(height: 10),
+              Text(
+                'আপনার পছন্দের কুইজ খেলুন',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                'একটি কুইজ নির্বাচন করুন এবং নিজের ফুটবল জ্ঞান যাচাই করুন।',
+                style: TextStyle(
+                  color: Colors.white70,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        const Text(
+          'কুইজ নির্বাচন করুন',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (loadingSettings)
+          const LinearProgressIndicator(
+            color: Color(0xFF27D66B),
+            backgroundColor: Color(0xFF164B2C),
+          ),
+        buildQuizModeCard(
+          icon: Icons.quiz,
+          title: 'General MCQ',
+          description: 'সাধারণ ফুটবল বিষয়ক বহুনির্বাচনী প্রশ্ন',
+          mode: 'general_mcq',
+        ),
+        const SizedBox(height: 10),
+        buildQuizModeCard(
+          icon: Icons.stadium,
+          title: 'Guess the Stadium',
+          description: 'স্টেডিয়াম চিনে সঠিক উত্তর নির্বাচন করুন',
+          mode: 'guess_stadium',
+        ),
+        const SizedBox(height: 10),
+        buildQuizModeCard(
+          icon: Icons.visibility,
+          title: 'Guess the Silhouette',
+          description: 'ছায়ার ছবি দেখে সঠিক উত্তর খুঁজুন',
+          mode: 'guess_silhouette',
+        ),
+        const SizedBox(height: 10),
+        buildQuizModeCard(
+          icon: Icons.lightbulb_outline,
+          title: 'Guess the Clues',
+          description: 'ইঙ্গিত থেকে ফুটবল বিষয়টি শনাক্ত করুন',
+          mode: 'guess_clues',
+        ),
+        const SizedBox(height: 10),
+        buildTournamentQuizCard(),
+        const SizedBox(height: 18),
+      ],
     );
   }
 
@@ -493,9 +734,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   color: const Color(0xFF27D66B),
                   size: 38,
                 ),
-
               const SizedBox(height: 10),
-
               Text(
                 name,
                 textAlign: TextAlign.center,
@@ -507,9 +746,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   fontSize: 12,
                 ),
               ),
-
               const SizedBox(height: 4),
-
               Text(
                 code,
                 style: const TextStyle(
@@ -577,9 +814,7 @@ class _QuizScreenState extends State<QuizScreen> {
             ),
           ],
         ),
-
         const SizedBox(height: 8),
-
         Text(
           subtitle,
           style: const TextStyle(
@@ -587,9 +822,7 @@ class _QuizScreenState extends State<QuizScreen> {
             fontSize: 13,
           ),
         ),
-
         const SizedBox(height: 18),
-
         if (loadingSubjects)
           const Center(
             child: Padding(
@@ -599,7 +832,6 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
             ),
           ),
-
         if (!loadingSubjects && subjectError != null)
           Column(
             children: [
@@ -616,7 +848,6 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
             ],
           ),
-
         if (!loadingSubjects &&
             subjectError == null &&
             subjects.isEmpty)
@@ -628,7 +859,6 @@ class _QuizScreenState extends State<QuizScreen> {
               style: TextStyle(color: Colors.white70),
             ),
           ),
-
         if (!loadingSubjects && subjects.isNotEmpty)
           GridView.builder(
             shrinkWrap: true,
@@ -660,7 +890,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 : activeCategory == 'club'
                     ? 'ক্লাব কুইজ'
                     : 'প্লেয়ার কুইজ',
-        ),
+          ),
         ),
         body: SafeArea(
           child: RefreshIndicator(
@@ -682,34 +912,141 @@ class _QuizScreenState extends State<QuizScreen> {
       appBar: AppBar(
         title: const Text('কুইজ'),
       ),
-      body: Center(
+      body: SafeArea(
+        child: buildQuizMenu(),
+      ),
+    );
+  }
+}
+
+/// Tournament Quiz-এর ভেতরের দুটি বিভাগ।
+class TournamentQuizSectionsScreen extends StatelessWidget {
+  const TournamentQuizSectionsScreen({super.key});
+
+  void _showMyQuizzesInfo(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'My Quizzes-এর ব্যক্তিগত তালিকা পরবর্তী ধাপে যুক্ত করা হবে।',
+        ),
+      ),
+    );
+  }
+
+  void _openOtherQuizzes(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const TournamentScreen(),
+      ),
+    );
+  }
+
+  Widget _sectionCard({
+    required IconData icon,
+    required String title,
+    required String description,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      color: const Color(0xFF151D18),
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.white.withOpacity(0.07)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          padding: const EdgeInsets.all(18),
+          child: Row(
             children: [
-              if (loadingSettings)
-                const CircularProgressIndicator(
-                  color: Color(0xFF27D66B),
-                )
-              else
-                const Icon(
-                  Icons.sports_soccer,
-                  color: Color(0xFF27D66B),
-                  size: 48,
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF164B2C),
+                  borderRadius: BorderRadius.circular(15),
                 ),
-              const SizedBox(height: 16),
-              const Text(
-                'হোম পেজ থেকে আপনার পছন্দের কুইজ নির্বাচন করুন।',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 15,
+                child: Icon(
+                  icon,
+                  color: const Color(0xFF27D66B),
+                  size: 31,
                 ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Color(0xFF27D66B),
+                size: 17,
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF090D0B),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF090D0B),
+        title: const Text('Tournament Quiz'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(18),
+        children: [
+          const Text(
+            'আপনার পছন্দের Tournament Quiz বিভাগ নির্বাচন করুন।',
+            style: TextStyle(
+              color: Colors.white70,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 18),
+          _sectionCard(
+            icon: Icons.bookmark,
+            title: 'My Quizzes',
+            description:
+                'আপনার অংশগ্রহণ করা বা আপনার জন্য নির্ধারিত কুইজ',
+            onTap: () => _showMyQuizzesInfo(context),
+          ),
+          const SizedBox(height: 12),
+          _sectionCard(
+            icon: Icons.explore,
+            title: 'Other Quiz',
+            description:
+                'প্রকাশিত Tournament এবং অন্যান্য কুইজ দেখুন',
+            onTap: () => _openOtherQuizzes(context),
+          ),
+        ],
       ),
     );
   }
