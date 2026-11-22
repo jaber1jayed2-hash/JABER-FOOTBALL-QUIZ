@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'quiz_play_screen.dart';
+
 class TournamentScreen extends StatefulWidget {
   const TournamentScreen({super.key});
 
@@ -238,9 +240,7 @@ class _TournamentScreenState extends State<TournamentScreen> {
 
       if (existing != null) {
         if (existing['status'] == 'joined') {
-          if (mounted) {
-            setState(() => joinedTournamentIds.add(id));
-          }
+          if (mounted) setState(() => joinedTournamentIds.add(id));
           showMessage('আপনি ইতিমধ্যে Join করেছেন।');
         } else {
           if (existing['status'] == 'kicked' && mounted) {
@@ -713,6 +713,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
   Map<String, String> playerNames = {};
   Map<String, String> stageNames = {};
   Map<String, String> roundNames = {};
+  Map<String, Map<String, dynamic>> stageData = {};
   Map<String, Map<String, dynamic>> results = {};
 
   String get tournamentId => widget.tournament['id'].toString();
@@ -770,20 +771,23 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
       }
 
       final stageMap = <String, String>{};
+      final stageInfo = <String, Map<String, dynamic>>{};
+
       final stages = await db
           .from('tournament_stages')
-          .select('id,stage_name')
+          .select('id,stage_name,quiz_mode,question_count,status')
           .eq('tournament_id', widget.tournament['id']);
 
       for (final stage in stages as List) {
-        stageMap[stage['id'].toString()] =
-            stage['stage_name']?.toString() ?? 'Stage';
+        final id = stage['id'].toString();
+        stageMap[id] = stage['stage_name']?.toString() ?? 'Stage';
+        stageInfo[id] = Map<String, dynamic>.from(stage);
       }
 
       final roundMap = <String, String>{};
       final rounds = await db
           .from('tournament_stage_rounds')
-          .select('id,round_name,round_number')
+          .select('id,round_name,round_number,status')
           .eq('tournament_id', widget.tournament['id']);
 
       for (final round in rounds as List) {
@@ -804,8 +808,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
             .inFilter('match_id', matchIds);
 
         for (final row in resultRows as List) {
-          resultMap[
-              '${row['match_id']}_${row['user_id']}'] =
+          resultMap['${row['match_id']}_${row['user_id']}'] =
               Map<String, dynamic>.from(row);
         }
       }
@@ -816,6 +819,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
         matches = loaded;
         playerNames = names;
         stageNames = stageMap;
+        stageData = stageInfo;
         roundNames = roundMap;
         results = resultMap;
         loading = false;
@@ -900,6 +904,92 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
     return '$stage · $round';
   }
 
+  Future<void> startMatchQuiz(Map<String, dynamic> match) async {
+    final user = db.auth.currentUser;
+
+    if (user == null) {
+      showMessage('প্রথমে Login করুন।');
+      return;
+    }
+
+    if (!isMyMatch(match, user.id)) {
+      showMessage('এই ম্যাচটি আপনার জন্য নির্ধারিত নয়।');
+      return;
+    }
+
+    final status = match['status']?.toString().toLowerCase();
+
+    if (status != 'scheduled' && status != 'ongoing') {
+      showMessage('এই ম্যাচে এখন কুইজ খেলা যাবে না।');
+      return;
+    }
+
+    final tournamentIdValue = int.tryParse(tournamentId);
+    final matchId = int.tryParse(match['id'].toString());
+    final stageId = int.tryParse(match['stage_id']?.toString() ?? '');
+    final roundId = int.tryParse(match['round_id']?.toString() ?? '');
+
+    if (tournamentIdValue == null ||
+        matchId == null ||
+        stageId == null ||
+        roundId == null) {
+      showMessage('ম্যাচের প্রয়োজনীয় তথ্য পাওয়া যায়নি।');
+      return;
+    }
+
+    final stage = stageData[stageId.toString()];
+    if (stage == null) {
+      showMessage('স্টেজের তথ্য পাওয়া যায়নি।');
+      return;
+    }
+
+    final mode = stage['quiz_mode']?.toString().trim().isNotEmpty == true
+        ? stage['quiz_mode'].toString()
+        : widget.tournament['quiz_mode']?.toString() ?? 'general_mcq';
+
+    final questionCount = int.tryParse(
+          stage['question_count']?.toString() ?? '',
+        ) ??
+        int.tryParse(
+          widget.tournament['question_count']?.toString() ?? '',
+        ) ??
+        10;
+
+    final quizName =
+        '${widget.tournament['title']} - ${stage['stage_name'] ?? 'Tournament Match'}';
+
+    final alreadySubmitted = results.containsKey('${match['id']}_${user.id}');
+    if (alreadySubmitted) {
+      showMessage('আপনি এই ম্যাচের কুইজ ইতিমধ্যে জমা দিয়েছেন।');
+      return;
+    }
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => QuizPlayScreen(
+          mode: mode,
+          questionCount: questionCount,
+          quizName: quizName,
+          tournamentId: tournamentIdValue,
+          matchId: matchId,
+          stageId: stageId,
+          roundId: roundId,
+        ),
+      ),
+    );
+  }
+
+  void showMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
   void showMatchDetails(Map<String, dynamic> match) {
     final userId = db.auth.currentUser?.id ?? '';
     final p1 = match['player1_id']?.toString() ?? '';
@@ -915,7 +1005,10 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
+        final myResult = userId == p1 ? result1 : result2;
+        final opponentResult = userId == p1 ? result2 : result1;
+
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -932,16 +1025,11 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  detail('টুর্নামেন্ট', widget.tournament['title']?.toString() ?? ''),
+                  detail('টুর্নামেন্ট',
+                      widget.tournament['title']?.toString() ?? ''),
                   detail('স্টেজ ও রাউন্ড', stageRoundText(match)),
-                  detail(
-                    'তারিখ ও সময়',
-                    dateTimeText(match['scheduled_at']),
-                  ),
-                  detail(
-                    'অবস্থা',
-                    matchStatus(match['status']),
-                  ),
+                  detail('তারিখ ও সময়', dateTimeText(match['scheduled_at'])),
+                  detail('অবস্থা', matchStatus(match['status'])),
                   const Divider(color: Colors.white24, height: 25),
                   Row(
                     children: [
@@ -984,21 +1072,37 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                       ),
                     ],
                   ),
-                  if (match['status']?.toString() == 'completed') ...[
-                    const Divider(color: Colors.white24, height: 25),
-                    const Text(
-                      'খেলোয়াড়দের কুইজের ফলাফল',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 10),
-                    resultDetails('আপনার ফলাফল', result1, userId == p1 ? result1 : result2),
-                    resultDetails('অন্য খেলোয়াড়ের ফলাফল', userId == p1 ? result2 : result1, null),
-                  ],
-                  const SizedBox(height: 15),
+                  const Divider(color: Colors.white24, height: 25),
                   const Text(
-                    'এই স্ক্রিনে ম্যাচের তথ্য দেখা যাবে। ম্যাচ খেলার সুবিধা পরবর্তী ধাপে QuizPlayScreen-এর সঙ্গে যুক্ত হবে।',
-                    style: TextStyle(color: Colors.white54, height: 1.5),
+                    'আপনার ফলাফল',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
+                  resultDetails(myResult),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'অন্য খেলোয়াড়ের ফলাফল',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  resultDetails(opponentResult),
+                  const SizedBox(height: 15),
+                  if (isMyMatch(match, userId) &&
+                      (match['status']?.toString() == 'scheduled' ||
+                          match['status']?.toString() == 'ongoing'))
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          startMatchQuiz(match);
+                        },
+                        icon: const Icon(Icons.play_arrow),
+                        label: const Text('ম্যাচ খেলুন'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: green,
+                          foregroundColor: Colors.black,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -1008,23 +1112,21 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
     );
   }
 
-  Widget resultDetails(
-    String title,
-    Map<String, dynamic>? result,
-    Map<String, dynamic>? ignored,
-  ) {
+  Widget resultDetails(Map<String, dynamic>? result) {
     if (result == null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5),
-        child: Text('$title: ফলাফল পাওয়া যায়নি',
-            style: const TextStyle(color: Colors.white60)),
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 5),
+        child: Text(
+          'ফলাফল পাওয়া যায়নি',
+          style: TextStyle(color: Colors.white60),
+        ),
       );
     }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Text(
-        '$title: ${result['questions_answered'] ?? 0} প্রশ্ন · '
+        '${result['questions_answered'] ?? 0} প্রশ্ন · '
         '${result['correct_answers'] ?? 0} সঠিক · '
         '${result['points'] ?? 0} পয়েন্ট',
         style: const TextStyle(color: Colors.white70),
@@ -1062,11 +1164,11 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
     final userId = db.auth.currentUser?.id ?? '';
     final mine = isMyMatch(match, userId);
 
-    final opponentId = userId == p1 ? p2 : p1;
-    final opponentName = playerNames[opponentId] ?? 'প্রতিপক্ষ';
-
     final status = match['status'];
     final myResult = results['${match['id']}_$userId'];
+
+    final player1Name = playerNames[p1] ?? 'খেলোয়াড় ১';
+    final player2Name = playerNames[p2] ?? 'খেলোয়াড় ২';
 
     return Card(
       color: cardColor,
@@ -1118,9 +1220,13 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                   child: Column(
                     children: [
                       const Icon(Icons.person, color: green, size: 30),
+                      Text(player1Name, textAlign: TextAlign.center),
                       Text(
-                        playerNames[p1] ?? 'খেলোয়াড় ১',
-                        textAlign: TextAlign.center,
+                        '${match['player1_score'] ?? 0}',
+                        style: const TextStyle(
+                          color: green,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -1137,9 +1243,13 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                   child: Column(
                     children: [
                       const Icon(Icons.person, color: green, size: 30),
+                      Text(player2Name, textAlign: TextAlign.center),
                       Text(
-                        playerNames[p2] ?? 'খেলোয়াড় ২',
-                        textAlign: TextAlign.center,
+                        '${match['player2_score'] ?? 0}',
+                        style: const TextStyle(
+                          color: green,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -1147,8 +1257,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
               ],
             ),
             const Divider(color: Colors.white12, height: 25),
-            detail('প্রতিপক্ষ', opponentName),
-            detail('রাউন্ড', stageRoundText(match)),
+            detail('স্টেজ ও রাউন্ড', stageRoundText(match)),
             detail('তারিখ ও সময়', dateTimeText(match['scheduled_at'])),
             if (mine && myResult != null) ...[
               const SizedBox(height: 8),
@@ -1160,6 +1269,32 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
               ),
             ],
             const SizedBox(height: 12),
+            if (mine &&
+                (status?.toString() == 'scheduled' ||
+                    status?.toString() == 'ongoing') &&
+                myResult == null)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => startMatchQuiz(match),
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('ম্যাচ খেলুন'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: green,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                  ),
+                ),
+              ),
+            if (mine && myResult != null)
+              const SizedBox(
+                width: double.infinity,
+                child: Text(
+                  'আপনি এই ম্যাচের কুইজ জমা দিয়েছেন।',
+                  style: TextStyle(color: Colors.greenAccent),
+                ),
+              ),
+            const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -1176,8 +1311,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title =
-        widget.tournament['title']?.toString() ?? 'Tournament';
+    final title = widget.tournament['title']?.toString() ?? 'Tournament';
 
     return Scaffold(
       backgroundColor: const Color(0xFF090D0B),
@@ -1238,12 +1372,9 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                     icon: const Icon(Icons.person),
                     label: const Text('আমার ম্যাচ'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: selectedTab == 0
-                          ? green
-                          : cardColor,
-                      foregroundColor: selectedTab == 0
-                          ? Colors.black
-                          : Colors.white,
+                      backgroundColor: selectedTab == 0 ? green : cardColor,
+                      foregroundColor:
+                          selectedTab == 0 ? Colors.black : Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
                   ),
@@ -1258,12 +1389,9 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                       textAlign: TextAlign.center,
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: selectedTab == 1
-                          ? green
-                          : cardColor,
-                      foregroundColor: selectedTab == 1
-                          ? Colors.black
-                          : Colors.white,
+                      backgroundColor: selectedTab == 1 ? green : cardColor,
+                      foregroundColor:
+                          selectedTab == 1 ? Colors.black : Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
                   ),
