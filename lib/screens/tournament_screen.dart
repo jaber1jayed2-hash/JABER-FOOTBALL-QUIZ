@@ -113,14 +113,12 @@ class _TournamentScreenState extends State<TournamentScreen> {
     if (value == null) return 'নির্ধারিত নয়';
     final date = DateTime.tryParse(value.toString());
     if (date == null) return 'নির্ধারিত নয়';
-
     final d = date.toLocal();
     return '${d.day}/${d.month}/${d.year}';
   }
 
   String formatDateTime(dynamic value) {
     if (value == null) return 'সময় নির্ধারিত নয়';
-
     final date = DateTime.tryParse(value.toString());
     if (date == null) return 'সময় নির্ধারিত নয়';
 
@@ -140,7 +138,7 @@ class _TournamentScreenState extends State<TournamentScreen> {
       case 'active':
         return 'চলমান';
       case 'completed':
-        return 'শেষ হয়েছে';
+        return 'সম্পূর্ণ';
       case 'cancelled':
         return 'বাতিল';
       case 'scheduled':
@@ -312,7 +310,6 @@ class _TournamentScreenState extends State<TournamentScreen> {
 
   void showMessage(String message) {
     if (!mounted) return;
-
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
@@ -322,15 +319,11 @@ class _TournamentScreenState extends State<TournamentScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => TournamentInsideScreen(
-          tournament: tournament,
-        ),
+        builder: (_) => TournamentInsideScreen(tournament: tournament),
       ),
     );
 
-    if (mounted) {
-      await loadTournaments();
-    }
+    if (mounted) await loadTournaments();
   }
 
   void showTournamentDetails(Map<String, dynamic> tournament) {
@@ -438,16 +431,10 @@ class _TournamentScreenState extends State<TournamentScreen> {
         children: [
           SizedBox(
             width: 130,
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white54),
-            ),
+            child: Text(label, style: const TextStyle(color: Colors.white54)),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
+            child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -459,11 +446,7 @@ class _TournamentScreenState extends State<TournamentScreen> {
       width: double.infinity,
       height: 155,
       color: const Color(0xFF164B2C),
-      child: const Icon(
-        Icons.emoji_events,
-        size: 55,
-        color: green,
-      ),
+      child: const Icon(Icons.emoji_events, size: 55, color: green),
     );
   }
 
@@ -561,9 +544,7 @@ class _TournamentScreenState extends State<TournamentScreen> {
                         ? () => openTournament(tournament)
                         : () async {
                             final success = await joinTournament(tournament);
-                            if (success && mounted) {
-                              openTournament(tournament);
-                            }
+                            if (success && mounted) openTournament(tournament);
                           },
                 icon: Icon(joined ? Icons.login : Icons.emoji_events),
                 label: Text(joinButtonText(tournament)),
@@ -593,10 +574,7 @@ class _TournamentScreenState extends State<TournamentScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
-            onPressed: loadTournaments,
-            icon: const Icon(Icons.refresh),
-          ),
+          IconButton(onPressed: loadTournaments, icon: const Icon(Icons.refresh)),
         ],
       ),
       body: RefreshIndicator(
@@ -621,10 +599,7 @@ class _TournamentScreenState extends State<TournamentScreen> {
                   SizedBox(height: 10),
                   Text(
                     'Tournament Arena',
-                    style: TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
-                    ),
+                    style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
                   ),
                   SizedBox(height: 5),
                   Text(
@@ -658,10 +633,7 @@ class _TournamentScreenState extends State<TournamentScreen> {
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.white54, fontSize: 11),
                   ),
-                  TextButton(
-                    onPressed: loadTournaments,
-                    child: const Text('আবার চেষ্টা করুন'),
-                  ),
+                  TextButton(onPressed: loadTournaments, child: const Text('আবার চেষ্টা করুন')),
                 ],
               )
             else if (tournaments.isEmpty)
@@ -669,11 +641,7 @@ class _TournamentScreenState extends State<TournamentScreen> {
                 padding: EdgeInsets.symmetric(vertical: 35),
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.emoji_events_outlined,
-                      size: 55,
-                      color: Colors.white38,
-                    ),
+                    Icon(Icons.emoji_events_outlined, size: 55, color: Colors.white38),
                     SizedBox(height: 12),
                     Text(
                       'এখনো কোনো টুর্নামেন্ট প্রকাশ করা হয়নি।',
@@ -693,7 +661,7 @@ class _TournamentScreenState extends State<TournamentScreen> {
 }
 
 // ------------------------------------------------------
-// Joined tournament: My Matches and Other Matches
+// Tournament Inside Screen
 // ------------------------------------------------------
 
 class TournamentInsideScreen extends StatefulWidget {
@@ -761,12 +729,8 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
 
       final ids = <String>{};
       for (final match in loaded) {
-        if (match['player1_id'] != null) {
-          ids.add(match['player1_id'].toString());
-        }
-        if (match['player2_id'] != null) {
-          ids.add(match['player2_id'].toString());
-        }
+        if (match['player1_id'] != null) ids.add(match['player1_id'].toString());
+        if (match['player2_id'] != null) ids.add(match['player2_id'].toString());
       }
 
       final names = <String, String>{};
@@ -804,8 +768,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
 
       for (final round in rounds as List) {
         roundMap[round['id'].toString()] =
-            round['round_name']?.toString() ??
-                'Round ${round['round_number']}';
+            round['round_name']?.toString() ?? 'Round ${round['round_number']}';
       }
 
       final resultMap = <String, Map<String, dynamic>>{};
@@ -814,9 +777,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
 
         final resultRows = await db
             .from('tournament_match_results')
-            .select(
-              'match_id,user_id,questions_answered,correct_answers,points',
-            )
+            .select('match_id,user_id,questions_answered,correct_answers,points')
             .inFilter('match_id', matchIds);
 
         for (final row in resultRows as List) {
@@ -847,7 +808,6 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
 
   String dateTimeText(dynamic value) {
     if (value == null) return 'তারিখ ও সময় নির্ধারিত নয়';
-
     final date = DateTime.tryParse(value.toString());
     if (date == null) return 'তারিখ ও সময় নির্ধারিত নয়';
 
@@ -866,7 +826,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
       case 'ongoing':
         return 'চলমান';
       case 'completed':
-        return 'সম্পন্ন';
+        return 'সম্পূর্ণ';
       case 'cancelled':
         return 'বাতিল';
       default:
@@ -894,6 +854,8 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
         match['player2_id']?.toString() == userId;
   }
 
+  // আমার ম্যাচে শুধু নিজের ম্যাচ।
+  // অন্যান্য সকল ম্যাচে টুর্নামেন্টের নিজের ম্যাচসহ সব ম্যাচ।
   List<Map<String, dynamic>> get visibleMatches {
     final userId = db.auth.currentUser?.id;
     if (userId == null) return [];
@@ -902,7 +864,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
       return matches.where((m) => isMyMatch(m, userId)).toList();
     }
 
-    return matches.where((m) => !isMyMatch(m, userId)).toList();
+    return matches;
   }
 
   String stageRoundText(Map<String, dynamic> match) {
@@ -910,13 +872,11 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
     final roundId = match['round_id']?.toString();
 
     final stage = stageNames[stageId] ?? 'Stage';
-    final round = roundNames[roundId] ??
-        'Round ${match['round_number'] ?? ''}';
+    final round = roundNames[roundId] ?? 'Round ${match['round_number'] ?? ''}';
 
     return '$stage · $round';
   }
 
-  // Stage এবং Round সরাসরি Supabase থেকে যাচাই করা হচ্ছে।
   Future<Map<String, dynamic>> fetchMatchStage(
     int stageId,
     int roundId,
@@ -931,8 +891,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
 
     if (stage == null) {
       throw Exception(
-        'Stage পাওয়া যায়নি। Stage ID: $stageId, Tournament ID: $tournamentIdValue। '
-        'Supabase RLS Policy এবং tournament_id মিলিয়ে দেখুন।',
+        'Stage পাওয়া যায়নি। Stage ID: $stageId, Tournament ID: $tournamentIdValue।',
       );
     }
 
@@ -945,9 +904,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
         .maybeSingle();
 
     if (round == null) {
-      throw Exception(
-        'Round পাওয়া যায়নি। Round ID: $roundId, Stage ID: $stageId।',
-      );
+      throw Exception('Round পাওয়া যায়নি। Round ID: $roundId, Stage ID: $stageId।');
     }
 
     final stageStatus = stage['status']?.toString().trim().toLowerCase();
@@ -1007,7 +964,6 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
     }
 
     try {
-      // ক্যাশ করা stageData নয়, সরাসরি database থেকে তথ্য নেওয়া হচ্ছে।
       final matchInfo = await fetchMatchStage(
         stageId,
         roundId,
@@ -1023,9 +979,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
       final questionCount = int.tryParse(
             stage['question_count']?.toString() ?? '',
           ) ??
-          int.tryParse(
-            widget.tournament['question_count']?.toString() ?? '',
-          ) ??
+          int.tryParse(widget.tournament['question_count']?.toString() ?? '') ??
           10;
 
       final quizName =
@@ -1048,10 +1002,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
         ),
       );
 
-      // কুইজ থেকে ফিরে এলে ফলাফলসহ সব ম্যাচ আবার লোড হবে।
-      if (mounted) {
-        await loadMatches();
-      }
+      if (mounted) await loadMatches();
     } catch (e) {
       showMessage('ম্যাচ শুরু করা যায়নি: $e');
     }
@@ -1059,10 +1010,81 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
 
   void showMessage(String message) {
     if (!mounted) return;
-
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  int resultPoints(Map<String, dynamic>? result, dynamic fallback) {
+    if (result != null) {
+      return int.tryParse(result['points']?.toString() ?? '') ?? 0;
+    }
+    return int.tryParse(fallback?.toString() ?? '') ?? 0;
+  }
+
+  // Admin অনুমোদিত ফলাফল ছাড়া Winner/Loser দেখানো হবে না।
+  Widget approvedWinnerDetails(Map<String, dynamic> match) {
+    if (match['status']?.toString().toLowerCase() != 'completed') {
+      return const SizedBox.shrink();
+    }
+
+    final p1 = match['player1_id']?.toString() ?? '';
+    final p2 = match['player2_id']?.toString() ?? '';
+    final winnerId = match['winner_id']?.toString();
+
+    final result1 = results['${match['id']}_$p1'];
+    final result2 = results['${match['id']}_$p2'];
+
+    final score1 = resultPoints(result1, match['player1_score']);
+    final score2 = resultPoints(result2, match['player2_score']);
+
+    String winnerText;
+    String loserText;
+    int margin;
+
+    if (winnerId == null || winnerId.isEmpty) {
+      winnerText = 'ড্র';
+      loserText = 'কোনো পরাজিত নেই';
+      margin = 0;
+    } else if (winnerId == p1) {
+      winnerText = playerNames[p1] ?? 'খেলোয়াড় ১';
+      loserText = playerNames[p2] ?? 'খেলোয়াড় ২';
+      margin = (score1 - score2).abs();
+    } else if (winnerId == p2) {
+      winnerText = playerNames[p2] ?? 'খেলোয়াড় ২';
+      loserText = playerNames[p1] ?? 'খেলোয়াড় ১';
+      margin = (score2 - score1).abs();
+    } else {
+      winnerText = 'ফলাফল নির্ধারিত নয়';
+      loserText = '';
+      margin = 0;
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: green.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: green.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'অনুমোদিত ম্যাচের ফলাফল',
+            style: TextStyle(color: green, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text('🏆 জয়ী: $winnerText'),
+          if (loserText.isNotEmpty) Text('পরাজিত: $loserText'),
+          Text('পয়েন্ট: $score1 - $score2'),
+          if (winnerId != null && winnerId.isNotEmpty)
+            Text('জয়ের ব্যবধান: $margin পয়েন্ট'),
+        ],
+      ),
+    );
   }
 
   void showMatchDetails(Map<String, dynamic> match) {
@@ -1095,14 +1117,10 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                 children: [
                   Text(
                     'Match #${match['match_number']}',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
-                  detail('টুর্নামেন্ট',
-                      widget.tournament['title']?.toString() ?? ''),
+                  detail('টুর্নামেন্ট', widget.tournament['title']?.toString() ?? ''),
                   detail('স্টেজ ও রাউন্ড', stageRoundText(match)),
                   detail('তারিখ ও সময়', dateTimeText(match['scheduled_at'])),
                   detail('অবস্থা', matchStatus(match['status'])),
@@ -1112,12 +1130,9 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                       Expanded(
                         child: Column(
                           children: [
+                            Text(playerNames[p1] ?? 'খেলোয়াড় ১', textAlign: TextAlign.center),
                             Text(
-                              playerNames[p1] ?? 'খেলোয়াড় ১',
-                              textAlign: TextAlign.center,
-                            ),
-                            Text(
-                              '${match['player1_score'] ?? 0}',
+                              '${resultPoints(result1, match['player1_score'])}',
                               style: const TextStyle(
                                 fontSize: 25,
                                 fontWeight: FontWeight.bold,
@@ -1131,12 +1146,9 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                       Expanded(
                         child: Column(
                           children: [
+                            Text(playerNames[p2] ?? 'খেলোয়াড় ২', textAlign: TextAlign.center),
                             Text(
-                              playerNames[p2] ?? 'খেলোয়াড় ২',
-                              textAlign: TextAlign.center,
-                            ),
-                            Text(
-                              '${match['player2_score'] ?? 0}',
+                              '${resultPoints(result2, match['player2_score'])}',
                               style: const TextStyle(
                                 fontSize: 25,
                                 fontWeight: FontWeight.bold,
@@ -1148,19 +1160,13 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                       ),
                     ],
                   ),
+                  approvedWinnerDetails(match),
                   const Divider(color: Colors.white24, height: 25),
-
                   if (mine) ...[
-                    const Text(
-                      'আপনার ফলাফল',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    const Text('আপনার ফলাফল', style: TextStyle(fontWeight: FontWeight.bold)),
                     resultDetails(myResult),
                     const SizedBox(height: 12),
-                    const Text(
-                      'অন্য খেলোয়াড়ের ফলাফল',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    const Text('অন্য খেলোয়াড়ের ফলাফল', style: TextStyle(fontWeight: FontWeight.bold)),
                     resultDetails(opponentResult),
                   ] else ...[
                     Text(
@@ -1175,7 +1181,6 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                     ),
                     resultDetails(result2),
                   ],
-
                   const SizedBox(height: 15),
                   if (mine &&
                       (match['status']?.toString().toLowerCase() == 'scheduled' ||
@@ -1209,10 +1214,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
     if (result == null) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 5),
-        child: Text(
-          'ফলাফল পাওয়া যায়নি',
-          style: TextStyle(color: Colors.white60),
-        ),
+        child: Text('ফলাফল পাওয়া যায়নি', style: TextStyle(color: Colors.white60)),
       );
     }
 
@@ -1235,16 +1237,10 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
         children: [
           SizedBox(
             width: 115,
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white54),
-            ),
+            child: Text(label, style: const TextStyle(color: Colors.white54)),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
+            child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -1259,9 +1255,17 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
 
     final status = match['status'];
     final myResult = results['${match['id']}_$userId'];
-
     final player1Name = playerNames[p1] ?? 'খেলোয়াড় ১';
     final player2Name = playerNames[p2] ?? 'খেলোয়াড় ২';
+
+    final score1 = resultPoints(
+      results['${match['id']}_$p1'],
+      match['player1_score'],
+    );
+    final score2 = resultPoints(
+      results['${match['id']}_$p2'],
+      match['player2_score'],
+    );
 
     return Card(
       color: cardColor,
@@ -1280,17 +1284,11 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                 Expanded(
                   child: Text(
                     'Match #${match['match_number']}',
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: matchStatusColor(status).withValues(alpha: 0.13),
                     borderRadius: BorderRadius.circular(20),
@@ -1315,43 +1313,34 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                       const Icon(Icons.person, color: green, size: 30),
                       Text(player1Name, textAlign: TextAlign.center),
                       Text(
-                        '${match['player1_score'] ?? 0}',
-                        style: const TextStyle(
-                          color: green,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        '$score1 পয়েন্ট',
+                        style: const TextStyle(color: green, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                 ),
-                const Text(
-                  'VS',
-                  style: TextStyle(
-                    color: green,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 19,
-                  ),
-                ),
+                const Text('VS', style: TextStyle(color: green, fontWeight: FontWeight.bold, fontSize: 19)),
                 Expanded(
                   child: Column(
                     children: [
                       const Icon(Icons.person, color: green, size: 30),
                       Text(player2Name, textAlign: TextAlign.center),
                       Text(
-                        '${match['player2_score'] ?? 0}',
-                        style: const TextStyle(
-                          color: green,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        '$score2 পয়েন্ট',
+                        style: const TextStyle(color: green, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const Divider(color: Colors.white12, height: 25),
+            const SizedBox(height: 8),
             detail('স্টেজ ও রাউন্ড', stageRoundText(match)),
             detail('তারিখ ও সময়', dateTimeText(match['scheduled_at'])),
+
+            // সম্পূর্ণ ম্যাচের অনুমোদিত ফলাফল
+            approvedWinnerDetails(match),
+
             if (mine && myResult != null) ...[
               const SizedBox(height: 8),
               Text(
@@ -1410,16 +1399,9 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
       backgroundColor: const Color(0xFF090D0B),
       appBar: AppBar(
         backgroundColor: const Color(0xFF090D0B),
-        title: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
-          IconButton(
-            onPressed: loadMatches,
-            icon: const Icon(Icons.refresh),
-          ),
+          IconButton(onPressed: loadMatches, icon: const Icon(Icons.refresh)),
         ],
       ),
       body: RefreshIndicator(
@@ -1444,10 +1426,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                   SizedBox(height: 8),
                   Text(
                     'Tournament Matches',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   Text(
                     'আপনার এবং অন্যান্য খেলোয়াড়দের ম্যাচ দেখুন।',
@@ -1466,8 +1445,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                     label: const Text('আমার ম্যাচ'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: selectedTab == 0 ? green : cardColor,
-                      foregroundColor:
-                          selectedTab == 0 ? Colors.black : Colors.white,
+                      foregroundColor: selectedTab == 0 ? Colors.black : Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
                   ),
@@ -1477,14 +1455,10 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => setState(() => selectedTab = 1),
                     icon: const Icon(Icons.groups),
-                    label: const Text(
-                      'অন্যান্য সকল ম্যাচ',
-                      textAlign: TextAlign.center,
-                    ),
+                    label: const Text('অন্যান্য সকল ম্যাচ', textAlign: TextAlign.center),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: selectedTab == 1 ? green : cardColor,
-                      foregroundColor:
-                          selectedTab == 1 ? Colors.black : Colors.white,
+                      foregroundColor: selectedTab == 1 ? Colors.black : Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
                   ),
@@ -1493,11 +1467,8 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
             ),
             const SizedBox(height: 18),
             Text(
-              selectedTab == 0 ? 'আমার ম্যাচসমূহ' : 'অন্যান্য খেলোয়াড়দের ম্যাচ',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              selectedTab == 0 ? 'আমার ম্যাচসমূহ' : 'টুর্নামেন্টের সকল ম্যাচ',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             if (loading)
@@ -1510,22 +1481,15 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
             else if (error != null)
               Column(
                 children: [
-                  const Icon(Icons.error_outline,
-                      color: Colors.redAccent, size: 40),
+                  const Icon(Icons.error_outline, color: Colors.redAccent, size: 40),
                   const SizedBox(height: 8),
                   const Text('ম্যাচ লোড করা যায়নি।'),
                   Text(
                     error!,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white54,
-                      fontSize: 11,
-                    ),
+                    style: const TextStyle(color: Colors.white54, fontSize: 11),
                   ),
-                  TextButton(
-                    onPressed: loadMatches,
-                    child: const Text('আবার চেষ্টা করুন'),
-                  ),
+                  TextButton(onPressed: loadMatches, child: const Text('আবার চেষ্টা করুন')),
                 ],
               )
             else if (visibleMatches.isEmpty)
@@ -1534,9 +1498,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                 child: Column(
                   children: [
                     Icon(
-                      selectedTab == 0
-                          ? Icons.sports_soccer
-                          : Icons.groups_outlined,
+                      selectedTab == 0 ? Icons.sports_soccer : Icons.groups_outlined,
                       color: Colors.white38,
                       size: 50,
                     ),
@@ -1544,7 +1506,7 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
                     Text(
                       selectedTab == 0
                           ? 'আপনাকে নিয়ে এখনো কোনো ম্যাচ তৈরি করা হয়নি।'
-                          : 'অন্য কোনো ম্যাচ পাওয়া যায়নি।',
+                          : 'এই টুর্নামেন্টে এখনো কোনো ম্যাচ তৈরি করা হয়নি।',
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.white60),
                     ),
