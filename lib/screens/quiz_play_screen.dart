@@ -601,7 +601,7 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
         final availableQuestions =
             List<Map<String, dynamic>>.from(questionData);
 
-        if (availableQuestions.isEmpty()) {
+        if (availableQuestions.isEmpty) {
           if (!mounted) return;
 
           setState(() {
