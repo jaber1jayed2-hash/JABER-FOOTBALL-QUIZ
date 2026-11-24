@@ -1022,15 +1022,59 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
     return int.tryParse(fallback?.toString() ?? '') ?? 0;
   }
 
-  // Admin অনুমোদিত ফলাফল ছাড়া Winner/Loser দেখানো হবে না।
+  // Admin অনুমোদন না করা পর্যন্ত Winner/Loser দেখানো হবে না।
+  // winner_id না থাকলে সেটিকে Draw হিসেবে দেখানো যাবে না।
   Widget approvedWinnerDetails(Map<String, dynamic> match) {
-    if (match['status']?.toString().toLowerCase() != 'completed') {
+    if (match['status']?.toString().trim().toLowerCase() != 'completed') {
       return const SizedBox.shrink();
     }
 
     final p1 = match['player1_id']?.toString() ?? '';
     final p2 = match['player2_id']?.toString() ?? '';
-    final winnerId = match['winner_id']?.toString();
+    final winnerId = match['winner_id']?.toString().trim();
+
+    // Admin এখনো Winner অনুমোদন করেননি।
+    if (winnerId == null || winnerId.isEmpty) {
+      return Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(top: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.orangeAccent.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.orangeAccent.withValues(alpha: 0.30),
+          ),
+        ),
+        child: const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.hourglass_top,
+              color: Colors.orangeAccent,
+              size: 20,
+            ),
+            SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                'ম্যাচের ফলাফল সম্পন্ন হয়েছে। Admin-এর বিজয়ী অনুমোদনের অপেক্ষায়।',
+                style: TextStyle(
+                  color: Colors.orangeAccent,
+                  fontWeight: FontWeight.w600,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // অনুমোদিত winner অবশ্যই এই ম্যাচের দুই খেলোয়াড়ের একজন হতে হবে।
+    // অন্য কোনো ID হলে ভুল Winner দেখানো হবে না।
+    if (winnerId != p1 && winnerId != p2) {
+      return const SizedBox.shrink();
+    }
 
     final result1 = results['${match['id']}_$p1'];
     final result2 = results['${match['id']}_$p2'];
@@ -1038,27 +1082,17 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
     final score1 = resultPoints(result1, match['player1_score']);
     final score2 = resultPoints(result2, match['player2_score']);
 
-    String winnerText;
-    String loserText;
-    int margin;
+    final bool player1Won = winnerId == p1;
 
-    if (winnerId == null || winnerId.isEmpty) {
-      winnerText = 'ড্র';
-      loserText = 'কোনো পরাজিত নেই';
-      margin = 0;
-    } else if (winnerId == p1) {
-      winnerText = playerNames[p1] ?? 'খেলোয়াড় ১';
-      loserText = playerNames[p2] ?? 'খেলোয়াড় ২';
-      margin = (score1 - score2).abs();
-    } else if (winnerId == p2) {
-      winnerText = playerNames[p2] ?? 'খেলোয়াড় ২';
-      loserText = playerNames[p1] ?? 'খেলোয়াড় ১';
-      margin = (score2 - score1).abs();
-    } else {
-      winnerText = 'ফলাফল নির্ধারিত নয়';
-      loserText = '';
-      margin = 0;
-    }
+    final winnerText = player1Won
+        ? playerNames[p1] ?? 'খেলোয়াড় ১'
+        : playerNames[p2] ?? 'খেলোয়াড় ২';
+
+    final loserText = player1Won
+        ? playerNames[p2] ?? 'খেলোয়াড় ২'
+        : playerNames[p1] ?? 'খেলোয়াড় ১';
+
+    final margin = (score1 - score2).abs();
 
     return Container(
       width: double.infinity,
@@ -1073,15 +1107,17 @@ class _TournamentInsideScreenState extends State<TournamentInsideScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'অনুমোদিত ম্যাচের ফলাফল',
-            style: TextStyle(color: green, fontWeight: FontWeight.bold),
+            'Admin অনুমোদিত ম্যাচের ফলাফল',
+            style: TextStyle(
+              color: green,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 8),
           Text('🏆 জয়ী: $winnerText'),
-          if (loserText.isNotEmpty) Text('পরাজিত: $loserText'),
+          Text('পরাজিত: $loserText'),
           Text('পয়েন্ট: $score1 - $score2'),
-          if (winnerId != null && winnerId.isNotEmpty)
-            Text('জয়ের ব্যবধান: $margin পয়েন্ট'),
+          Text('জয়ের ব্যবধান: $margin পয়েন্ট'),
         ],
       ),
     );
