@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -90,7 +89,10 @@ hr{border:0;border-top:1px solid #304536;margin:18px 0}
 <input id="title" required maxlength="150" placeholder="World Cup Quiz">
 <label>Description</label>
 <textarea id="description" placeholder="Tournament সম্পর্কে লিখুন"></textarea>
-<label>Image URL</label>
+<label>Tournament Cover (Gallery থেকে Upload)</label>
+<input id="coverFile" type="file" accept="image/*">
+<div id="coverPreview" class="meta"></div>
+<label>অথবা Image URL</label>
 <input id="imageUrl" type="url" placeholder="https://example.com/image.jpg">
 <div class="grid">
 <div>
@@ -429,7 +431,7 @@ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
 const $=id=>document.getElementById(id);
 let currentUser=null,isAdmin=false;
 let tournaments=[],activeTournament=null;
-let participants=[],matches=[],results=[],matchResults=[];
+let participants=[],matches=[],results=[],matchResults=[],matchAttendance=[];
 let profileNames={};
 let stages=[],activeStage=null,stageQuestions=[],stageResults=[],advancements=[];
 let stageRounds=[],activeRound=null,roundAdvancements=[];
@@ -493,6 +495,23 @@ async function checkAdmin(){
  }catch(e){$("loading").textContent=e.message;return false}
 }
 
+/* TOURNAMENT COVER GALLERY UPLOAD */
+async function uploadTournamentCover(file){
+ if(!file.type.startsWith("image/"))throw new Error("শুধু Image ফাইল Upload করা যাবে।");
+ if(file.size>10*1024*1024)throw new Error("Tournament Cover সর্বোচ্চ ১০ MB হতে পারবে।");
+ const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
+ const path=`tournament-covers/${crypto.randomUUID()}.${ext}`;
+ const {error}=await db.storage.from(STORAGE_BUCKET).upload(path,file,{cacheControl:"3600",upsert:false,contentType:file.type});
+ if(error)throw error;
+ const {data}=db.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+ return data.publicUrl;
+}
+$("coverFile").addEventListener("change",()=>{
+ const file=$("coverFile").files[0];if(!file){$("coverPreview").innerHTML="";return;}
+ const url=URL.createObjectURL(file);
+ $("coverPreview").innerHTML=`<img src="${url}" style="max-width:100%;max-height:180px;border-radius:8px;margin-top:8px" alt="Tournament cover preview">`;
+});
+
 /* TOURNAMENT CRUD */
 async function loadTournaments(){
  if(!isAdmin)return;
@@ -529,7 +548,7 @@ function renderTournaments(){
  </div>`).join("");
 }
 function resetTournamentForm(){
- $("tournamentForm").reset();$("editId").value="";
+ $("tournamentForm").reset();$("editId").value="";$("coverPreview").innerHTML="";
  $("questionCount").value=10;$("maxParticipants").value=100;
  $("formTitle").textContent="➕ Create Tournament";
  $("saveButton").textContent="💾 Save Tournament";
@@ -542,7 +561,9 @@ $("tournamentForm").addEventListener("submit",async e=>{
  if(!isAdmin)return message("Admin permission নেই।","error");
  const b=$("saveButton");b.disabled=true;
  try{
-  const title=$("title").value.trim(),imageUrl=$("imageUrl").value.trim();
+  const title=$("title").value.trim();let imageUrl=$("imageUrl").value.trim();
+  const coverFile=$("coverFile").files[0];
+  if(coverFile)imageUrl=await uploadTournamentCover(coverFile);
   const questionCount=validNumber("questionCount",1,500);
   const maxParticipants=validNumber("maxParticipants",2,10000);
   const start=$("startsAt").value,end=$("endsAt").value;
@@ -570,7 +591,7 @@ $("tournamentForm").addEventListener("submit",async e=>{
 async function editTournament(id){
  const t=tournaments.find(x=>Number(x.id)===Number(id));if(!t)return;
  $("editId").value=t.id;$("title").value=t.title||"";
- $("description").value=t.description||"";$("imageUrl").value=t.image_url||"";
+ $("description").value=t.description||"";$("imageUrl").value=t.image_url||"";$("coverFile").value="";$("coverPreview").innerHTML=t.image_url?`<img src="${escapeHTML(t.image_url)}" style="max-width:100%;max-height:160px;border-radius:8px" alt="Cover preview">`:"";
  $("quizMode").value=t.quiz_mode;$("questionCount").value=t.question_count;
  $("maxParticipants").value=t.max_participants;$("status").value=t.status;
  $("startsAt").value=localDate(t.starts_at);$("endsAt").value=localDate(t.ends_at);
@@ -610,7 +631,7 @@ async function manageTournament(id){
  $("selectedTournamentTitle").textContent="🏆 "+activeTournament.title;
  $("selectedTournamentInfo").textContent="ID: "+activeTournament.id+" • Status: "+activeTournament.status;
  window.scrollTo({top:$("management").offsetTop-10,behavior:"smooth"});
- await Promise.all([loadParticipants(),loadMatches(),loadResults(),loadMatchResults()]);
+ await loadParticipants();await loadMatchResults();await loadMatches();await loadResults();
  try{await refreshStageChoices();}catch(e){console.warn(e.message)}
 }
 function closeManagement(){
@@ -684,30 +705,61 @@ async function loadMatches(){
   const {data,error}=await db.from("tournament_matches").select("*")
    .eq("tournament_id",activeTournament.id).order("round_number").order("match_number");
   if(error)throw error;matches=data||[];
-  const ids=[...new Set(matches.flatMap(m=>[m.player1_id,m.player2_id,m.winner_id]).filter(Boolean))];
+  const ids=[...new Set(matches.flatMap(m=>[m.player1_id,m.player2_id,m.winner_id].filter(Boolean)))];
   if(ids.length){
    const {data:ps,error:pe}=await db.from("profiles").select("id,display_name").in("id",ids);
    if(pe)throw pe;(ps||[]).forEach(p=>profileNames[p.id]=p.display_name||"নাম নেই");
   }
+  const matchIds=matches.map(m=>m.id);
+  matchAttendance=[];
+  if(matchIds.length){
+   const {data:attendance,error:ae}=await db.from("tournament_match_attendance")
+    .select("match_id,user_id,status,joined_at,exited_at,completed_at,rejoin_blocked")
+    .in("match_id",matchIds);
+   if(ae)throw ae;matchAttendance=attendance||[];
+  }
   updateMatchOptions();
-  if(!matches.length){$("matchesList").innerHTML="<p>এখনো কোনো Match তৈরি হয়নি।</p>";return}
-  $("matchesList").innerHTML=matches.map(m=>`
-   <div class="item">
-   <h3>Round ${m.round_number} • Match ${m.match_number}</h3>
-   <div class="meta">
-   ${escapeHTML(playerName(m.player1_id))}
-   <strong>${m.player1_score} - ${m.player2_score}</strong>
-   ${escapeHTML(playerName(m.player2_id))}<br>
-   Winner: ${escapeHTML(playerName(m.winner_id)||"Draw / নির্ধারিত নয়")}<br>
-   Status: <span class="status">${escapeHTML(m.status)}</span><br>
-   Scheduled: ${escapeHTML(dateText(m.scheduled_at))}
-   </div>
-   <div class="actions">
-   <button class="secondary" onclick="editMatch(${m.id})">✏️ Edit Match</button>
-   <button class="danger" onclick="deleteMatch(${m.id})">Delete</button>
-   </div></div>`).join("");
+  if(!matches.length){$("matchesList").innerHTML="<p>এখনো কোনো Match তৈরি হয়নি।</p>";return;}
+  const resultByKey={};matchResults.forEach(r=>resultByKey[String(r.match_id)+":"+r.user_id]=r);
+  const attendanceByKey={};matchAttendance.forEach(a=>attendanceByKey[String(a.match_id)+":"+a.user_id]=a);
+  $("matchesList").innerHTML=matches.map(m=>{
+   const a1=attendanceByKey[String(m.id)+":"+m.player1_id],a2=attendanceByKey[String(m.id)+":"+m.player2_id];
+   const r1=resultByKey[String(m.id)+":"+m.player1_id],r2=resultByKey[String(m.id)+":"+m.player2_id];
+   const attendanceLabel=a=>a?.status||"pending";
+   const statusLabel=v=>({pending:"অপেক্ষমাণ",joined:"প্রবেশ করেছে",exited:"বের হয়েছে",completed:"কুইজ জমা",absent:"অনুপস্থিত"}[v]||v||"রেকর্ড নেই");
+   const opts=`<option value="">Winner নির্বাচন করুন</option><option value="${escapeHTML(m.player1_id)}" ${m.winner_id===m.player1_id?"selected":""}>${escapeHTML(playerName(m.player1_id))}</option><option value="${escapeHTML(m.player2_id)}" ${m.winner_id===m.player2_id?"selected":""}>${escapeHTML(playerName(m.player2_id))}</option><option value="draw" ${!m.winner_id&&m.status==="completed"?"selected":""}>Draw</option>`;
+   return `<div class="item">
+    <h3>Round ${m.round_number} • Match ${m.match_number}</h3>
+    <div class="meta">
+    ${escapeHTML(playerName(m.player1_id))} <strong>${Number(m.player1_score)||0} - ${Number(m.player2_score)||0}</strong> ${escapeHTML(playerName(m.player2_id))}<br>
+    Winner: <strong>${escapeHTML(playerName(m.winner_id)|| (m.status==="completed"?"Draw":"এখনো অনুমোদিত নয়"))}</strong><br>
+    Match Status: <span class="status">${escapeHTML(m.status)}</span><br>
+    Scheduled: ${escapeHTML(dateText(m.scheduled_at))}<hr>
+    <strong>খেলোয়াড়ের কুইজ ও Attendance</strong><br>
+    ${escapeHTML(playerName(m.player1_id))}: ${escapeHTML(statusLabel(attendanceLabel(a1)))} · উত্তর ${Number(r1?.questions_answered)||0} · সঠিক ${Number(r1?.correct_answers)||0} · ভুল ${Math.max(0,Number(r1?.questions_answered||0)-Number(r1?.correct_answers||0))} · পয়েন্ট ${Number(r1?.points)||0}<br>
+    ${escapeHTML(playerName(m.player2_id))}: ${escapeHTML(statusLabel(attendanceLabel(a2)))} · উত্তর ${Number(r2?.questions_answered)||0} · সঠিক ${Number(r2?.correct_answers)||0} · ভুল ${Math.max(0,Number(r2?.questions_answered||0)-Number(r2?.correct_answers||0))} · পয়েন্ট ${Number(r2?.points)||0}
+    </div>
+    ${m.status!=="completed"?`<div class="item"><label>Admin Winner Approval</label><select id="winner-${m.id}">${opts}</select><button type="button" onclick="approveMatchWinner(${m.id})">✅ Winner অনুমোদন ও Match Complete</button><small>শুধু ফলাফল যাচাই করে Admin অনুমোদন দিলে Match Completed হবে।</small></div>`:"<p class='status'>Admin অনুমোদিত ফলাফল</p>"}
+    <div class="actions"><button class="secondary" onclick="editMatch(${m.id})">✏️ Edit Match</button><button class="danger" onclick="deleteMatch(${m.id})">Delete</button></div>
+   </div>`;
+  }).join("");
  }catch(e){$("matchesList").textContent="Matches Error: "+e.message}
 }
+
+async function approveMatchWinner(id){
+ const m=matches.find(x=>Number(x.id)===Number(id));if(!m)return;
+ const winner=$("winner-"+id)?.value;
+ if(!winner) return message("Winner নির্বাচন করুন অথবা Draw নির্বাচন করুন।","error");
+ const selectedWinner=winner==="draw"?null:winner;
+ if(!confirm("আপনি কি যাচাই করে এই ফলাফল অনুমোদন করতে চান? অনুমোদনের পর Match Completed হবে।"))return;
+ try{
+  const {error}=await db.from("tournament_matches").update({winner_id:selectedWinner,status:"completed",completed_at:new Date().toISOString()}).eq("id",id).eq("tournament_id",activeTournament.id);
+  if(error)throw error;
+  message("Admin Result Approval সফল হয়েছে। Match Completed করা হয়েছে।");
+  await loadMatches();await loadOverview();await loadResults();
+ }catch(e){message("Winner Approval Error: "+e.message,"error")}
+}
+
 function updateMatchOptions(){
  $("matchResultMatch").innerHTML='<option value="">Match নির্বাচন করুন</option>'+matches.map(m=>
  `<option value="${m.id}">Round ${m.round_number} • Match ${m.match_number} — ${escapeHTML(playerName(m.player1_id))} vs ${escapeHTML(playerName(m.player2_id))}</option>`).join("");
@@ -772,10 +824,11 @@ async function loadMatchResults(){
  $("matchHistoryList").textContent="লোড হচ্ছে...";
  try{
   const {data,error}=await db.from("tournament_match_results").select("*")
-   .eq("tournament_id",activeTournament.id).order("created_at",{ascending:false});
-  if(error)throw error;matchResults=data||[];renderMatchHistory();
+   .eq("tournament_id",activeTournament.id).order("updated_at",{ascending:false});
+  if(error)throw error;matchResults=data||[];renderMatchHistory();if(matches.length)renderMatchesFromCache();
  }catch(e){$("matchHistoryList").textContent="Match History Error: "+e.message}
 }
+function renderMatchesFromCache(){ loadMatches(); }
 function renderMatchHistory(){
  if(!matchResults.length){$("matchHistoryList").innerHTML="<p>এখনো কোনো Match Result সংরক্ষণ করা হয়নি।</p>";return}
  const matchMap={};matches.forEach(m=>matchMap[m.id]=m);
@@ -990,7 +1043,6 @@ async function createDefaultStages(){
   }
  }
 }
-
 async function loadStages(){
  if(!activeTournament)return;
  $("stagesList").textContent="Stage লোড হচ্ছে...";
@@ -1540,8 +1592,8 @@ $("importStageJsonButton").onclick=async()=>{
    const opts=Array.isArray(q.options)?q.options:(q.options&&typeof q.options==="object"?[q.options.A,q.options.B,q.options.C,q.options.D]:null);
    if(!opts||opts.length!==4||opts.some(x=>!String(x??"").trim()))throw new Error("প্রশ্ন "+(i+1)+": চারটি Option পূরণ করুন।");
    let correct=String(q.correct_option??q.correct_answer??"").trim().toUpperCase();if(["1","2","3","4"].includes(correct))correct=["A","B","C","D"][Number(correct)-1];
-   if(!["A","B","C","D"].includes(correct))throw new Error("প্রশ্ন "+(i+1)+": correct_option A/B/C/D হতে হবে。");
-   const question=String(q.question_bn??q.question??"").trim();if(!question)throw new Error("প্রশ্ন "+(i+1)+": question_bn ফাঁকা。");
+   if(!["A","B","C","D"].includes(correct))throw new Error("প্রশ্ন "+(i+1)+": correct_option A/B/C/D হতে হবে।");
+   const question=String(q.question_bn??q.question??"").trim();if(!question)throw new Error("প্রশ্ন "+(i+1)+": question_bn ফাঁকা।");
    return {tournament_id:activeTournament.id,stage_id:activeStage.id,round_id:activeRound.id,mode:String(q.mode||activeStage.quiz_mode||"general_mcq"),
     question_bn:question,options:opts.map(String),correct_option:correct,explanation_bn:q.explanation_bn?String(q.explanation_bn):null,
     image_url:q.image_url?String(q.image_url):null,question_order:startOrder+i+1,is_published:q.is_published!==false};
