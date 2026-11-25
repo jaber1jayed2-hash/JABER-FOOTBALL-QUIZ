@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ব্যবহারকারী পরিচালনা - JABER FOOTBALL QUIZ</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#090D0B;color:white;
+ font-family:Arial,sans-serif;padding:16px
+}
+.container{max-width:1100px;margin:auto}
+h1{color:#27D66B}
+.card{
+ background:#151D18;border:1px solid #26352b;
+ padding:18px;border-radius:14px;margin-bottom:18px
+}
+input,button,textarea{
+ width:100%;padding:12px;border-radius:9px;
+ border:1px solid #304238;background:#101713;color:white;
+ margin-top:8px;font-size:15px
+}
+button{cursor:pointer;font-weight:bold}
+.primary{background:#27D66B;color:#07130b;border:none}
+.danger{background:#e04444;color:white;border:none}
+.secondary{background:#26352b}
+.grid{
+ display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+ gap:12px
+}
+.user{
+ background:#101713;border:1px solid #304238;
+ padding:14px;border-radius:12px;margin-top:12px
+}
+.small{font-size:13px;color:#a9b9ae}
+.green{color:#27D66B}
+.red{color:#ff7777}
+.hidden{display:none}
+table{width:100%;border-collapse:collapse}
+th,td{
+ padding:10px;border-bottom:1px solid #304238;
+ text-align:left;font-size:13px
+}
+.tablewrap{overflow-x:auto}
+#msg{padding:10px;margin-top:10px;white-space:pre-wrap}
+.avatar{
+ width:55px;height:55px;border-radius:50%;object-fit:cover;
+ background:#26352b
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>👥 ব্যবহারকারী পরিচালনা</h1>
+<p class="small">JABER FOOTBALL QUIZ Admin Management</p>
+
+<div class="card">
+<h3>🔎 ব্যবহারকারী খুঁজুন</h3>
+<input id="search" placeholder="Nickname অথবা User ID লিখুন">
+<button class="primary" onclick="searchUsers()">খুঁজুন</button>
+<div id="results"></div>
+</div>
+
+<div id="details" class="card hidden">
+<h3>👤 ব্যবহারকারীর বিস্তারিত</h3>
+<div id="detailBox"></div>
+</div>
+
+<div id="actionPanel" class="card hidden">
+<h3>🎁 XP / পয়েন্ট প্রদান</h3>
+<div id="selectedUser"></div>
+
+<div class="grid">
+<div>
+<label>XP পরিমাণ</label>
+<input id="xpAmount" type="number" min="1" placeholder="যত XP দিতে চান">
+</div>
+<div>
+<label>পয়েন্ট পরিমাণ</label>
+<input id="pointAmount" type="number" min="1" placeholder="যত পয়েন্ট দিতে চান">
+</div>
+</div>
+
+<label>কারণ</label>
+<textarea id="giftReason" placeholder="উপহার দেওয়ার কারণ"></textarea>
+
+<div class="grid">
+<button class="primary" onclick="giftXP()">XP প্রদান</button>
+<button class="primary" onclick="giftPoints()">পয়েন্ট প্রদান</button>
+</div>
+
+<hr>
+
+<h3>🚫 Ban / Unban</h3>
+<label>Ban-এর কারণ</label>
+<textarea id="banReason" placeholder="Ban করার কারণ লিখুন"></textarea>
+
+<div class="grid">
+<button class="danger" onclick="banUser()">Ban ব্যবহারকারী</button>
+<button class="primary" onclick="unbanUser()">Unban ব্যবহারকারী</button>
+</div>
+</div>
+
+<div class="card">
+<h3>📋 Admin কার্যক্রমের ইতিহাস</h3>
+<button class="secondary" onclick="loadHistory()">ইতিহাস রিফ্রেশ</button>
+<div class="tablewrap">
+<table>
+<thead>
+<tr>
+<th>তারিখ</th>
+<th>Action</th>
+<th>পরিমাণ</th>
+<th>কারণ</th>
+</tr>
+</thead>
+<tbody id="history"></tbody>
+</table>
+</div>
+</div>
+
+<div id="msg"></div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://cuvfoltgtopchiugrbuf.supabase.co";
+
+// আপনার admin/index.html-এর একই Supabase Publishable/Anon Key বসান
+const SUPABASE_KEY = "আপনার_SUPABASE_PUBLISHABLE_KEY";
+
+const db = window.supabase.createClient(
+ SUPABASE_URL,
+ SUPABASE_KEY
+);
+
+let selectedUser = null;
+
+function message(text,success=true){
+ const el=document.getElementById("msg");
+ el.textContent=text;
+ el.style.color=success?"#27D66B":"#ff7777";
+}
+
+function esc(value){
+ return String(value??"").replace(/[&<>"']/g,c=>{
+  return {
+   "&":"&amp;",
+   "<":"&lt;",
+   ">":"&gt;",
+   '"':"&quot;",
+   "'":"&#39;"
+  }[c];
+ });
+}
+
+async function checkAdmin(){
+ const {data:{user},error}=await db.auth.getUser();
+
+ if(error || !user){
+  document.body.innerHTML=
+   "<h2>Login নেই। Admin Panel থেকে লগইন করুন।</h2>";
+  return false;
+ }
+
+ const {data,error:adminError}=await db
+  .from("admin_users")
+  .select("user_id")
+  .eq("user_id",user.id)
+  .maybeSingle();
+
+ if(adminError || !data){
+  document.body.innerHTML="<h2>Admin permission নেই।</h2>";
+  return false;
+ }
+
+ return true;
+}
+
+async function searchUsers(){
+ const term=document.getElementById("search").value.trim();
+ const box=document.getElementById("results");
+
+ if(!term){
+  box.innerHTML="সার্চ লিখুন";
+  return;
+ }
+
+ box.innerHTML="খোঁজা হচ্ছে...";
+
+ let query=db.from("profiles").select("*").limit(30);
+
+ if(term.includes("-") && term.length>20){
+  query=query.eq("id",term);
+ }else{
+  query=query.ilike("display_name","%"+term+"%");
+ }
+
+ const {data,error}=await query;
+
+ if(error){
+  box.innerHTML="ত্রুটি: "+esc(error.message);
+  return;
+ }
+
+ if(!data || data.length===0){
+  box.innerHTML="কোনো ব্যবহারকারী পাওয়া যায়নি।";
+  return;
+ }
+
+ box.innerHTML=data.map(u=>`
+ <div class="user">
+  <b>${esc(u.display_name||"নাম নেই")}</b>
+  <p class="small">User ID: ${esc(u.id)}</p>
+  <p>XP: ${esc(u.xp??0)} | Points: ${esc(u.total_points??0)}</p>
+  <p class="${u.is_banned?'red':'green'}">
+   ${u.is_banned?'🚫 Banned':'✅ Active'}
+  </p>
+  <button class="primary" onclick="selectUser('${esc(u.id)}')">
+   ব্যবহারকারী পরিচালনা
+  </button>
+ </div>
+ `).join("");
+}
+
+async function selectUser(id){
+ const {data,error}=await db
+  .from("profiles")
+  .select("*")
+  .eq("id",id)
+  .single();
+
+ if(error){
+  message(error.message,false);
+  return;
+ }
+
+ selectedUser=data;
+
+ document.getElementById("actionPanel").classList.remove("hidden");
+ document.getElementById("details").classList.remove("hidden");
+
+ document.getElementById("selectedUser").innerHTML=
+ `<p><b>${esc(data.display_name||"নাম নেই")}</b></p>
+  <p class="small">${esc(data.id)}</p>`;
+
+ document.getElementById("detailBox").innerHTML=`
+ <div class="user">
+ <p><b>Nickname:</b> ${esc(data.display_name||"")}</p>
+ <p><b>XP:</b> ${esc(data.xp??0)}</p>
+ <p><b>Level:</b> ${esc(data.level??1)}</p>
+ <p><b>Total Points:</b> ${esc(data.total_points??0)}</p>
+ <p><b>Account Status:</b>
+ ${data.is_banned?'🚫 Banned':'✅ Active'}</p>
+ <p><b>Ban Reason:</b> ${esc(data.ban_reason||"নেই")}</p>
+ <p><b>User ID:</b> ${esc(data.id)}</p>
+ </div>`;
+
+ message("ব্যবহারকারী নির্বাচন করা হয়েছে।");
+}
+
+async function giftXP(){
+ if(!selectedUser)return;
+
+ const amount=parseInt(document.getElementById("xpAmount").value);
+ const reason=document.getElementById("giftReason").value.trim();
+
+ if(!Number.isSafeInteger(amount)||amount<=0){
+  message("সঠিক XP পরিমাণ লিখুন।",false);
+  return;
+ }
+
+ if(!confirm(amount+" XP প্রদান করবেন?"))return;
+
+ const {error}=await db.rpc("admin_gift_xp",{
+  p_user_id:selectedUser.id,
+  p_amount:amount,
+  p_reason:reason
+ });
+
+ if(error){
+  message(error.message,false);
+  return;
+ }
+
+ document.getElementById("xpAmount").value="";
+ document.getElementById("giftReason").value="";
+
+ message("XP সফলভাবে প্রদান করা হয়েছে!");
+ await selectUser(selectedUser.id);
+ await searchUsers();
+ await loadHistory();
+}
+
+async function giftPoints(){
+ if(!selectedUser)return;
+
+ const amount=parseInt(document.getElementById("pointAmount").value);
+ const reason=document.getElementById("giftReason").value.trim();
+
+ if(!Number.isSafeInteger(amount)||amount<=0){
+  message("সঠিক পয়েন্ট পরিমাণ লিখুন।",false);
+  return;
+ }
+
+ if(!confirm(amount+" পয়েন্ট প্রদান করবেন?"))return;
+
+ const {error}=await db.rpc("admin_gift_points",{
+  p_user_id:selectedUser.id,
+  p_amount:amount,
+  p_reason:reason
+ });
+
+ if(error){
+  message(error.message,false);
+  return;
+ }
+
+ document.getElementById("pointAmount").value="";
+ document.getElementById("giftReason").value="";
+
+ message("পয়েন্ট সফলভাবে প্রদান করা হয়েছে!");
+ await selectUser(selectedUser.id);
+ await searchUsers();
+ await loadHistory();
+}
+
+async function banUser(){
+ if(!selectedUser)return;
+
+ const reason=document.getElementById("banReason").value.trim();
+
+ if(!reason){
+  message("Ban করার কারণ লিখুন।",false);
+  return;
+ }
+
+ if(!confirm("এই ব্যবহারকারীকে Ban করবেন?"))return;
+
+ const {error}=await db.rpc("admin_ban_player",{
+  p_user_id:selectedUser.id,
+  p_reason:reason
+ });
+
+ if(error){
+  message(error.message,false);
+  return;
+ }
+
+ document.getElementById("banReason").value="";
+ message("ব্যবহারকারী Ban করা হয়েছে!");
+
+ await selectUser(selectedUser.id);
+ await searchUsers();
+ await loadHistory();
+}
+
+async function unbanUser(){
+ if(!selectedUser)return;
+
+ if(!confirm("এই ব্যবহারকারীকে Unban করবেন?"))return;
+
+ const {error}=await db.rpc("admin_unban_player",{
+  p_user_id:selectedUser.id
+ });
+
+ if(error){
+  message(error.message,false);
+  return;
+ }
+
+ message("ব্যবহারকারী Unban করা হয়েছে!");
+
+ await selectUser(selectedUser.id);
+ await searchUsers();
+ await loadHistory();
+}
+
+async function loadHistory(){
+ const box=document.getElementById("history");
+ box.innerHTML="<tr><td colspan='4'>লোড হচ্ছে...</td></tr>";
+
+ const {data,error}=await db
+  .from("admin_action_logs")
+  .select("*")
+  .order("created_at",{ascending:false})
+  .limit(50);
+
+ if(error){
+  box.innerHTML=
+   "<tr><td colspan='4'>"+esc(error.message)+"</td></tr>";
+  return;
+ }
+
+ if(!data||data.length===0){
+  box.innerHTML="<tr><td colspan='4'>কোনো ইতিহাস নেই</td></tr>";
+  return;
+ }
+
+ box.innerHTML=data.map(row=>`
+ <tr>
+ <td>${esc(new Date(row.created_at).toLocaleString())}</td>
+ <td>${esc(row.action_type)}</td>
+ <td>${esc(row.amount??"-")}</td>
+ <td>${esc(row.reason||"-")}</td>
+ </tr>
+ `).join("");
+}
+
+(async()=>{
+ const ok=await checkAdmin();
+ if(ok)await loadHistory();
+})();
+</script>
+</body>
+</html>
