@@ -6,121 +6,218 @@
 <title>JABER FOOTBALL QUIZ - Admin Panel</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#080d0b;color:#fff}
-header{background:#101b15;padding:20px;border-bottom:2px solid #16c766}header h2{margin:0;color:#20e879}
-.container{padding:15px;max-width:1100px;margin:auto}.card{background:#14221a;padding:18px;border-radius:12px;margin:15px 0;border:1px solid #244a32}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#080d0b;color:#fff}
+header{background:#101b15;padding:20px;border-bottom:2px solid #16c766}
+header h2{margin:0;color:#20e879}
+.container{padding:15px;max-width:1100px;margin:auto}
+.card{background:#14221a;padding:18px;border-radius:12px;margin:15px 0;border:1px solid #244a32}
 input,select{width:100%;padding:13px;margin:8px 0;border-radius:7px;border:0;font-size:15px;background:#e8eee9;color:#111}
 button{width:100%;padding:13px;margin:8px 0;border-radius:7px;border:0;font-size:15px;background:#16c766;color:#06130a;font-weight:bold;cursor:pointer}
-button:disabled{opacity:.55;cursor:not-allowed}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}
-.stat{background:#1a3022;padding:18px;border-radius:10px;text-align:center}.stat h2{color:#20e879}
-.menu button{background:#203d2a;color:white}.menu button:hover{background:#285638}.menu .country-button{background:#176b3b}
-.hidden{display:none!important}small{color:#b7c8bd}.preview{max-width:180px;max-height:140px;display:block;margin:10px 0;border-radius:8px;object-fit:contain;background:#0b140e}
-.status{color:#b7c8bd;white-space:pre-wrap;line-height:1.6;overflow-wrap:anywhere}label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
-.setting-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.setting-box{background:#1a3022;padding:12px;border-radius:9px}
+button:disabled{opacity:.55;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}
+.stat{background:#1a3022;padding:18px;border-radius:10px;text-align:center}
+.stat h2{color:#20e879}
+.menu button{background:#203d2a;color:white}
+.menu button:hover{background:#285638}
+.menu .country-button{background:#176b3b}
+.hidden{display:none!important}
+small{color:#b7c8bd}
+.preview{max-width:180px;max-height:140px;display:block;margin:10px 0;border-radius:8px;object-fit:contain;background:#0b140e}
+.status{color:#b7c8bd;white-space:pre-wrap;line-height:1.6;overflow-wrap:anywhere}
+label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
+.setting-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.setting-box{background:#1a3022;padding:12px;border-radius:9px}
 .subject-image{width:75px;height:75px;object-fit:contain;background:#0b140e;border-radius:10px;padding:5px;flex-shrink:0}
 .subject-row{display:flex;align-items:center;gap:12px;background:#1a3022;padding:12px;border-radius:10px;margin:10px 0}
-.subject-info{flex:1;min-width:0}.subject-info strong{display:block;overflow-wrap:anywhere}.subject-info small{display:block;margin-top:5px}
-.danger{background:#a83232;color:white}.secondary{background:#294b35;color:white}.section-note{padding:12px;background:#1a3022;border-radius:8px}
-.form-card{background:#1a3022;padding:14px;border-radius:10px;margin:15px 0}.form-card h3{margin-top:0;color:#20e879}
-.check-row,.bulk-select-all{display:flex;align-items:center;gap:10px;margin:12px 0}.check-row input,.bulk-select-all input{width:21px;height:21px;margin:0}.check-row label,.bulk-select-all label{margin:0}
-.subject-actions{display:flex;gap:7px;flex-wrap:wrap}.subject-actions button{width:auto;flex:1;min-width:85px}
+.subject-info{flex:1;min-width:0}
+.subject-info strong{display:block;overflow-wrap:anywhere}
+.subject-info small{display:block;margin-top:5px}
+.danger{background:#a83232;color:white}
+.secondary{background:#294b35;color:white}
+.section-note{padding:12px;background:#1a3022;border-radius:8px}
+.form-card{background:#1a3022;padding:14px;border-radius:10px;margin:15px 0}
+.form-card h3{margin-top:0;color:#20e879}
+.check-row,.bulk-select-all{display:flex;align-items:center;gap:10px;margin:12px 0}
+.check-row input,.bulk-select-all input{width:21px;height:21px;margin:0}
+.check-row label,.bulk-select-all label{margin:0}
+.subject-actions{display:flex;gap:7px;flex-wrap:wrap}
+.subject-actions button{width:auto;flex:1;min-width:85px}
 .bulk-toolbar{background:#1a3022;border:1px solid #315b3d;border-radius:10px;padding:12px;margin:15px 0}
-.bulk-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px}.bulk-buttons button{margin:3px 0}
-@media(max-width:520px){.subject-row{gap:8px;padding:9px}.subject-image{width:55px;height:55px}.subject-actions{min-width:80px;flex-direction:column}.subject-actions button{min-width:0;width:100%;padding:9px 5px;font-size:13px}.subject-info{font-size:13px}}
+.bulk-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px}
+.bulk-buttons button{margin:3px 0}
+@media(max-width:520px){
+.subject-row{gap:8px;padding:9px}
+.subject-image{width:55px;height:55px}
+.subject-actions{min-width:80px;flex-direction:column}
+.subject-actions button{min-width:0;width:100%;padding:9px 5px;font-size:13px}
+.subject-info{font-size:13px}
+}
 </style>
 </head>
 <body>
-<header><h2>⚽ JABER FOOTBALL QUIZ</h2><p>ADMIN CONTROL PANEL</p></header>
+
+<header>
+<h2>⚽ JABER FOOTBALL QUIZ</h2>
+<p>ADMIN CONTROL PANEL</p>
+</header>
+
 <div class="container">
+
 <div id="login" class="card">
-<h2>Admin Login</h2><p>আপনার Admin Account দিয়ে প্রবেশ করুন।</p>
+<h2>Admin Login</h2>
+<p>আপনার Admin Account দিয়ে প্রবেশ করুন।</p>
 <input type="email" id="email" placeholder="Admin Email" autocomplete="username">
 <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-<button id="loginButton" type="button">Login</button><p id="message" class="status">Admin Account দিয়ে প্রবেশ করুন।</p>
+<button id="loginButton" type="button">Login</button>
+<p id="message" class="status">Admin Account দিয়ে প্রবেশ করুন।</p>
 </div>
+
 <div id="dashboard" class="hidden">
-<div class="card"><h2>স্বাগতম, Admin!</h2><p>আপনার Football Quiz App নিয়ন্ত্রণ করুন।</p><p id="adminEmail" class="status"></p></div>
+
+<div class="card">
+<h2>স্বাগতম, Admin!</h2>
+<p>আপনার Football Quiz App নিয়ন্ত্রণ করুন।</p>
+<p id="adminEmail" class="status"></p>
+</div>
+
 <div class="grid">
 <div class="stat"><h2 id="questionCount">0</h2><p>মোট প্রশ্ন</p></div>
 <div class="stat"><h2 id="playerCount">0</h2><p>মোট খেলোয়াড়</p></div>
 <div class="stat"><h2 id="clubCount">0</h2><p>মোট ক্লাব</p></div>
 <div class="stat"><h2 id="countryCount">0</h2><p>মোট দেশ</p></div>
 </div>
-<div class="card menu"><h2>Admin Menu</h2>
+
+<div class="card menu">
+<h2>Admin Menu</h2>
 <button type="button" onclick="show('questions')">প্রশ্ন পরিচালনা</button>
 <button class="country-button" type="button" onclick="show('country_questions')">🌍 দেশভিত্তিক প্রশ্ন পরিচালনা</button>
 <button type="button" onclick="show('players')">খেলোয়াড় পরিচালনা ও ছবি</button>
 <button type="button" onclick="show('clubs')">ক্লাব পরিচালনা ও লোগো</button>
 <button type="button" onclick="show('countries')">🌍 দেশ পরিচালনা ও পতাকা</button>
 <button type="button" onclick="show('tournaments')">টুর্নামেন্ট পরিচালনা</button>
-<button type="button" onclick="show('users')">ব্যবহারকারী পরিচালনা</button>
+<button type="button" onclick="show('users')">👥 ব্যবহারকারী পরিচালনা</button>
 <button type="button" onclick="show('settings')">অ্যাপ সেটিংস</button>
 <button type="button" onclick="show('quiz-settings')">কুইজ সেটিংস</button>
 <button type="button" onclick="show('developer')">Contact with Developer</button>
 </div>
 
 <div id="subjectManager" class="card hidden">
-<h2 id="managerTitle">তালিকা পরিচালনা</h2><p id="managerDescription" class="status"></p>
+<h2 id="managerTitle">তালিকা পরিচালনা</h2>
+<p id="managerDescription" class="status"></p>
+
 <div class="form-card">
 <h3 id="subjectFormTitle">নতুন রেকর্ড যোগ করুন</h3>
-<label>বাংলা নাম</label><input id="subjectNameBn" type="text" placeholder="বাংলা নাম লিখুন">
-<label>ইংরেজি নাম</label><input id="subjectNameEn" type="text" placeholder="English name">
-<label>Subject Code</label><input id="subjectCode" type="text" placeholder="যেমন: BRAZIL">
-<label>Sort Order</label><input id="subjectSortOrder" type="number" min="0" value="0">
-<div class="check-row"><input id="subjectEnabled" type="checkbox" checked><label for="subjectEnabled">সক্রিয় রাখুন</label></div>
+
+<label>বাংলা নাম</label>
+<input id="subjectNameBn" type="text" placeholder="বাংলা নাম লিখুন">
+
+<label>ইংরেজি নাম</label>
+<input id="subjectNameEn" type="text" placeholder="English name">
+
+<label>Subject Code</label>
+<input id="subjectCode" type="text" placeholder="যেমন: BRAZIL">
+
+<label>Sort Order</label>
+<input id="subjectSortOrder" type="number" min="0" value="0">
+
+<div class="check-row">
+<input id="subjectEnabled" type="checkbox" checked>
+<label for="subjectEnabled">সক্রিয় রাখুন</label>
+</div>
+
 <label id="newImageLabel">পতাকা / লোগো / ছবি (Gallery)</label>
 <input type="file" id="newSubjectImageFile" accept="image/*">
 <img id="newSubjectImagePreview" class="preview hidden" alt="ছবির Preview">
-<label>অথবা ছবির URL দিন</label><input id="newSubjectImageUrl" type="url" placeholder="https://example.com/image.png">
+
+<label>অথবা ছবির URL দিন</label>
+<input id="newSubjectImageUrl" type="url" placeholder="https://example.com/image.png">
+
 <button id="addSubjectButton" type="button">নতুন রেকর্ড যোগ করুন</button>
 <button id="updateSubjectButton" type="button" class="secondary hidden">পরিবর্তন সংরক্ষণ করুন</button>
 <button id="cancelEditButton" type="button" class="danger hidden">Edit বাতিল করুন</button>
 <p id="subjectFormStatus" class="status"></p>
 </div>
+
 <hr>
-<label>নাম বা কোড দিয়ে খুঁজুন</label><input id="subjectSearch" type="search" placeholder="নাম বা কোড লিখুন...">
+
+<label>নাম বা কোড দিয়ে খুঁজুন</label>
+<input id="subjectSearch" type="search" placeholder="নাম বা কোড লিখুন...">
+
 <label id="subjectSelectLabel">তালিকা থেকে নির্বাচন করুন</label>
 <select id="subjectSelect"><option value="">প্রথমে নির্বাচন করুন</option></select>
+
 <div id="selectedSubject" class="hidden">
 <p id="selectedName" class="status"></p>
-<label>বর্তমান ছবি</label><img id="subjectPreview" class="preview hidden" alt="বর্তমান ছবি"><p id="imageStatus" class="status"></p>
-<label>নতুন ছবি Gallery থেকে আপলোড করুন</label><input type="file" id="subjectImageFile" accept="image/*">
+<label>বর্তমান ছবি</label>
+<img id="subjectPreview" class="preview hidden" alt="বর্তমান ছবি">
+<p id="imageStatus" class="status"></p>
+
+<label>নতুন ছবি Gallery থেকে আপলোড করুন</label>
+<input type="file" id="subjectImageFile" accept="image/*">
 <img id="newSubjectPreview" class="preview hidden" alt="নতুন ছবির Preview">
-<label>অথবা নতুন ছবির URL দিন</label><input type="url" id="subjectImageUrl" placeholder="https://example.com/image.png">
+
+<label>অথবা নতুন ছবির URL দিন</label>
+<input type="url" id="subjectImageUrl" placeholder="https://example.com/image.png">
+
 <button id="saveSubjectImageButton" type="button">ছবি সংরক্ষণ করুন</button>
 <button id="removeSubjectImageButton" class="danger" type="button">ছবি সরিয়ে দিন</button>
 <button id="editSelectedSubjectButton" class="secondary" type="button">নাম ও তথ্য পরিবর্তন করুন</button>
 </div>
+
 <h3>সব তালিকা</h3>
+
 <div class="bulk-toolbar">
 <p><strong>একসাথে একাধিক রেকর্ড পরিচালনা</strong></p>
-<div class="bulk-select-all"><input type="checkbox" id="selectAllSubjects"><label for="selectAllSubjects">এই তালিকার সব নির্বাচন করুন</label></div>
+
+<div class="bulk-select-all">
+<input type="checkbox" id="selectAllSubjects">
+<label for="selectAllSubjects">এই তালিকার সব নির্বাচন করুন</label>
+</div>
+
 <p id="selectionCount" class="status">নির্বাচিত: ০টি</p>
+
 <div class="bulk-buttons">
 <button type="button" class="secondary" id="clearSubjectSelectionButton">নির্বাচন বাতিল</button>
 <button type="button" id="bulkEnableButton">নির্বাচিত প্রকাশ করুন</button>
 <button type="button" class="secondary" id="bulkDisableButton">নির্বাচিত অপ্রকাশ করুন</button>
 <button type="button" class="danger" id="bulkDeleteButton">নির্বাচিত মুছুন</button>
 </div>
+
 <p class="status">প্রশ্নের সঙ্গে যুক্ত কোনো দেশ, ক্লাব বা খেলোয়াড় মুছে ফেলা যাবে না। আগে সংশ্লিষ্ট প্রশ্ন পরিচালনা করুন।</p>
 </div>
-<div id="subjectList" class="status">তালিকা লোড হচ্ছে...</div><p id="managerStatus" class="status"></p>
+
+<div id="subjectList" class="status">তালিকা লোড হচ্ছে...</div>
+<p id="managerStatus" class="status"></p>
 </div>
 
 <div id="settings" class="card hidden">
 <h2>অ্যাপ সেটিংস</h2>
 
-<label>Android App Name (অ্যাপ আইকনের নিচে যে নাম দেখাবে)</label>
+<label>Android App Name</label>
 <input type="text" id="appName" maxlength="100" placeholder="JABER FOOTBALL QUIZ">
 <small>এখানে নাম পরিবর্তন করে Save App Settings চাপুন। পরবর্তী APK Build করার সময় নতুন নাম যুক্ত হবে।</small>
 
-<label>Home Cover Image</label><input type="file" id="coverFile" accept="image/*"><img id="coverPreview" class="preview hidden" alt="Home Cover">
-<label>Home Logo</label><input type="file" id="logoFile" accept="image/*"><img id="logoPreview" class="preview hidden" alt="Home Logo">
-<label>App Icon</label><input type="file" id="iconFile" accept="image/*"><img id="iconPreview" class="preview hidden" alt="App Icon">
-<button id="saveAppButton" type="button">Save App Settings</button><p id="appStatus" class="status"></p>
+<label>Home Cover Image</label>
+<input type="file" id="coverFile" accept="image/*">
+<img id="coverPreview" class="preview hidden" alt="Home Cover">
+
+<label>Home Logo</label>
+<input type="file" id="logoFile" accept="image/*">
+<img id="logoPreview" class="preview hidden" alt="Home Logo">
+
+<label>App Icon</label>
+<input type="file" id="iconFile" accept="image/*">
+<img id="iconPreview" class="preview hidden" alt="App Icon">
+
+<button id="saveAppButton" type="button">Save App Settings</button>
+<p id="appStatus" class="status"></p>
 </div>
 
-<div id="quiz-settings" class="card hidden"><h2>কুইজ সেটিংস</h2><p class="status">এখান থেকে Quiz-এর নিয়ম পরিবর্তন করতে পারবেন।</p>
+<div id="quiz-settings" class="card hidden">
+<h2>কুইজ সেটিংস</h2>
+<p class="status">এখান থেকে Quiz-এর নিয়ম পরিবর্তন করতে পারবেন।</p>
+
 <div class="setting-grid">
 <div class="setting-box"><label>সর্বনিম্ন প্রশ্ন সংখ্যা</label><input type="number" id="quizMin" min="1" max="500"></div>
 <div class="setting-box"><label>সর্বোচ্চ প্রশ্ন সংখ্যা</label><input type="number" id="quizMax" min="1" max="500"></div>
@@ -130,47 +227,220 @@ button:disabled{opacity:.55;cursor:not-allowed}.grid{display:grid;grid-template-
 <div class="setting-box"><label>ভুল উত্তরে XP</label><input type="number" id="quizWrongXP" min="-10000" max="0"></div>
 <div class="setting-box"><label>সঠিক উত্তরে পয়েন্ট</label><input type="number" id="quizCorrectPoints" min="0" max="10000"></div>
 <div class="setting-box"><label>ভুল উত্তরে পয়েন্ট</label><input type="number" id="quizWrongPoints" min="0" max="10000"></div>
-</div><button id="saveQuizButton" type="button">কুইজ সেটিংস সংরক্ষণ করুন</button><p id="quizStatus" class="status"></p>
 </div>
 
-<div id="developer" class="card hidden"><h2>Contact with Developer</h2>
-<label>Developer Photo</label><input type="file" id="developerPhotoFile" accept="image/*"><img id="developerPreview" class="preview hidden" alt="Developer Photo">
-<label>Developer Name</label><input type="text" id="developerName" placeholder="আপনার নাম">
-<label>Developer Phone</label><input type="tel" id="developerPhone" placeholder="আপনার ফোন নম্বর">
-<label>WhatsApp Link</label><input type="url" id="whatsappLink" placeholder="https://wa.me/">
-<button id="saveDeveloperButton" type="button">Save Developer Settings</button><p id="developerStatus" class="status"></p>
+<button id="saveQuizButton" type="button">কুইজ সেটিংস সংরক্ষণ করুন</button>
+<p id="quizStatus" class="status"></p>
 </div>
-<div id="section" class="card hidden"><h2 id="sectionTitle"></h2><p id="sectionText" class="section-note"></p></div>
-<button id="backButton" type="button">ড্যাশবোর্ডে ফিরে যান</button><button id="logoutButton" type="button" class="danger">Logout</button>
-</div></div>
+
+<div id="developer" class="card hidden">
+<h2>Contact with Developer</h2>
+
+<label>Developer Photo</label>
+<input type="file" id="developerPhotoFile" accept="image/*">
+<img id="developerPreview" class="preview hidden" alt="Developer Photo">
+
+<label>Developer Name</label>
+<input type="text" id="developerName" placeholder="আপনার নাম">
+
+<label>Developer Phone</label>
+<input type="tel" id="developerPhone" placeholder="আপনার ফোন নম্বর">
+
+<label>WhatsApp Link</label>
+<input type="url" id="whatsappLink" placeholder="https://wa.me/">
+
+<button id="saveDeveloperButton" type="button">Save Developer Settings</button>
+<p id="developerStatus" class="status"></p>
+</div>
+
+<div id="section" class="card hidden">
+<h2 id="sectionTitle"></h2>
+<p id="sectionText" class="section-note"></p>
+</div>
+
+<button id="backButton" type="button">ড্যাশবোর্ডে ফিরে যান</button>
+<button id="logoutButton" type="button" class="danger">Logout</button>
+
+</div>
+</div>
 
 <script>
 "use strict";
+
 const SUPABASE_URL="https://cuvfoltgtopchiugrbuf.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D";
-const BUCKET="app-assets",MAX_IMAGE_SIZE=10*1024*1024;
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-let currentUser=null,isAdminVerified=false,activeSubjectType="",subjects=[],selectedSubjectRow=null,selectedSubjectIds=new Set();
+const BUCKET="app-assets";
+const MAX_IMAGE_SIZE=10*1024*1024;
+
+const db=window.supabase.createClient(
+ SUPABASE_URL,
+ SUPABASE_PUBLISHABLE_KEY,
+ {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}
+);
+
+let currentUser=null;
+let isAdminVerified=false;
+let activeSubjectType="";
+let subjects=[];
+let selectedSubjectRow=null;
+let selectedSubjectIds=new Set();
+
 const $=id=>document.getElementById(id);
+
 function setText(id,value){$(id).textContent=value??""}
 function showElement(id){$(id).classList.remove("hidden")}
 function hideElement(id){$(id).classList.add("hidden")}
 function setStatus(id,message){setText(id,message)}
-function typeName(type=activeSubjectType){return ({country:"দেশ",club:"ক্লাব",player:"খেলোয়াড়"})[type]||"রেকর্ড"}
-function typeImageName(type=activeSubjectType){return ({country:"পতাকা",club:"ক্লাবের লোগো",player:"খেলোয়াড়ের ছবি"})[type]||"ছবি"}
-function validateImage(file){if(!file)return "প্রথমে একটি ছবি নির্বাচন করুন।";if(!file.type.startsWith("image/"))return "শুধু ছবির ফাইল ব্যবহার করুন।";if(file.size>MAX_IMAGE_SIZE)return "ছবির সাইজ ১০ MB-এর বেশি হতে পারবে না।";return ""}
-function makePreview(file,imageId){if(!file)return false;const err=validateImage(file);if(err){alert(err);return false}const img=$(imageId);if(img.dataset.objectUrl)URL.revokeObjectURL(img.dataset.objectUrl);const url=URL.createObjectURL(file);img.dataset.objectUrl=url;img.src=url;showElement(imageId);return true}
-function clearFilePreview(inputId,imageId){$(inputId).value="";const img=$(imageId);if(img.dataset.objectUrl)URL.revokeObjectURL(img.dataset.objectUrl);img.removeAttribute("src");delete img.dataset.objectUrl;hideElement(imageId)}
-function resetSubjectForm(){["subjectNameBn","subjectNameEn","subjectCode"].forEach(id=>$(id).value="");$("subjectSortOrder").value="0";$("subjectEnabled").checked=true;$("newSubjectImageUrl").value="";clearFilePreview("newSubjectImageFile","newSubjectImagePreview");hideElement("updateSubjectButton");hideElement("cancelEditButton");showElement("addSubjectButton");setText("subjectFormTitle","নতুন রেকর্ড যোগ করুন");setStatus("subjectFormStatus","")}
-async function verifyAdmin(user){if(!user)return false;const {data,error}=await db.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();if(error)throw error;return !!data}
-async function openDashboard(user){try{if(!await verifyAdmin(user)){await db.auth.signOut();currentUser=null;isAdminVerified=false;hideElement("dashboard");showElement("login");setStatus("message","আপনার Account-এ Admin অনুমতি নেই।");return false}currentUser=user;isAdminVerified=true;hideElement("login");showElement("dashboard");setStatus("adminEmail","Admin: "+(user.email||""));await Promise.all([loadSettings(),loadDashboardCounts()]);return true}catch(e){setStatus("message","Admin যাচাই করতে সমস্যা হয়েছে: "+e.message);return false}}
-async function restoreSession(){setStatus("message","Admin Session যাচাই হচ্ছে...");try{const {data,error}=await db.auth.getSession();if(error)throw error;if(data.session?.user)await openDashboard(data.session.user);else setStatus("message","Admin Account দিয়ে প্রবেশ করুন।")}catch(e){setStatus("message","Session Error: "+e.message)}}
-async function login(){const email=$("email").value.trim(),password=$("password").value,button=$("loginButton");if(!email||!password){setStatus("message","Email ও Password লিখুন।");return}button.disabled=true;setStatus("message","লগইন হচ্ছে...");try{const {data,error}=await db.auth.signInWithPassword({email,password});if(error)throw error;await openDashboard(data.user)}catch(e){setStatus("message","Login Error: "+e.message)}finally{button.disabled=false}}
-async function logout(){try{await db.auth.signOut()}catch(e){console.error(e)}currentUser=null;isAdminVerified=false;selectedSubjectRow=null;selectedSubjectIds.clear();hideElement("dashboard");showElement("login");$("password").value="";setStatus("message","আপনি Logout করেছেন।");setText("adminEmail","")}
-async function loadDashboardCounts(){try{const results=await Promise.all(["quiz_questions","player","club","country"].map((v,i)=>i===0?db.from("quiz_questions").select("id",{count:"exact",head:true}):db.from("quiz_subjects").select("id",{count:"exact",head:true}).eq("subject_type",v)));["questionCount","playerCount","clubCount","countryCount"].forEach((id,i)=>{if(!results[i].error)setText(id,results[i].count??0)})}catch(e){console.error(e)}}
-function hidePanels(){["settings","quiz-settings","developer","section","subjectManager"].forEach(hideElement)}
 
-/* Tournament পেজ সরাসরি খুলবে */
+function typeName(type=activeSubjectType){
+ return ({country:"দেশ",club:"ক্লাব",player:"খেলোয়াড়"})[type]||"রেকর্ড";
+}
+
+function typeImageName(type=activeSubjectType){
+ return ({country:"পতাকা",club:"ক্লাবের লোগো",player:"খেলোয়াড়ের ছবি"})[type]||"ছবি";
+}
+
+function validateImage(file){
+ if(!file)return "প্রথমে একটি ছবি নির্বাচন করুন।";
+ if(!file.type.startsWith("image/"))return "শুধু ছবির ফাইল ব্যবহার করুন।";
+ if(file.size>MAX_IMAGE_SIZE)return "ছবির সাইজ ১০ MB-এর বেশি হতে পারবে না।";
+ return "";
+}
+
+function makePreview(file,imageId){
+ if(!file)return false;
+ const err=validateImage(file);
+ if(err){alert(err);return false}
+ const img=$(imageId);
+ if(img.dataset.objectUrl)URL.revokeObjectURL(img.dataset.objectUrl);
+ const url=URL.createObjectURL(file);
+ img.dataset.objectUrl=url;
+ img.src=url;
+ showElement(imageId);
+ return true;
+}
+
+function clearFilePreview(inputId,imageId){
+ $(inputId).value="";
+ const img=$(imageId);
+ if(img.dataset.objectUrl)URL.revokeObjectURL(img.dataset.objectUrl);
+ img.removeAttribute("src");
+ delete img.dataset.objectUrl;
+ hideElement(imageId);
+}
+
+function resetSubjectForm(){
+ ["subjectNameBn","subjectNameEn","subjectCode"].forEach(id=>$(id).value="");
+ $("subjectSortOrder").value="0";
+ $("subjectEnabled").checked=true;
+ $("newSubjectImageUrl").value="";
+ clearFilePreview("newSubjectImageFile","newSubjectImagePreview");
+ hideElement("updateSubjectButton");
+ hideElement("cancelEditButton");
+ showElement("addSubjectButton");
+ setText("subjectFormTitle","নতুন রেকর্ড যোগ করুন");
+ setStatus("subjectFormStatus","");
+}
+
+async function verifyAdmin(user){
+ if(!user)return false;
+ const {data,error}=await db.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();
+ if(error)throw error;
+ return !!data;
+}
+
+async function openDashboard(user){
+ try{
+  if(!await verifyAdmin(user)){
+   await db.auth.signOut();
+   currentUser=null;
+   isAdminVerified=false;
+   hideElement("dashboard");
+   showElement("login");
+   setStatus("message","আপনার Account-এ Admin অনুমতি নেই।");
+   return false;
+  }
+  currentUser=user;
+  isAdminVerified=true;
+  hideElement("login");
+  showElement("dashboard");
+  setStatus("adminEmail","Admin: "+(user.email||""));
+  await Promise.all([loadSettings(),loadDashboardCounts()]);
+  return true;
+ }catch(e){
+  setStatus("message","Admin যাচাই করতে সমস্যা হয়েছে: "+e.message);
+  return false;
+ }
+}
+
+async function restoreSession(){
+ setStatus("message","Admin Session যাচাই হচ্ছে...");
+ try{
+  const {data,error}=await db.auth.getSession();
+  if(error)throw error;
+  if(data.session?.user)await openDashboard(data.session.user);
+  else setStatus("message","Admin Account দিয়ে প্রবেশ করুন।");
+ }catch(e){
+  setStatus("message","Session Error: "+e.message);
+ }
+}
+
+async function login(){
+ const email=$("email").value.trim();
+ const password=$("password").value;
+ const button=$("loginButton");
+
+ if(!email||!password){
+  setStatus("message","Email ও Password লিখুন।");
+  return;
+ }
+
+ button.disabled=true;
+ setStatus("message","লগইন হচ্ছে...");
+
+ try{
+  const {data,error}=await db.auth.signInWithPassword({email,password});
+  if(error)throw error;
+  await openDashboard(data.user);
+ }catch(e){
+  setStatus("message","Login Error: "+e.message);
+ }finally{
+  button.disabled=false;
+ }
+}
+
+async function logout(){
+ try{await db.auth.signOut()}catch(e){console.error(e)}
+ currentUser=null;
+ isAdminVerified=false;
+ selectedSubjectRow=null;
+ selectedSubjectIds.clear();
+ hideElement("dashboard");
+ showElement("login");
+ $("password").value="";
+ setStatus("message","আপনি Logout করেছেন।");
+ setText("adminEmail","");
+}
+
+async function loadDashboardCounts(){
+ try{
+  const results=await Promise.all([
+   db.from("quiz_questions").select("id",{count:"exact",head:true}),
+   db.from("quiz_subjects").select("id",{count:"exact",head:true}).eq("subject_type","player"),
+   db.from("quiz_subjects").select("id",{count:"exact",head:true}).eq("subject_type","club"),
+   db.from("quiz_subjects").select("id",{count:"exact",head:true}).eq("subject_type","country")
+  ]);
+  ["questionCount","playerCount","clubCount","countryCount"].forEach((id,i)=>{
+   if(!results[i].error)setText(id,results[i].count??0);
+  });
+ }catch(e){console.error(e)}
+}
+
+function hidePanels(){
+ ["settings","quiz-settings","developer","section","subjectManager"].forEach(hideElement);
+}
+
+/* Admin Page Navigation */
 function show(name){
  if(!isAdminVerified||!currentUser){
   alert("প্রথমে Admin Login করুন।");
@@ -180,7 +450,8 @@ function show(name){
  const pages={
   questions:"questions.html",
   country_questions:"country_questions.html",
-  tournaments:"tournaments.html"
+  tournaments:"tournaments.html",
+  users:"users.html"
  };
 
  if(pages[name]){
@@ -211,44 +482,527 @@ function show(name){
   return;
  }
 
- const titles={
-  users:"ব্যবহারকারী পরিচালনা"
- };
-
- setText("sectionTitle",titles[name]||"পরিচালনা");
+ setText("sectionTitle","পরিচালনা");
  setText("sectionText","এই অংশের সম্পূর্ণ কার্যক্রম এখনো যুক্ত করা হয়নি।");
  showElement("section");
 }
 
-function back(){hidePanels();selectedSubjectRow=null;hideElement("selectedSubject");selectedSubjectIds.clear();updateSelectionUI();clearFilePreview("subjectImageFile","newSubjectPreview");$("subjectImageUrl").value="";resetSubjectForm();setStatus("managerStatus","")}
-function imageFolder(){return ({country:"country-flags",club:"club-logos",player:"player-photos"})[activeSubjectType]}
-async function uploadImage(file,folder){if(!isAdminVerified||!currentUser)throw new Error("Admin Login নেই।");const err=validateImage(file);if(err)throw new Error(err);const ext=(file.name.split(".").pop()||"img").toLowerCase().replace(/[^a-z0-9]/g,"")||"img";const path=folder+"/"+Date.now()+"-"+crypto.randomUUID()+"."+ext;const {error}=await db.storage.from(BUCKET).upload(path,file,{cacheControl:"3600",upsert:false,contentType:file.type});if(error)throw error;const {data}=db.storage.from(BUCKET).getPublicUrl(path);if(!data?.publicUrl)throw new Error("ছবির Public URL পাওয়া যায়নি।");return data.publicUrl}
-async function resolveImage(file,url,folder){if(file)return await uploadImage(file,folder);const clean=(url||"").trim();if(clean){try{const parsed=new URL(clean);if(!["http:","https:"].includes(parsed.protocol))throw 0;return clean}catch{throw new Error("সঠিক Image URL দিন।")}}return null}
-async function openSubjectManager(type){activeSubjectType=type;selectedSubjectRow=null;selectedSubjectIds.clear();updateSelectionUI();const names={country:{title:"দেশ পরিচালনা ও পতাকা",desc:"নতুন দেশ যোগ করুন, দেশের বাংলা ও ইংরেজি নাম, কোড এবং পতাকা পরিচালনা করুন।"},club:{title:"ক্লাব পরিচালনা ও লোগো",desc:"নতুন ক্লাব যোগ করুন, নাম, কোড এবং লোগো পরিচালনা করুন।"},player:{title:"খেলোয়াড় পরিচালনা ও ছবি",desc:"নতুন খেলোয়াড় যোগ করুন, নাম, কোড এবং ছবি পরিচালনা করুন।"}};setText("managerTitle",names[type].title);setText("managerDescription",names[type].desc);setText("newImageLabel",typeImageName(type)+" (Gallery)");setText("subjectSelectLabel",typeName(type)+" নির্বাচন করুন");$("subjectSearch").value="";$("subjectSelect").innerHTML='<option value="">নির্বাচন করুন</option>';hideElement("selectedSubject");resetSubjectForm();showElement("subjectManager");await loadSubjects(type)}
-async function loadSubjects(type){setStatus("managerStatus","তালিকা লোড হচ্ছে...");try{let all=[],start=0,size=500;while(true){const {data,error}=await db.from("quiz_subjects").select("id,subject_type,subject_code,name_en,name_bn,image_url,is_enabled,sort_order").eq("subject_type",type).order("sort_order",{ascending:true}).range(start,start+size-1);if(error)throw error;const rows=data||[];all=all.concat(rows);if(rows.length<size)break;start+=size}subjects=all;const ids=new Set(subjects.map(x=>String(x.id)));selectedSubjectIds=new Set([...selectedSubjectIds].filter(x=>ids.has(x)));fillSubjectSelect();renderSubjectList();updateSelectionUI();setStatus("managerStatus","মোট "+subjects.length+"টি "+typeName(type)+" পাওয়া গেছে।")}catch(e){setStatus("managerStatus","Load Error: "+e.message)}}
-function fillSubjectSelect(){const s=$("subjectSelect");s.innerHTML='<option value="">নির্বাচন করুন</option>';subjects.forEach(x=>{const o=document.createElement("option");o.value=String(x.id);o.textContent=(x.name_bn||x.name_en||x.subject_code)+" ("+x.subject_code+")";s.appendChild(o)})}
-function getFilteredSubjects(){const q=$("subjectSearch").value.trim().toLowerCase();return subjects.filter(x=>[x.name_en,x.name_bn,x.subject_code].some(v=>String(v||"").toLowerCase().includes(q)))}
-function updateSelectionUI(){const n=selectedSubjectIds.size;setText("selectionCount","নির্বাচিত: "+n+"টি");const f=getFilteredSubjects(),all=f.length>0&&f.every(x=>selectedSubjectIds.has(String(x.id)));$("selectAllSubjects").checked=all;$("selectAllSubjects").indeterminate=!all&&f.some(x=>selectedSubjectIds.has(String(x.id)));["bulkEnableButton","bulkDisableButton","bulkDeleteButton","clearSubjectSelectionButton"].forEach(id=>$(id).disabled=n===0)}
-function toggleSubjectSelection(id,checked){checked?selectedSubjectIds.add(String(id)):selectedSubjectIds.delete(String(id));updateSelectionUI()}
-function selectAllFilteredSubjects(checked){getFilteredSubjects().forEach(x=>checked?selectedSubjectIds.add(String(x.id)):selectedSubjectIds.delete(String(x.id)));renderSubjectList()}
-function clearSubjectSelection(){selectedSubjectIds.clear();renderSubjectList();setStatus("managerStatus","নির্বাচন বাতিল করা হয়েছে।")}
-function renderSubjectList(){const list=$("subjectList"),filtered=getFilteredSubjects();list.innerHTML="";if(!filtered.length){list.textContent="কোনো ফলাফল পাওয়া যায়নি।";updateSelectionUI();return}filtered.forEach(s=>{const row=document.createElement("div");row.className="subject-row";const cb=document.createElement("input");cb.type="checkbox";cb.checked=selectedSubjectIds.has(String(s.id));cb.style.cssText="width:22px;height:22px;flex-shrink:0;margin:0";cb.addEventListener("change",()=>toggleSubjectSelection(s.id,cb.checked));const img=document.createElement("img");img.className="subject-image";img.alt="ছবি";if(s.image_url)img.src=s.image_url;else img.style.visibility="hidden";const info=document.createElement("div");info.className="subject-info";const title=document.createElement("strong");title.textContent=s.name_bn||s.name_en||s.subject_code;const detail=document.createElement("small");detail.textContent=s.subject_code+" • "+(s.image_url?"ছবি আছে":"ছবি নেই")+" • "+(s.is_enabled===false?"অপ্রকাশিত":"প্রকাশিত");info.append(title,detail);const actions=document.createElement("div");actions.className="subject-actions";const choose=document.createElement("button");choose.type="button";choose.className="secondary";choose.textContent="নির্বাচন";choose.onclick=()=>chooseSubject(s.id);const edit=document.createElement("button");edit.type="button";edit.textContent="Edit";edit.onclick=()=>editSubject(s.id);actions.append(choose,edit);row.append(cb,img,info,actions);list.append(row)});updateSelectionUI()}
-function findSubject(id){return subjects.find(x=>String(x.id)===String(id))||null}
-function chooseSubject(id){$("subjectSelect").value=String(id);selectSubject();$("selectedSubject").scrollIntoView({behavior:"smooth",block:"start"})}
-function selectSubject(){const id=$("subjectSelect").value;selectedSubjectRow=findSubject(id);clearFilePreview("subjectImageFile","newSubjectPreview");$("subjectImageUrl").value="";if(!selectedSubjectRow){hideElement("selectedSubject");return}showElement("selectedSubject");setText("selectedName",(selectedSubjectRow.name_bn||selectedSubjectRow.name_en||"")+" • "+selectedSubjectRow.subject_code);const p=$("subjectPreview");if(selectedSubjectRow.image_url){p.src=selectedSubjectRow.image_url;showElement("subjectPreview");setStatus("imageStatus","বর্তমান "+typeImageName()+" সংরক্ষিত আছে।")}else{p.removeAttribute("src");hideElement("subjectPreview");setStatus("imageStatus","এখনো কোনো ছবি যোগ করা হয়নি।")}}
-async function addSubject(){const b=$("addSubjectButton"),bn=$("subjectNameBn").value.trim(),en=$("subjectNameEn").value.trim(),code=$("subjectCode").value.trim().toUpperCase(),sort=Number($("subjectSortOrder").value),enabled=$("subjectEnabled").checked,file=$("newSubjectImageFile").files[0],url=$("newSubjectImageUrl").value.trim();if(!bn&&!en)return setStatus("subjectFormStatus","বাংলা অথবা ইংরেজি নাম লিখুন।");if(!/^[A-Z0-9_-]+$/.test(code))return setStatus("subjectFormStatus","সঠিক Subject Code লিখুন।");if(subjects.some(x=>String(x.subject_code).toUpperCase()===code))return setStatus("subjectFormStatus","এই Subject Code আগে থেকেই আছে।");if(!Number.isInteger(sort)||sort<0)return setStatus("subjectFormStatus","Sort Order সঠিক নয়।");if(file&&validateImage(file))return setStatus("subjectFormStatus",validateImage(file));b.disabled=true;setStatus("subjectFormStatus","রেকর্ড সংরক্ষণ হচ্ছে...");try{const image_url=await resolveImage(file,url,imageFolder());const {data,error}=await db.from("quiz_subjects").insert({subject_type:activeSubjectType,subject_code:code,name_bn:bn||null,name_en:en||null,image_url,is_enabled:enabled,sort_order:sort}).select("id,subject_type,subject_code,name_en,name_bn,image_url,is_enabled,sort_order").single();if(error)throw error;subjects.push(data);subjects.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));fillSubjectSelect();renderSubjectList();await loadDashboardCounts();resetSubjectForm();setStatus("subjectFormStatus","নতুন "+typeName()+" সফলভাবে যোগ হয়েছে।")}catch(e){setStatus("subjectFormStatus","Add Error: "+e.message)}finally{b.disabled=false}}
-function editSubject(id){const s=findSubject(id);if(!s)return;selectedSubjectRow=s;$("subjectNameBn").value=s.name_bn||"";$("subjectNameEn").value=s.name_en||"";$("subjectCode").value=s.subject_code||"";$("subjectSortOrder").value=s.sort_order??0;$("subjectEnabled").checked=s.is_enabled!==false;$("newSubjectImageUrl").value=s.image_url||"";clearFilePreview("newSubjectImageFile","newSubjectImagePreview");setText("subjectFormTitle",typeName()+"-এর তথ্য পরিবর্তন করুন");hideElement("addSubjectButton");showElement("updateSubjectButton");showElement("cancelEditButton");chooseSubject(id);$("subjectFormTitle").scrollIntoView({behavior:"smooth",block:"start"})}
-async function updateSubject(){if(!selectedSubjectRow)return setStatus("subjectFormStatus","প্রথমে একটি রেকর্ড নির্বাচন করুন।");const b=$("updateSubjectButton"),bn=$("subjectNameBn").value.trim(),en=$("subjectNameEn").value.trim(),code=$("subjectCode").value.trim().toUpperCase(),sort=Number($("subjectSortOrder").value),enabled=$("subjectEnabled").checked,file=$("newSubjectImageFile").files[0],url=$("newSubjectImageUrl").value.trim();if(!bn&&!en)return setStatus("subjectFormStatus","বাংলা অথবা ইংরেজি নাম লিখুন।");if(!/^[A-Z0-9_-]+$/.test(code))return setStatus("subjectFormStatus","সঠিক Subject Code লিখুন।");if(!Number.isInteger(sort)||sort<0)return setStatus("subjectFormStatus","Sort Order সঠিক নয়।");if(subjects.some(x=>String(x.id)!==String(selectedSubjectRow.id)&&String(x.subject_code).toUpperCase()===code))return setStatus("subjectFormStatus","এই Code অন্য রেকর্ডে আছে।");b.disabled=true;setStatus("subjectFormStatus","পরিবর্তন সংরক্ষণ হচ্ছে...");try{let image_url=selectedSubjectRow.image_url||null;if(file||url)image_url=await resolveImage(file,url,imageFolder());const {data,error}=await db.from("quiz_subjects").update({name_bn:bn||null,name_en:en||null,subject_code:code,sort_order:sort,is_enabled:enabled,image_url}).eq("id",selectedSubjectRow.id).eq("subject_type",activeSubjectType).select("id,subject_type,subject_code,name_en,name_bn,image_url,is_enabled,sort_order").single();if(error)throw error;const i=subjects.findIndex(x=>String(x.id)===String(data.id));if(i>=0)subjects[i]=data;selectedSubjectRow=data;subjects.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));fillSubjectSelect();$("subjectSelect").value=String(data.id);selectSubject();renderSubjectList();await loadDashboardCounts();resetSubjectForm();setStatus("subjectFormStatus","তথ্য সফলভাবে পরিবর্তন হয়েছে।")}catch(e){setStatus("subjectFormStatus","Update Error: "+e.message)}finally{b.disabled=false}}
-async function saveSubjectImage(){if(!selectedSubjectRow)return alert("প্রথমে একটি রেকর্ড নির্বাচন করুন।");const file=$("subjectImageFile").files[0],url=$("subjectImageUrl").value.trim(),b=$("saveSubjectImageButton");if(!file&&!url)return setStatus("managerStatus","Gallery থেকে ছবি নির্বাচন করুন অথবা Image URL দিন।");b.disabled=true;setStatus("managerStatus","ছবি সংরক্ষণ হচ্ছে...");try{const image_url=await resolveImage(file,url,imageFolder());const {error}=await db.from("quiz_subjects").update({image_url}).eq("id",selectedSubjectRow.id).eq("subject_type",activeSubjectType);if(error)throw error;selectedSubjectRow.image_url=image_url;const i=subjects.findIndex(x=>String(x.id)===String(selectedSubjectRow.id));if(i>=0)subjects[i].image_url=image_url;selectSubject();renderSubjectList();setStatus("managerStatus",typeImageName()+" সফলভাবে সংরক্ষণ হয়েছে।")}catch(e){setStatus("managerStatus","Save Error: "+e.message)}finally{b.disabled=false}}
-async function removeSubjectImage(){if(!selectedSubjectRow?.image_url)return alert("এই রেকর্ডে কোনো ছবি নেই।");if(!confirm("এই "+typeName()+"-এর ছবি সরাতে চান?"))return;const b=$("removeSubjectImageButton");b.disabled=true;try{const {error}=await db.from("quiz_subjects").update({image_url:null}).eq("id",selectedSubjectRow.id).eq("subject_type",activeSubjectType);if(error)throw error;selectedSubjectRow.image_url=null;const i=subjects.findIndex(x=>String(x.id)===String(selectedSubjectRow.id));if(i>=0)subjects[i].image_url=null;selectSubject();renderSubjectList();setStatus("managerStatus","ছবির URL সরানো হয়েছে। Storage-এর পুরোনো ফাইল আলাদা থাকতে পারে।")}catch(e){setStatus("managerStatus","Remove Error: "+e.message)}finally{b.disabled=false}}
-async function bulkUpdateSubjects(enabled){const ids=[...selectedSubjectIds];if(!ids.length)return alert("প্রথমে রেকর্ড নির্বাচন করুন।");if(!confirm("নির্বাচিত "+ids.length+"টি "+typeName()+" "+(enabled?"প্রকাশ":"অপ্রকাশ")+" করতে চান?"))return;const b=enabled?$("bulkEnableButton"):$("bulkDisableButton");b.disabled=true;try{const {error}=await db.from("quiz_subjects").update({is_enabled:enabled}).eq("subject_type",activeSubjectType).in("id",ids);if(error)throw error;selectedSubjectIds.clear();if(selectedSubjectRow&&ids.includes(String(selectedSubjectRow.id))){selectedSubjectRow=null;$("subjectSelect").value="";hideElement("selectedSubject")}await loadSubjects(activeSubjectType);await loadDashboardCounts();setStatus("managerStatus",ids.length+"টি রেকর্ড আপডেট হয়েছে।")}catch(e){setStatus("managerStatus","Update Error: "+e.message)}finally{b.disabled=false}}
-async function bulkDeleteSubjects(){const ids=[...selectedSubjectIds];if(!ids.length)return alert("প্রথমে রেকর্ড নির্বাচন করুন।");const rows=subjects.filter(x=>ids.includes(String(x.id)));if(!confirm("নির্বাচিত "+rows.length+"টি "+typeName()+" মুছে ফেলবেন? যুক্ত প্রশ্ন থাকলে মুছতে দেওয়া হবে না।"))return;const b=$("bulkDeleteButton");b.disabled=true;try{const codes=[...new Set(rows.map(x=>x.subject_code).filter(Boolean))],linked=new Set();for(let i=0;i<codes.length;i+=100){const {data,error}=await db.from("quiz_questions").select("subject_code").eq("subject_type",activeSubjectType).in("subject_code",codes.slice(i,i+100));if(error)throw error;(data||[]).forEach(q=>linked.add(q.subject_code))}if(linked.size){const names=rows.filter(x=>linked.has(x.subject_code)).map(x=>x.name_bn||x.name_en||x.subject_code);setStatus("managerStatus","প্রশ্ন যুক্ত থাকায় নিরাপত্তার জন্য মুছতে দেওয়া হয়নি:\n"+names.join("\n"));alert("প্রশ্ন যুক্ত রেকর্ড মুছে ফেলা হয়নি।");return}const {error}=await db.from("quiz_subjects").delete().eq("subject_type",activeSubjectType).in("id",ids);if(error)throw error;selectedSubjectIds.clear();selectedSubjectRow=null;hideElement("selectedSubject");await loadSubjects(activeSubjectType);await loadDashboardCounts();setStatus("managerStatus",rows.length+"টি রেকর্ড মুছে ফেলা হয়েছে।")}catch(e){setStatus("managerStatus","Delete Error: "+e.message)}finally{b.disabled=false}}
-function setupPreview(inputId,previewId){$(inputId).addEventListener("change",function(){const f=this.files[0];if(!f){clearFilePreview(inputId,previewId);return}if(!makePreview(f,previewId))this.value=""})}
-setupPreview("subjectImageFile","newSubjectPreview");setupPreview("newSubjectImageFile","newSubjectImagePreview");setupPreview("coverFile","coverPreview");setupPreview("logoFile","logoPreview");setupPreview("iconFile","iconPreview");setupPreview("developerPhotoFile","developerPreview");
-async function saveSetting(key,value){if(!isAdminVerified||!currentUser)throw new Error("Admin অনুমতি নেই।");const {error}=await db.from("app_settings").upsert({key,value:String(value),updated_at:new Date().toISOString()},{onConflict:"key"});if(error)throw error}
-function setRemotePreview(id,url){if(url){$(id).src=url;showElement(id)}else{$(id).removeAttribute("src");hideElement(id)}}
+function back(){
+ hidePanels();
+ selectedSubjectRow=null;
+ hideElement("selectedSubject");
+ selectedSubjectIds.clear();
+ updateSelectionUI();
+ clearFilePreview("subjectImageFile","newSubjectPreview");
+ $("subjectImageUrl").value="";
+ resetSubjectForm();
+ setStatus("managerStatus","");
+}
 
-/* App Settings লোড */
+function imageFolder(){
+ return ({country:"country-flags",club:"club-logos",player:"player-photos"})[activeSubjectType];
+}
+
+async function uploadImage(file,folder){
+ if(!isAdminVerified||!currentUser)throw new Error("Admin Login নেই।");
+ const err=validateImage(file);
+ if(err)throw new Error(err);
+
+ const ext=(file.name.split(".").pop()||"img").toLowerCase().replace(/[^a-z0-9]/g,"")||"img";
+ const path=folder+"/"+Date.now()+"-"+crypto.randomUUID()+"."+ext;
+
+ const {error}=await db.storage.from(BUCKET).upload(path,file,{
+  cacheControl:"3600",
+  upsert:false,
+  contentType:file.type
+ });
+
+ if(error)throw error;
+
+ const {data}=db.storage.from(BUCKET).getPublicUrl(path);
+ if(!data?.publicUrl)throw new Error("ছবির Public URL পাওয়া যায়নি।");
+ return data.publicUrl;
+}
+
+async function resolveImage(file,url,folder){
+ if(file)return await uploadImage(file,folder);
+ const clean=(url||"").trim();
+ if(clean){
+  try{
+   const parsed=new URL(clean);
+   if(!["http:","https:"].includes(parsed.protocol))throw 0;
+   return clean;
+  }catch{
+   throw new Error("সঠিক Image URL দিন।");
+  }
+ }
+ return null;
+}
+
+async function openSubjectManager(type){
+ activeSubjectType=type;
+ selectedSubjectRow=null;
+ selectedSubjectIds.clear();
+ updateSelectionUI();
+
+ const names={
+  country:{title:"দেশ পরিচালনা ও পতাকা",desc:"নতুন দেশ যোগ করুন, দেশের বাংলা ও ইংরেজি নাম, কোড এবং পতাকা পরিচালনা করুন।"},
+  club:{title:"ক্লাব পরিচালনা ও লোগো",desc:"নতুন ক্লাব যোগ করুন, নাম, কোড এবং লোগো পরিচালনা করুন।"},
+  player:{title:"খেলোয়াড় পরিচালনা ও ছবি",desc:"নতুন খেলোয়াড় যোগ করুন, নাম, কোড এবং ছবি পরিচালনা করুন।"}
+ };
+
+ setText("managerTitle",names[type].title);
+ setText("managerDescription",names[type].desc);
+ setText("newImageLabel",typeImageName(type)+" (Gallery)");
+ setText("subjectSelectLabel",typeName(type)+" নির্বাচন করুন");
+ $("subjectSearch").value="";
+ $("subjectSelect").innerHTML='<option value="">নির্বাচন করুন</option>';
+ hideElement("selectedSubject");
+ resetSubjectForm();
+ showElement("subjectManager");
+ await loadSubjects(type);
+}
+
+async function loadSubjects(type){
+ setStatus("managerStatus","তালিকা লোড হচ্ছে...");
+ try{
+  let all=[],start=0,size=500;
+  while(true){
+   const {data,error}=await db.from("quiz_subjects")
+    .select("id,subject_type,subject_code,name_en,name_bn,image_url,is_enabled,sort_order")
+    .eq("subject_type",type)
+    .order("sort_order",{ascending:true})
+    .range(start,start+size-1);
+
+   if(error)throw error;
+   const rows=data||[];
+   all=all.concat(rows);
+   if(rows.length<size)break;
+   start+=size;
+  }
+
+  subjects=all;
+  const ids=new Set(subjects.map(x=>String(x.id)));
+  selectedSubjectIds=new Set([...selectedSubjectIds].filter(x=>ids.has(x)));
+  fillSubjectSelect();
+  renderSubjectList();
+  updateSelectionUI();
+  setStatus("managerStatus","মোট "+subjects.length+"টি "+typeName(type)+" পাওয়া গেছে।");
+ }catch(e){
+  setStatus("managerStatus","Load Error: "+e.message);
+ }
+}
+
+function fillSubjectSelect(){
+ const s=$("subjectSelect");
+ s.innerHTML='<option value="">নির্বাচন করুন</option>';
+ subjects.forEach(x=>{
+  const o=document.createElement("option");
+  o.value=String(x.id);
+  o.textContent=(x.name_bn||x.name_en||x.subject_code)+" ("+x.subject_code+")";
+  s.appendChild(o);
+ });
+}
+
+function getFilteredSubjects(){
+ const q=$("subjectSearch").value.trim().toLowerCase();
+ return subjects.filter(x=>[x.name_en,x.name_bn,x.subject_code].some(v=>String(v||"").toLowerCase().includes(q)));
+}
+
+function updateSelectionUI(){
+ const n=selectedSubjectIds.size;
+ setText("selectionCount","নির্বাচিত: "+n+"টি");
+ const f=getFilteredSubjects();
+ const all=f.length>0&&f.every(x=>selectedSubjectIds.has(String(x.id)));
+ $("selectAllSubjects").checked=all;
+ $("selectAllSubjects").indeterminate=!all&&f.some(x=>selectedSubjectIds.has(String(x.id)));
+ ["bulkEnableButton","bulkDisableButton","bulkDeleteButton","clearSubjectSelectionButton"].forEach(id=>$(id).disabled=n===0);
+}
+
+function toggleSubjectSelection(id,checked){
+ checked?selectedSubjectIds.add(String(id)):selectedSubjectIds.delete(String(id));
+ updateSelectionUI();
+}
+
+function selectAllFilteredSubjects(checked){
+ getFilteredSubjects().forEach(x=>checked?selectedSubjectIds.add(String(x.id)):selectedSubjectIds.delete(String(x.id)));
+ renderSubjectList();
+}
+
+function clearSubjectSelection(){
+ selectedSubjectIds.clear();
+ renderSubjectList();
+ setStatus("managerStatus","নির্বাচন বাতিল করা হয়েছে।");
+}
+
+function renderSubjectList(){
+ const list=$("subjectList");
+ const filtered=getFilteredSubjects();
+ list.innerHTML="";
+
+ if(!filtered.length){
+  list.textContent="কোনো ফলাফল পাওয়া যায়নি।";
+  updateSelectionUI();
+  return;
+ }
+
+ filtered.forEach(s=>{
+  const row=document.createElement("div");
+  row.className="subject-row";
+
+  const cb=document.createElement("input");
+  cb.type="checkbox";
+  cb.checked=selectedSubjectIds.has(String(s.id));
+  cb.style.cssText="width:22px;height:22px;flex-shrink:0;margin:0";
+  cb.addEventListener("change",()=>toggleSubjectSelection(s.id,cb.checked));
+
+  const img=document.createElement("img");
+  img.className="subject-image";
+  img.alt="ছবি";
+  if(s.image_url)img.src=s.image_url;
+  else img.style.visibility="hidden";
+
+  const info=document.createElement("div");
+  info.className="subject-info";
+
+  const title=document.createElement("strong");
+  title.textContent=s.name_bn||s.name_en||s.subject_code;
+
+  const detail=document.createElement("small");
+  detail.textContent=s.subject_code+" • "+(s.image_url?"ছবি আছে":"ছবি নেই")+" • "+(s.is_enabled===false?"অপ্রকাশিত":"প্রকাশিত");
+  info.append(title,detail);
+
+  const actions=document.createElement("div");
+  actions.className="subject-actions";
+
+  const choose=document.createElement("button");
+  choose.type="button";
+  choose.className="secondary";
+  choose.textContent="নির্বাচন";
+  choose.onclick=()=>chooseSubject(s.id);
+
+  const edit=document.createElement("button");
+  edit.type="button";
+  edit.textContent="Edit";
+  edit.onclick=()=>editSubject(s.id);
+
+  actions.append(choose,edit);
+  row.append(cb,img,info,actions);
+  list.append(row);
+ });
+
+ updateSelectionUI();
+}
+
+function findSubject(id){
+ return subjects.find(x=>String(x.id)===String(id))||null;
+}
+
+function chooseSubject(id){
+ $("subjectSelect").value=String(id);
+ selectSubject();
+ $("selectedSubject").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function selectSubject(){
+ const id=$("subjectSelect").value;
+ selectedSubjectRow=findSubject(id);
+ clearFilePreview("subjectImageFile","newSubjectPreview");
+ $("subjectImageUrl").value="";
+
+ if(!selectedSubjectRow){
+  hideElement("selectedSubject");
+  return;
+ }
+
+ showElement("selectedSubject");
+ setText("selectedName",(selectedSubjectRow.name_bn||selectedSubjectRow.name_en||"")+" • "+selectedSubjectRow.subject_code);
+
+ const p=$("subjectPreview");
+ if(selectedSubjectRow.image_url){
+  p.src=selectedSubjectRow.image_url;
+  showElement("subjectPreview");
+  setStatus("imageStatus","বর্তমান "+typeImageName()+" সংরক্ষিত আছে।");
+ }else{
+  p.removeAttribute("src");
+  hideElement("subjectPreview");
+  setStatus("imageStatus","এখনো কোনো ছবি যোগ করা হয়নি।");
+ }
+}
+
+async function addSubject(){
+ const b=$("addSubjectButton");
+ const bn=$("subjectNameBn").value.trim();
+ const en=$("subjectNameEn").value.trim();
+ const code=$("subjectCode").value.trim().toUpperCase();
+ const sort=Number($("subjectSortOrder").value);
+ const enabled=$("subjectEnabled").checked;
+ const file=$("newSubjectImageFile").files[0];
+ const url=$("newSubjectImageUrl").value.trim();
+
+ if(!bn&&!en)return setStatus("subjectFormStatus","বাংলা অথবা ইংরেজি নাম লিখুন।");
+ if(!/^[A-Z0-9_-]+$/.test(code))return setStatus("subjectFormStatus","সঠিক Subject Code লিখুন।");
+ if(subjects.some(x=>String(x.subject_code).toUpperCase()===code))return setStatus("subjectFormStatus","এই Subject Code আগে থেকেই আছে।");
+ if(!Number.isInteger(sort)||sort<0)return setStatus("subjectFormStatus","Sort Order সঠিক নয়।");
+ if(file&&validateImage(file))return setStatus("subjectFormStatus",validateImage(file));
+
+ b.disabled=true;
+ setStatus("subjectFormStatus","রেকর্ড সংরক্ষণ হচ্ছে...");
+
+ try{
+  const image_url=await resolveImage(file,url,imageFolder());
+  const {data,error}=await db.from("quiz_subjects").insert({
+   subject_type:activeSubjectType,
+   subject_code:code,
+   name_bn:bn||null,
+   name_en:en||null,
+   image_url,
+   is_enabled:enabled,
+   sort_order:sort
+  }).select("id,subject_type,subject_code,name_en,name_bn,image_url,is_enabled,sort_order").single();
+
+  if(error)throw error;
+  subjects.push(data);
+  subjects.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+  fillSubjectSelect();
+  renderSubjectList();
+  await loadDashboardCounts();
+  resetSubjectForm();
+  setStatus("subjectFormStatus","নতুন "+typeName()+" সফলভাবে যোগ হয়েছে।");
+ }catch(e){
+  setStatus("subjectFormStatus","Add Error: "+e.message);
+ }finally{
+  b.disabled=false;
+ }
+}
+
+function editSubject(id){
+ const s=findSubject(id);
+ if(!s)return;
+ selectedSubjectRow=s;
+ $("subjectNameBn").value=s.name_bn||"";
+ $("subjectNameEn").value=s.name_en||"";
+ $("subjectCode").value=s.subject_code||"";
+ $("subjectSortOrder").value=s.sort_order??0;
+ $("subjectEnabled").checked=s.is_enabled!==false;
+ $("newSubjectImageUrl").value=s.image_url||"";
+ clearFilePreview("newSubjectImageFile","newSubjectImagePreview");
+ setText("subjectFormTitle",typeName()+"-এর তথ্য পরিবর্তন করুন");
+ hideElement("addSubjectButton");
+ showElement("updateSubjectButton");
+ showElement("cancelEditButton");
+ chooseSubject(id);
+ $("subjectFormTitle").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+async function updateSubject(){
+ if(!selectedSubjectRow)return setStatus("subjectFormStatus","প্রথমে একটি রেকর্ড নির্বাচন করুন।");
+
+ const b=$("updateSubjectButton");
+ const bn=$("subjectNameBn").value.trim();
+ const en=$("subjectNameEn").value.trim();
+ const code=$("subjectCode").value.trim().toUpperCase();
+ const sort=Number($("subjectSortOrder").value);
+ const enabled=$("subjectEnabled").checked;
+ const file=$("newSubjectImageFile").files[0];
+ const url=$("newSubjectImageUrl").value.trim();
+
+ if(!bn&&!en)return setStatus("subjectFormStatus","বাংলা অথবা ইংরেজি নাম লিখুন।");
+ if(!/^[A-Z0-9_-]+$/.test(code))return setStatus("subjectFormStatus","সঠিক Subject Code লিখুন।");
+ if(!Number.isInteger(sort)||sort<0)return setStatus("subjectFormStatus","Sort Order সঠিক নয়.");
+ if(subjects.some(x=>String(x.id)!==String(selectedSubjectRow.id)&&String(x.subject_code).toUpperCase()===code))return setStatus("subjectFormStatus","এই Code অন্য রেকর্ডে আছে।");
+
+ b.disabled=true;
+ setStatus("subjectFormStatus","পরিবর্তন সংরক্ষণ হচ্ছে...");
+
+ try{
+  let image_url=selectedSubjectRow.image_url||null;
+  if(file||url)image_url=await resolveImage(file,url,imageFolder());
+
+  const {data,error}=await db.from("quiz_subjects").update({
+   name_bn:bn||null,
+   name_en:en||null,
+   subject_code:code,
+   sort_order:sort,
+   is_enabled:enabled,
+   image_url
+  }).eq("id",selectedSubjectRow.id).eq("subject_type",activeSubjectType)
+   .select("id,subject_type,subject_code,name_en,name_bn,image_url,is_enabled,sort_order").single();
+
+  if(error)throw error;
+  const i=subjects.findIndex(x=>String(x.id)===String(data.id));
+  if(i>=0)subjects[i]=data;
+  selectedSubjectRow=data;
+  subjects.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+  fillSubjectSelect();
+  $("subjectSelect").value=String(data.id);
+  selectSubject();
+  renderSubjectList();
+  await loadDashboardCounts();
+  resetSubjectForm();
+  setStatus("subjectFormStatus","তথ্য সফলভাবে পরিবর্তন হয়েছে।");
+ }catch(e){
+  setStatus("subjectFormStatus","Update Error: "+e.message);
+ }finally{
+  b.disabled=false;
+ }
+}
+
+async function saveSubjectImage(){
+ if(!selectedSubjectRow)return alert("প্রথমে একটি রেকর্ড নির্বাচন করুন।");
+
+ const file=$("subjectImageFile").files[0];
+ const url=$("subjectImageUrl").value.trim();
+ const b=$("saveSubjectImageButton");
+
+ if(!file&&!url)return setStatus("managerStatus","Gallery থেকে ছবি নির্বাচন করুন অথবা Image URL দিন।");
+
+ b.disabled=true;
+ setStatus("managerStatus","ছবি সংরক্ষণ হচ্ছে...");
+
+ try{
+  const image_url=await resolveImage(file,url,imageFolder());
+  const {error}=await db.from("quiz_subjects").update({image_url}).eq("id",selectedSubjectRow.id).eq("subject_type",activeSubjectType);
+  if(error)throw error;
+  selectedSubjectRow.image_url=image_url;
+  const i=subjects.findIndex(x=>String(x.id)===String(selectedSubjectRow.id));
+  if(i>=0)subjects[i].image_url=image_url;
+  selectSubject();
+  renderSubjectList();
+  setStatus("managerStatus",typeImageName()+" সফলভাবে সংরক্ষণ হয়েছে।");
+ }catch(e){
+  setStatus("managerStatus","Save Error: "+e.message);
+ }finally{
+  b.disabled=false;
+ }
+}
+
+async function removeSubjectImage(){
+ if(!selectedSubjectRow?.image_url)return alert("এই রেকর্ডে কোনো ছবি নেই।");
+ if(!confirm("এই "+typeName()+"-এর ছবি সরাতে চান?"))return;
+
+ const b=$("removeSubjectImageButton");
+ b.disabled=true;
+
+ try{
+  const {error}=await db.from("quiz_subjects").update({image_url:null}).eq("id",selectedSubjectRow.id).eq("subject_type",activeSubjectType);
+  if(error)throw error;
+  selectedSubjectRow.image_url=null;
+  const i=subjects.findIndex(x=>String(x.id)===String(selectedSubjectRow.id));
+  if(i>=0)subjects[i].image_url=null;
+  selectSubject();
+  renderSubjectList();
+  setStatus("managerStatus","ছবির URL সরানো হয়েছে। Storage-এর পুরোনো ফাইল আলাদা থাকতে পারে।");
+ }catch(e){
+  setStatus("managerStatus","Remove Error: "+e.message);
+ }finally{
+  b.disabled=false;
+ }
+}
+
+async function bulkUpdateSubjects(enabled){
+ const ids=[...selectedSubjectIds];
+ if(!ids.length)return alert("প্রথমে রেকর্ড নির্বাচন করুন।");
+ if(!confirm("নির্বাচিত "+ids.length+"টি "+typeName()+" "+(enabled?"প্রকাশ":"অপ্রকাশ")+" করতে চান?"))return;
+
+ const b=enabled?$("bulkEnableButton"):$("bulkDisableButton");
+ b.disabled=true;
+
+ try{
+  const {error}=await db.from("quiz_subjects").update({is_enabled:enabled}).eq("subject_type",activeSubjectType).in("id",ids);
+  if(error)throw error;
+
+  selectedSubjectIds.clear();
+  if(selectedSubjectRow&&ids.includes(String(selectedSubjectRow.id))){
+   selectedSubjectRow=null;
+   $("subjectSelect").value="";
+   hideElement("selectedSubject");
+  }
+
+  await loadSubjects(activeSubjectType);
+  await loadDashboardCounts();
+  setStatus("managerStatus",ids.length+"টি রেকর্ড আপডেট হয়েছে।");
+ }catch(e){
+  setStatus("managerStatus","Update Error: "+e.message);
+ }finally{
+  b.disabled=false;
+ }
+}
+
+async function bulkDeleteSubjects(){
+ const ids=[...selectedSubjectIds];
+ if(!ids.length)return alert("প্রথমে রেকর্ড নির্বাচন করুন।");
+
+ const rows=subjects.filter(x=>ids.includes(String(x.id)));
+ if(!confirm("নির্বাচিত "+rows.length+"টি "+typeName()+" মুছে ফেলবেন? যুক্ত প্রশ্ন থাকলে মুছতে দেওয়া হবে না।"))return;
+
+ const b=$("bulkDeleteButton");
+ b.disabled=true;
+
+ try{
+  const codes=[...new Set(rows.map(x=>x.subject_code).filter(Boolean))];
+  const linked=new Set();
+
+  for(let i=0;i<codes.length;i+=100){
+   const {data,error}=await db.from("quiz_questions").select("subject_code").eq("subject_type",activeSubjectType).in("subject_code",codes.slice(i,i+100));
+   if(error)throw error;
+   (data||[]).forEach(q=>linked.add(q.subject_code));
+  }
+
+  if(linked.size){
+   const names=rows.filter(x=>linked.has(x.subject_code)).map(x=>x.name_bn||x.name_en||x.subject_code);
+   setStatus("managerStatus","প্রশ্ন যুক্ত থাকায় নিরাপত্তার জন্য মুছতে দেওয়া হয়নি:\n"+names.join("\n"));
+   alert("প্রশ্ন যুক্ত রেকর্ড মুছে ফেলা হয়নি।");
+   return;
+  }
+
+  const {error}=await db.from("quiz_subjects").delete().eq("subject_type",activeSubjectType).in("id",ids);
+  if(error)throw error;
+
+  selectedSubjectIds.clear();
+  selectedSubjectRow=null;
+  hideElement("selectedSubject");
+  await loadSubjects(activeSubjectType);
+  await loadDashboardCounts();
+  setStatus("managerStatus",rows.length+"টি রেকর্ড মুছে ফেলা হয়েছে।");
+ }catch(e){
+  setStatus("managerStatus","Delete Error: "+e.message);
+ }finally{
+  b.disabled=false;
+ }
+}
+
+function setupPreview(inputId,previewId){
+ $(inputId).addEventListener("change",function(){
+  const f=this.files[0];
+  if(!f){clearFilePreview(inputId,previewId);return}
+  if(!makePreview(f,previewId))this.value="";
+ });
+}
+
+setupPreview("subjectImageFile","newSubjectPreview");
+setupPreview("newSubjectImageFile","newSubjectImagePreview");
+setupPreview("coverFile","coverPreview");
+setupPreview("logoFile","logoPreview");
+setupPreview("iconFile","iconPreview");
+setupPreview("developerPhotoFile","developerPreview");
+
+async function saveSetting(key,value){
+ if(!isAdminVerified||!currentUser)throw new Error("Admin অনুমতি নেই।");
+ const {error}=await db.from("app_settings").upsert({key,value:String(value),updated_at:new Date().toISOString()},{onConflict:"key"});
+ if(error)throw error;
+}
+
+function setRemotePreview(id,url){
+ if(url){
+  $(id).src=url;
+  showElement(id);
+ }else{
+  $(id).removeAttribute("src");
+  hideElement(id);
+ }
+}
+
 async function loadSettings(){
  try{
   const {data,error}=await db.from("app_settings").select("key,value");
@@ -258,7 +1012,6 @@ async function loadSettings(){
   (data||[]).forEach(x=>s[x.key]=x.value);
 
   $("appName").value=s.home_app_name||"JABER FOOTBALL QUIZ";
-
   $("developerName").value=s.developer_name||"";
   $("developerPhone").value=s.developer_phone||"";
   $("whatsappLink").value=s.whatsapp_link||"";
@@ -274,7 +1027,6 @@ async function loadSettings(){
  }
 }
 
-/* App Name + Cover + Logo + Icon সংরক্ষণ */
 async function saveAppSettings(){
  const b=$("saveAppButton");
  const appName=$("appName").value.trim();
@@ -301,7 +1053,6 @@ async function saveAppSettings(){
    ["iconFile","app-icon","app_icon_url","iconPreview"]
   ]){
    const f=$(input).files[0];
-
    if(f){
     const url=await uploadImage(f,folder);
     await saveSetting(key,url);
@@ -318,11 +1069,124 @@ async function saveAppSettings(){
  }
 }
 
-function fillQuizSettings(s){$("quizMin").value=s.quiz_min_questions??5;$("quizMax").value=s.quiz_max_questions??50;$("quizDefault").value=s.quiz_default_questions??10;$("quizTimer").value=s.quiz_timer_seconds??20;$("quizCorrectXP").value=s.quiz_correct_xp??5;$("quizWrongXP").value=s.quiz_wrong_xp??-2;$("quizCorrectPoints").value=s.quiz_correct_points??5;$("quizWrongPoints").value=s.quiz_wrong_points??0}
-async function loadQuizSettings(){setStatus("quizStatus","সেটিংস লোড হচ্ছে...");try{const {data,error}=await db.from("app_settings").select("key,value").like("key","quiz_%");if(error)throw error;const s={};(data||[]).forEach(x=>s[x.key]=x.value);fillQuizSettings(s);setStatus("quizStatus","Quiz Settings লোড হয়েছে।")}catch(e){setStatus("quizStatus","Load Error: "+e.message)}}
-async function saveQuizSettings(){const vals={quiz_min_questions:+$("quizMin").value,quiz_max_questions:+$("quizMax").value,quiz_default_questions:+$("quizDefault").value,quiz_timer_seconds:+$("quizTimer").value,quiz_correct_xp:+$("quizCorrectXP").value,quiz_wrong_xp:+$("quizWrongXP").value,quiz_correct_points:+$("quizCorrectPoints").value,quiz_wrong_points:+$("quizWrongPoints").value};if(Object.values(vals).some(x=>!Number.isInteger(x)))return setStatus("quizStatus","সব ঘরে পূর্ণসংখ্যা লিখুন।");if(vals.quiz_min_questions<1||vals.quiz_max_questions<vals.quiz_min_questions||vals.quiz_max_questions>500||vals.quiz_default_questions<vals.quiz_min_questions||vals.quiz_default_questions>vals.quiz_max_questions||vals.quiz_timer_seconds<1||vals.quiz_timer_seconds>300||vals.quiz_correct_xp<0||vals.quiz_correct_xp>10000||vals.quiz_wrong_xp>0||vals.quiz_wrong_xp< -10000||vals.quiz_correct_points<0||vals.quiz_correct_points>10000||vals.quiz_wrong_points<0||vals.quiz_wrong_points>10000)return setStatus("quizStatus","সেটিংসের মান সঠিক নয়।");const b=$("saveQuizButton");b.disabled=true;try{for(const [k,v] of Object.entries(vals))await saveSetting(k,v);setStatus("quizStatus","Quiz Settings সফলভাবে সংরক্ষিত হয়েছে।")}catch(e){setStatus("quizStatus","Save Error: "+e.message)}finally{b.disabled=false}}
-async function saveDeveloperSettings(){const b=$("saveDeveloperButton");b.disabled=true;setStatus("developerStatus","সংরক্ষণ হচ্ছে...");try{const name=$("developerName").value.trim(),phone=$("developerPhone").value.trim(),wa=$("whatsappLink").value.trim();if(wa&&!/^https:\/\/(wa\.me|api\.whatsapp\.com)\//i.test(wa))throw new Error("সঠিক WhatsApp Link দিন।");const f=$("developerPhotoFile").files[0];if(f){const url=await uploadImage(f,"developer-photo");await saveSetting("developer_photo_url",url);clearFilePreview("developerPhotoFile","developerPreview");setRemotePreview("developerPreview",url)}await saveSetting("developer_name",name);await saveSetting("developer_phone",phone);await saveSetting("whatsapp_link",wa);setStatus("developerStatus","Developer Settings সফলভাবে সংরক্ষিত হয়েছে।")}catch(e){setStatus("developerStatus","Error: "+e.message)}finally{b.disabled=false}}
-$("loginButton").addEventListener("click",login);$("saveSubjectImageButton").addEventListener("click",saveSubjectImage);$("removeSubjectImageButton").addEventListener("click",removeSubjectImage);$("addSubjectButton").addEventListener("click",addSubject);$("updateSubjectButton").addEventListener("click",updateSubject);$("cancelEditButton").addEventListener("click",resetSubjectForm);$("editSelectedSubjectButton").addEventListener("click",()=>{if(selectedSubjectRow)editSubject(selectedSubjectRow.id)});$("saveAppButton").addEventListener("click",saveAppSettings);$("saveQuizButton").addEventListener("click",saveQuizSettings);$("saveDeveloperButton").addEventListener("click",saveDeveloperSettings);$("backButton").addEventListener("click",back);$("logoutButton").addEventListener("click",logout);$("subjectSelect").addEventListener("change",selectSubject);$("subjectSearch").addEventListener("input",renderSubjectList);$("selectAllSubjects").addEventListener("change",e=>selectAllFilteredSubjects(e.target.checked));$("clearSubjectSelectionButton").addEventListener("click",clearSubjectSelection);$("bulkEnableButton").addEventListener("click",()=>bulkUpdateSubjects(true));$("bulkDisableButton").addEventListener("click",()=>bulkUpdateSubjects(false));$("bulkDeleteButton").addEventListener("click",bulkDeleteSubjects);$("password").addEventListener("keydown",e=>{if(e.key==="Enter")login()});db.auth.onAuthStateChange(event=>{if(event==="SIGNED_OUT"){currentUser=null;isAdminVerified=false;selectedSubjectIds.clear()}});updateSelectionUI();restoreSession();
+function fillQuizSettings(s){
+ $("quizMin").value=s.quiz_min_questions??5;
+ $("quizMax").value=s.quiz_max_questions??50;
+ $("quizDefault").value=s.quiz_default_questions??10;
+ $("quizTimer").value=s.quiz_timer_seconds??20;
+ $("quizCorrectXP").value=s.quiz_correct_xp??5;
+ $("quizWrongXP").value=s.quiz_wrong_xp??-2;
+ $("quizCorrectPoints").value=s.quiz_correct_points??5;
+ $("quizWrongPoints").value=s.quiz_wrong_points??0;
+}
+
+async function loadQuizSettings(){
+ setStatus("quizStatus","সেটিংস লোড হচ্ছে...");
+ try{
+  const {data,error}=await db.from("app_settings").select("key,value").like("key","quiz_%");
+  if(error)throw error;
+  const s={};
+  (data||[]).forEach(x=>s[x.key]=x.value);
+  fillQuizSettings(s);
+  setStatus("quizStatus","Quiz Settings লোড হয়েছে।");
+ }catch(e){
+  setStatus("quizStatus","Load Error: "+e.message);
+ }
+}
+
+async function saveQuizSettings(){
+ const vals={
+  quiz_min_questions:+$("quizMin").value,
+  quiz_max_questions:+$("quizMax").value,
+  quiz_default_questions:+$("quizDefault").value,
+  quiz_timer_seconds:+$("quizTimer").value,
+  quiz_correct_xp:+$("quizCorrectXP").value,
+  quiz_wrong_xp:+$("quizWrongXP").value,
+  quiz_correct_points:+$("quizCorrectPoints").value,
+  quiz_wrong_points:+$("quizWrongPoints").value
+ };
+
+ if(Object.values(vals).some(x=>!Number.isInteger(x)))return setStatus("quizStatus","সব ঘরে পূর্ণসংখ্যা লিখুন।");
+
+ if(vals.quiz_min_questions<1||vals.quiz_max_questions<vals.quiz_min_questions||vals.quiz_max_questions>500||vals.quiz_default_questions<vals.quiz_min_questions||vals.quiz_default_questions>vals.quiz_max_questions||vals.quiz_timer_seconds<1||vals.quiz_timer_seconds>300||vals.quiz_correct_xp<0||vals.quiz_correct_xp>10000||vals.quiz_wrong_xp>0||vals.quiz_wrong_xp< -10000||vals.quiz_correct_points<0||vals.quiz_correct_points>10000||vals.quiz_wrong_points<0||vals.quiz_wrong_points>10000)return setStatus("quizStatus","সেটিংসের মান সঠিক নয়।");
+
+ const b=$("saveQuizButton");
+ b.disabled=true;
+
+ try{
+  for(const [k,v] of Object.entries(vals))await saveSetting(k,v);
+  setStatus("quizStatus","Quiz Settings সফলভাবে সংরক্ষিত হয়েছে।");
+ }catch(e){
+  setStatus("quizStatus","Save Error: "+e.message);
+ }finally{
+  b.disabled=false;
+ }
+}
+
+async function saveDeveloperSettings(){
+ const b=$("saveDeveloperButton");
+ b.disabled=true;
+ setStatus("developerStatus","সংরক্ষণ হচ্ছে...");
+
+ try{
+  const name=$("developerName").value.trim();
+  const phone=$("developerPhone").value.trim();
+  const wa=$("whatsappLink").value.trim();
+
+  if(wa&&!/^https:\/\/(wa\.me|api\.whatsapp\.com)\//i.test(wa))throw new Error("সঠিক WhatsApp Link দিন।");
+
+  const f=$("developerPhotoFile").files[0];
+
+  if(f){
+   const url=await uploadImage(f,"developer-photo");
+   await saveSetting("developer_photo_url",url);
+   clearFilePreview("developerPhotoFile","developerPreview");
+   setRemotePreview("developerPreview",url);
+  }
+
+  await saveSetting("developer_name",name);
+  await saveSetting("developer_phone",phone);
+  await saveSetting("whatsapp_link",wa);
+
+  setStatus("developerStatus","Developer Settings সফলভাবে সংরক্ষিত হয়েছে।");
+ }catch(e){
+  setStatus("developerStatus","Error: "+e.message);
+ }finally{
+  b.disabled=false;
+ }
+}
+
+$("loginButton").addEventListener("click",login);
+$("saveSubjectImageButton").addEventListener("click",saveSubjectImage);
+$("removeSubjectImageButton").addEventListener("click",removeSubjectImage);
+$("addSubjectButton").addEventListener("click",addSubject);
+$("updateSubjectButton").addEventListener("click",updateSubject);
+$("cancelEditButton").addEventListener("click",resetSubjectForm);
+$("editSelectedSubjectButton").addEventListener("click",()=>{if(selectedSubjectRow)editSubject(selectedSubjectRow.id)});
+$("saveAppButton").addEventListener("click",saveAppSettings);
+$("saveQuizButton").addEventListener("click",saveQuizSettings);
+$("saveDeveloperButton").addEventListener("click",saveDeveloperSettings);
+$("backButton").addEventListener("click",back);
+$("logoutButton").addEventListener("click",logout);
+$("subjectSelect").addEventListener("change",selectSubject);
+$("subjectSearch").addEventListener("input",renderSubjectList);
+$("selectAllSubjects").addEventListener("change",e=>selectAllFilteredSubjects(e.target.checked));
+$("clearSubjectSelectionButton").addEventListener("click",clearSubjectSelection);
+$("bulkEnableButton").addEventListener("click",()=>bulkUpdateSubjects(true));
+$("bulkDisableButton").addEventListener("click",()=>bulkUpdateSubjects(false));
+$("bulkDeleteButton").addEventListener("click",bulkDeleteSubjects);
+$("password").addEventListener("keydown",e=>{if(e.key==="Enter")login()});
+
+db.auth.onAuthStateChange(event=>{
+ if(event==="SIGNED_OUT"){
+  currentUser=null;
+  isAdminVerified=false;
+  selectedSubjectIds.clear();
+ }
+});
+
+updateSelectionUI();
+restoreSession();
 </script>
 </body>
 </html>
