@@ -54,6 +54,154 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return result;
   }
 
+  Future<void> _changeNickname(String currentNickname) async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    final controller = TextEditingController(
+      text: currentNickname,
+    );
+
+    final newNickname = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        String? dialogError;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: cardColor,
+              title: const Text(
+                'নিকনেম পরিবর্তন করুন',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    maxLength: 20,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'নতুন নিকনেম',
+                      hintText: '২–২০ অক্ষর',
+                      errorText: dialogError,
+                      counterStyle: const TextStyle(
+                        color: Colors.white54,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.person_outline,
+                        color: green,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                  },
+                  child: const Text('বাতিল'),
+                ),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: green,
+                    foregroundColor: Colors.black,
+                  ),
+                  onPressed: () {
+                    final nickname = controller.text.trim();
+
+                    if (nickname.length < 2 ||
+                        nickname.length > 20) {
+                      setDialogState(() {
+                        dialogError =
+                            'নিকনেম ২–২০ অক্ষরের হতে হবে।';
+                      });
+                      return;
+                    }
+
+                    Navigator.pop(dialogContext, nickname);
+                  },
+                  child: const Text('পরিবর্তন করুন'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    controller.dispose();
+
+    if (!mounted || newNickname == null) return;
+
+    if (newNickname == currentNickname) {
+      return;
+    }
+
+    try {
+      // একই নিকনেম অন্য কেউ ব্যবহার করছে কি না পরীক্ষা
+      final existing = await supabase
+          .from('profiles')
+          .select('id')
+          .ilike('display_name', newNickname)
+          .neq('id', user.id)
+          .limit(1)
+          .maybeSingle();
+
+      if (!mounted) return;
+
+      if (existing != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('এই নিকনেমটি অন্য একজন ব্যবহার করছেন।'),
+          ),
+        );
+        return;
+      }
+
+      await supabase
+          .from('profiles')
+          .update({
+            'display_name': newNickname,
+          })
+          .eq('id', user.id);
+
+      if (!mounted) return;
+
+      setState(() {});
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('নিকনেম সফলভাবে পরিবর্তন হয়েছে।'),
+          backgroundColor: green,
+        ),
+      );
+    } on PostgrestException catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.code == '23505'
+                ? 'এই নিকনেমটি ইতিমধ্যে ব্যবহৃত হয়েছে।'
+                : 'নিকনেম পরিবর্তন করা যায়নি: ${e.message}',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('নিকনেম পরিবর্তনে সমস্যা হয়েছে। আবার চেষ্টা করুন।'),
+        ),
+      );
+    }
+  }
+
   Future<void> _logout() async {
     try {
       await supabase.auth.signOut();
@@ -121,9 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-
             const SizedBox(height: 20),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -142,9 +288,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-
             const SizedBox(height: 10),
-
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: LinearProgressIndicator(
@@ -156,9 +300,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 14),
-
             Text(
               'পরবর্তী Level ${level + 1} এ যেতে আরও $remainingXp XP প্রয়োজন।',
               style: const TextStyle(
@@ -279,9 +421,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 25),
-
               Center(
                 child: CircleAvatar(
                   radius: 48,
@@ -299,9 +439,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       : null,
                 ),
               ),
-
               const SizedBox(height: 15),
-
               Center(
                 child: Text(
                   nickname,
@@ -311,9 +449,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 8),
+
+              Center(
+                child: TextButton.icon(
+                  onPressed: () => _changeNickname(nickname),
+                  icon: const Icon(
+                    Icons.edit,
+                    size: 17,
+                    color: green,
+                  ),
+                  label: const Text(
+                    'নিকনেম পরিবর্তন করুন',
+                    style: TextStyle(
+                      color: green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
 
               const SizedBox(height: 6),
-
               const Center(
                 child: Text(
                   'Football Quiz Player',
@@ -322,9 +478,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 25),
-
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
@@ -336,9 +490,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 25),
-
               const Text(
                 'Player Statistics',
                 style: TextStyle(
@@ -346,45 +498,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 12),
-
               _buildProgressCard(xp, level),
-
               const SizedBox(height: 10),
-
               _buildStatCard(
                 icon: Icons.star,
                 title: 'Total XP',
                 value: '$xp',
               ),
-
               _buildStatCard(
                 icon: Icons.military_tech,
                 title: 'Current Level',
                 value: '$level',
               ),
-
               _buildStatCard(
                 icon: Icons.emoji_events,
                 title: 'Total Points',
                 value: '$points',
               ),
-
               _buildStatCard(
                 icon: Icons.quiz,
                 title: 'Played Quizzes',
                 value: '$playedQuizzes',
               ),
-
               _buildStatCard(
                 icon: Icons.check_circle,
                 title: 'Correct Answers',
                 value: '$correctAnswers',
               ),
-
               const SizedBox(height: 25),
-
               const Text(
                 'Quiz Activities',
                 style: TextStyle(
@@ -392,9 +534,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 12),
-
               Card(
                 color: cardColor,
                 shape: RoundedRectangleBorder(
@@ -440,9 +580,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onTap: _openQuizHistory,
                 ),
               ),
-
               const SizedBox(height: 15),
-
               OutlinedButton.icon(
                 onPressed: () {
                   setState(() {});
@@ -450,7 +588,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: const Icon(Icons.refresh),
                 label: const Text('পরিসংখ্যান রিফ্রেশ করুন'),
               ),
-
               const SizedBox(height: 20),
             ],
           );
@@ -579,9 +716,7 @@ class _AuthDialogState extends State<AuthDialog> {
                 prefixIcon: Icon(Icons.email_outlined),
               ),
             ),
-
             const SizedBox(height: 15),
-
             TextField(
               controller: passwordController,
               obscureText: obscurePassword,
@@ -603,7 +738,6 @@ class _AuthDialogState extends State<AuthDialog> {
                 ),
               ),
             ),
-
             if (errorMessage != null) ...[
               const SizedBox(height: 12),
               Text(
@@ -614,9 +748,7 @@ class _AuthDialogState extends State<AuthDialog> {
                 ),
               ),
             ],
-
             const SizedBox(height: 12),
-
             TextButton(
               onPressed: isLoading
                   ? null
@@ -645,7 +777,6 @@ class _AuthDialogState extends State<AuthDialog> {
               : () => Navigator.of(context).pop(),
           child: const Text('বন্ধ করুন'),
         ),
-
         FilledButton(
           onPressed: isLoading ? null : _submit,
           style: FilledButton.styleFrom(
