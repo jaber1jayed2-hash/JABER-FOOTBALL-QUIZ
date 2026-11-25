@@ -9,71 +9,37 @@
 
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;background:#090D0B;color:white;
- font-family:Arial,sans-serif;padding:16px
-}
+body{margin:0;background:#090D0B;color:white;font-family:Arial,sans-serif;padding:16px}
 .container{max-width:1100px;margin:auto}
-h1,h2,h3{color:#27D66B}
-.card{
- background:#151D18;border:1px solid #26352b;
- padding:18px;border-radius:14px;margin-bottom:18px
-}
-input,button,textarea,select{
- width:100%;padding:12px;border-radius:9px;
- border:1px solid #304238;background:#101713;color:white;
- margin-top:8px;font-size:15px
-}
+h1,h3{color:#27D66B}
+.card{background:#151D18;border:1px solid #26352b;padding:18px;border-radius:14px;margin-bottom:18px}
+input,button,textarea{width:100%;padding:12px;border-radius:9px;border:1px solid #304238;background:#101713;color:white;margin-top:8px;font-size:15px}
 button{cursor:pointer;font-weight:bold}
 button:disabled{opacity:.5;cursor:not-allowed}
 .primary{background:#27D66B;color:#07130b;border:none}
 .danger{background:#e04444;color:white;border:none}
 .secondary{background:#26352b;color:white}
-.grid{
- display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
- gap:12px
-}
-.stats{
- display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
- gap:12px;margin-bottom:18px
-}
-.stat{
- background:#151D18;border:1px solid #26352b;
- padding:15px;border-radius:12px
-}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px}
+.stat{background:#151D18;border:1px solid #26352b;padding:15px;border-radius:12px}
 .stat strong{font-size:22px;color:#27D66B;display:block;margin-top:8px}
-.user{
- background:#101713;border:1px solid #304238;
- padding:14px;border-radius:12px;margin-top:12px
-}
+.user{background:#101713;border:1px solid #304238;padding:14px;border-radius:12px;margin-top:12px}
 .small{font-size:13px;color:#a9b9ae;word-break:break-word}
 .green{color:#27D66B}
 .red{color:#ff7777}
 .hidden{display:none!important}
 table{width:100%;border-collapse:collapse}
-th,td{
- padding:10px;border-bottom:1px solid #304238;
- text-align:left;font-size:13px
-}
+th,td{padding:10px;border-bottom:1px solid #304238;text-align:left;font-size:13px}
 .tablewrap{overflow-x:auto}
 #msg{padding:10px;margin-top:10px;white-space:pre-wrap}
-.avatar{
- width:55px;height:55px;border-radius:50%;
- object-fit:cover;background:#26352b
-}
-.badge{
- display:inline-block;padding:6px 10px;
- border-radius:20px;background:#26352b;margin-top:8px
-}
+.badge{display:inline-block;padding:6px 10px;border-radius:20px;background:#26352b;margin-top:8px}
 .searchbox{display:flex;gap:8px;flex-wrap:wrap}
 .searchbox input{flex:1;min-width:180px}
 .searchbox button{width:auto;min-width:100px}
 hr{border:0;border-top:1px solid #304238;margin:20px 0}
-@media(max-width:480px){
- body{padding:10px}
- .card{padding:14px}
- th,td{padding:8px}
-}
+.pager{display:flex;gap:8px;align-items:center;margin-top:15px}
+.pager button{flex:1}
+@media(max-width:480px){body{padding:10px}.card{padding:14px}th,td{padding:8px}}
 </style>
 </head>
 
@@ -84,40 +50,48 @@ hr{border:0;border-top:1px solid #304238;margin:20px 0}
 <p class="small">JABER FOOTBALL QUIZ Admin Management</p>
 
 <div id="loginStatus" class="card">
-<p>🔐 Admin সেশন যাচাই করা হচ্ছে...</p>
+<p>🔐 Admin সেশন যাচাই হচ্ছে...</p>
 </div>
 
 <div id="mainPanel" class="hidden">
 
 <div class="stats">
 <div class="stat">
-<div class="small">নির্বাচিত ব্যবহারকারী</div>
-<strong id="statSelected">0</strong>
+<div class="small">মোট ব্যবহারকারী</div>
+<strong id="totalUsers">0</strong>
 </div>
 <div class="stat">
-<div class="small">ব্যবহারকারীর XP</div>
+<div class="small">এই পৃষ্ঠায়</div>
+<strong id="pageUsers">0</strong>
+</div>
+<div class="stat">
+<div class="small">নির্বাচিত XP</div>
 <strong id="statXP">0</strong>
 </div>
 <div class="stat">
-<div class="small">মোট পয়েন্ট</div>
+<div class="small">নির্বাচিত পয়েন্ট</div>
 <strong id="statPoints">0</strong>
-</div>
-<div class="stat">
-<div class="small">অ্যাকাউন্ট অবস্থা</div>
-<strong id="statStatus">-</strong>
 </div>
 </div>
 
 <div class="card">
-<h3>🔎 ব্যবহারকারী খুঁজুন</h3>
+<h3>👥 সকল ব্যবহারকারী</h3>
 
 <div class="searchbox">
-<input id="search" placeholder="Nickname অথবা সম্পূর্ণ User ID">
-<button class="primary" onclick="searchUsers()">খুঁজুন</button>
-<button class="secondary" onclick="clearSearch()">Clear</button>
+<input id="search" placeholder="Nickname অথবা User ID দিয়ে Filter">
+<button class="primary" onclick="applySearch()">Filter</button>
+<button class="secondary" onclick="resetSearch()">Reset</button>
 </div>
 
+<p class="small" id="listInfo">লোড হচ্ছে...</p>
+
 <div id="results"></div>
+
+<div class="pager">
+<button class="secondary" id="prevBtn" onclick="prevPage()">⬅️ আগের</button>
+<div id="pageInfo" class="small" style="text-align:center;flex:1">1</div>
+<button class="secondary" id="nextBtn" onclick="nextPage()">পরের ➡️</button>
+</div>
 </div>
 
 <div id="details" class="card hidden">
@@ -140,8 +114,8 @@ hr{border:0;border-top:1px solid #304238;margin:20px 0}
 </div>
 </div>
 
-<label>উপহার দেওয়ার কারণ</label>
-<textarea id="giftReason" placeholder="কারণ লিখুন"></textarea>
+<label>উপহার দেওয়ার কারণ (ঐচ্ছিক)</label>
+<textarea id="giftReason" placeholder="কারণ লিখতে চাইলে লিখুন"></textarea>
 
 <div class="grid">
 <button class="primary" onclick="giftXP()">XP প্রদান</button>
@@ -185,17 +159,21 @@ hr{border:0;border-top:1px solid #304238;margin:20px 0}
 </div>
 
 <script>
-const SUPABASE_URL = "https://cuvfoltgtopchiugrbuf.supabase.co";
+const SUPABASE_URL="https://cuvfoltgtopchiugrbuf.supabase.co";
+const SUPABASE_KEY="sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D";
 
-const SUPABASE_KEY = "sb_publishable_9Ap4_wNTgEujxZy8wq4sKg_x1IsQd8D";
-
-const db = window.supabase.createClient(
+const db=window.supabase.createClient(
  SUPABASE_URL,
  SUPABASE_KEY
 );
 
-let selectedUser = null;
-let adminVerified = false;
+let selectedUser=null;
+let adminVerified=false;
+
+let page=0;
+const pageSize=50;
+let searchTerm="";
+let totalCount=0;
 
 function message(text,success=true){
  const el=document.getElementById("msg");
@@ -215,7 +193,7 @@ function esc(value){
  });
 }
 
-function formatNumber(value){
+function fmt(value){
  return Number(value||0).toLocaleString("en-US");
 }
 
@@ -225,44 +203,28 @@ async function checkAdmin(){
 
  try{
 
-  // প্রথমে বিদ্যমান সেশন পরীক্ষা
   const {data,error}=await db.auth.getSession();
 
-  if(error || !data.session){
-   status.innerHTML=
-   "<h3>❌ Admin সেশন পাওয়া যায়নি</h3>"+
-   "<p>Admin Panel থেকে লগইন করে এই পেজে প্রবেশ করুন।</p>";
+  if(error||!data.session){
+   status.innerHTML="<h3>❌ Admin সেশন পাওয়া যায়নি</h3><p>Admin Panel থেকে লগইন করুন।</p>";
    return false;
   }
 
-  const user=data.session.user;
+  const {data:verified,error:verifyError}=await db.auth.getUser();
 
-  if(!user){
-   status.innerHTML="<h3>❌ Login User পাওয়া যায়নি</h3>";
+  if(verifyError||!verified.user){
+   status.innerHTML="<h3>❌ Login যাচাই ব্যর্থ</h3>";
    return false;
   }
 
-  // সেশন ব্যবহার করে User যাচাই
-  const {data:verifiedUser,error:verifyError}=await db.auth.getUser();
-
-  if(verifyError || !verifiedUser.user){
-   status.innerHTML=
-   "<h3>❌ সেশন যাচাই ব্যর্থ</h3>"+
-   "<p>"+esc(verifyError?.message||"User যাচাই করা যায়নি")+"</p>";
-   return false;
-  }
-
-  // Admin table যাচাই
   const {data:admin,error:adminError}=await db
    .from("admin_users")
    .select("user_id")
-   .eq("user_id",verifiedUser.user.id)
+   .eq("user_id",verified.user.id)
    .maybeSingle();
 
   if(adminError){
-   status.innerHTML=
-   "<h3>❌ Admin যাচাই সমস্যা</h3>"+
-   "<p>"+esc(adminError.message)+"</p>";
+   status.innerHTML="<h3>❌ Admin যাচাই সমস্যা</h3><p>"+esc(adminError.message)+"</p>";
    return false;
   }
 
@@ -273,57 +235,66 @@ async function checkAdmin(){
 
   adminVerified=true;
 
-  status.innerHTML=
-  "<p class='green'>✅ Admin সফলভাবে যাচাই হয়েছে</p>";
+  status.innerHTML="<p class='green'>✅ Admin যাচাই সফল</p>";
 
   document.getElementById("mainPanel").classList.remove("hidden");
 
   return true;
 
  }catch(e){
-
-  status.innerHTML=
-  "<h3>❌ সমস্যা হয়েছে</h3>"+
-  "<p>"+esc(e.message)+"</p>";
-
+  status.innerHTML="<h3>❌ সমস্যা</h3><p>"+esc(e.message)+"</p>";
   return false;
  }
 }
 
-async function searchUsers(){
+async function loadUsers(){
 
  if(!adminVerified)return;
 
- const term=document.getElementById("search").value.trim();
  const box=document.getElementById("results");
 
- if(!term){
-  box.innerHTML="সার্চ লিখুন";
-  return;
- }
+ box.innerHTML="<p>⏳ ব্যবহারকারীদের লোড হচ্ছে...</p>";
 
- box.innerHTML="⏳ খোঁজা হচ্ছে...";
+ document.getElementById("prevBtn").disabled=true;
+ document.getElementById("nextBtn").disabled=true;
 
  try{
 
-  let query=db.from("profiles").select("*").limit(30);
+  let query=db.from("profiles").select("*",{count:"exact"});
 
-  // UUID হলে ID দিয়ে সার্চ
-  if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(term)){
-   query=query.eq("id",term);
-  }else{
-   query=query.ilike("display_name","%"+term+"%");
+  if(searchTerm){
+
+   if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(searchTerm)){
+    query=query.eq("id",searchTerm);
+   }else{
+    query=query.ilike("display_name","%"+searchTerm+"%");
+   }
+
   }
 
-  const {data,error}=await query;
+  const start=page*pageSize;
+  const end=start+pageSize-1;
+
+  const {data,error,count}=await query
+   .order("display_name",{ascending:true})
+   .range(start,end);
 
   if(error){
-   box.innerHTML="ত্রুটি: "+esc(error.message);
+   box.innerHTML="<p class='red'>"+esc(error.message)+"</p>";
    return;
   }
 
-  if(!data || data.length===0){
-   box.innerHTML="কোনো ব্যবহারকারী পাওয়া যায়নি।";
+  totalCount=count||0;
+
+  document.getElementById("totalUsers").textContent=fmt(totalCount);
+  document.getElementById("pageUsers").textContent=fmt(data?.length||0);
+
+  document.getElementById("listInfo").textContent=
+   totalCount+" জন ব্যবহারকারী পাওয়া গেছে";
+
+  if(!data||data.length===0){
+   box.innerHTML="<p>কোনো ব্যবহারকারী পাওয়া যায়নি।</p>";
+   updatePager();
    return;
   }
 
@@ -335,8 +306,7 @@ async function searchUsers(){
 
     <p class="small">User ID: ${esc(u.id)}</p>
 
-    <p>XP: ${formatNumber(u.xp)}
-    | Points: ${formatNumber(u.total_points)}</p>
+    <p>XP: ${fmt(u.xp)} | Points: ${fmt(u.total_points)}</p>
 
     <span class="badge ${u.is_banned?'red':'green'}">
     ${u.is_banned?'🚫 Banned':'✅ Active'}
@@ -351,14 +321,62 @@ async function searchUsers(){
 
   `).join("");
 
+  updatePager();
+
  }catch(e){
-  box.innerHTML="ত্রুটি: "+esc(e.message);
+
+  box.innerHTML="<p class='red'>"+esc(e.message)+"</p>";
+
  }
 }
 
-function clearSearch(){
+function updatePager(){
+
+ const pages=Math.max(1,Math.ceil(totalCount/pageSize));
+
+ document.getElementById("pageInfo").textContent=
+ "পৃষ্ঠা "+(page+1)+" / "+pages;
+
+ document.getElementById("prevBtn").disabled=page<=0;
+
+ document.getElementById("nextBtn").disabled=
+ page>=pages-1;
+
+}
+
+async function nextPage(){
+
+ if(page<Math.ceil(totalCount/pageSize)-1){
+  page++;
+  await loadUsers();
+ }
+
+}
+
+async function prevPage(){
+
+ if(page>0){
+  page--;
+  await loadUsers();
+ }
+
+}
+
+async function applySearch(){
+
+ searchTerm=document.getElementById("search").value.trim();
+ page=0;
+ await loadUsers();
+
+}
+
+async function resetSearch(){
+
  document.getElementById("search").value="";
- document.getElementById("results").innerHTML="";
+ searchTerm="";
+ page=0;
+ await loadUsers();
+
 }
 
 async function selectUser(id){
@@ -383,41 +401,35 @@ async function selectUser(id){
   document.getElementById("actionPanel").classList.remove("hidden");
   document.getElementById("details").classList.remove("hidden");
 
-  document.getElementById("selectedUser").innerHTML=
-  `<div class="user">
+  document.getElementById("selectedUser").innerHTML=`
+   <div class="user">
    <b>${esc(data.display_name||"নাম নেই")}</b>
    <p class="small">${esc(data.id)}</p>
-  </div>`;
+   </div>
+  `;
 
   document.getElementById("detailBox").innerHTML=`
 
    <div class="user">
 
    <p><b>Nickname:</b> ${esc(data.display_name||"")}</p>
-
-   <p><b>XP:</b> ${formatNumber(data.xp)}</p>
-
-   <p><b>Level:</b> ${formatNumber(data.level??1)}</p>
-
-   <p><b>Total Points:</b> ${formatNumber(data.total_points)}</p>
+   <p><b>XP:</b> ${fmt(data.xp)}</p>
+   <p><b>Level:</b> ${fmt(data.level??1)}</p>
+   <p><b>Total Points:</b> ${fmt(data.total_points)}</p>
 
    <p><b>Account Status:</b>
    <span class="${data.is_banned?'red':'green'}">
    ${data.is_banned?'🚫 Banned':'✅ Active'}
-   </span>
-   </p>
+   </span></p>
 
    <p><b>Ban Reason:</b> ${esc(data.ban_reason||"নেই")}</p>
-
    <p><b>User ID:</b> ${esc(data.id)}</p>
 
    </div>
   `;
 
-  document.getElementById("statSelected").textContent="1";
-  document.getElementById("statXP").textContent=formatNumber(data.xp);
-  document.getElementById("statPoints").textContent=formatNumber(data.total_points);
-  document.getElementById("statStatus").textContent=data.is_banned?"Banned":"Active";
+  document.getElementById("statXP").textContent=fmt(data.xp);
+  document.getElementById("statPoints").textContent=fmt(data.total_points);
 
   message("ব্যবহারকারী নির্বাচন করা হয়েছে।");
 
@@ -438,11 +450,6 @@ async function giftXP(){
   return;
  }
 
- if(!reason){
-  message("XP দেওয়ার কারণ লিখুন।",false);
-  return;
- }
-
  if(!confirm(amount+" XP প্রদান করবেন?"))return;
 
  try{
@@ -450,7 +457,7 @@ async function giftXP(){
   const {error}=await db.rpc("admin_gift_xp",{
    p_user_id:selectedUser.id,
    p_amount:amount,
-   p_reason:reason
+   p_reason:reason||null
   });
 
   if(error){
@@ -464,7 +471,7 @@ async function giftXP(){
   message("XP সফলভাবে প্রদান করা হয়েছে!");
 
   await selectUser(selectedUser.id);
-  await searchUsers();
+  await loadUsers();
   await loadHistory();
 
  }catch(e){
@@ -484,11 +491,6 @@ async function giftPoints(){
   return;
  }
 
- if(!reason){
-  message("পয়েন্ট দেওয়ার কারণ লিখুন।",false);
-  return;
- }
-
  if(!confirm(amount+" পয়েন্ট প্রদান করবেন?"))return;
 
  try{
@@ -496,7 +498,7 @@ async function giftPoints(){
   const {error}=await db.rpc("admin_gift_points",{
    p_user_id:selectedUser.id,
    p_amount:amount,
-   p_reason:reason
+   p_reason:reason||null
   });
 
   if(error){
@@ -510,7 +512,7 @@ async function giftPoints(){
   message("পয়েন্ট সফলভাবে প্রদান করা হয়েছে!");
 
   await selectUser(selectedUser.id);
-  await searchUsers();
+  await loadUsers();
   await loadHistory();
 
  }catch(e){
@@ -553,7 +555,7 @@ async function banUser(){
   message("ব্যবহারকারী Ban করা হয়েছে!");
 
   await selectUser(selectedUser.id);
-  await searchUsers();
+  await loadUsers();
   await loadHistory();
 
  }catch(e){
@@ -586,7 +588,7 @@ async function unbanUser(){
   message("ব্যবহারকারী Unban করা হয়েছে!");
 
   await selectUser(selectedUser.id);
-  await searchUsers();
+  await loadUsers();
   await loadHistory();
 
  }catch(e){
@@ -611,8 +613,7 @@ async function loadHistory(){
    .limit(50);
 
   if(error){
-   box.innerHTML=
-   "<tr><td colspan='4'>"+esc(error.message)+"</td></tr>";
+   box.innerHTML="<tr><td colspan='4'>"+esc(error.message)+"</td></tr>";
    return;
   }
 
@@ -624,34 +625,33 @@ async function loadHistory(){
   box.innerHTML=data.map(row=>`
 
    <tr>
-
    <td>${esc(new Date(row.created_at).toLocaleString())}</td>
-
    <td>${esc(row.action_type)}</td>
-
    <td>${esc(row.amount??"-")}</td>
-
    <td>${esc(row.reason||"-")}</td>
-
    </tr>
 
   `).join("");
 
  }catch(e){
-  box.innerHTML=
-  "<tr><td colspan='4'>"+esc(e.message)+"</td></tr>";
+
+  box.innerHTML="<tr><td colspan='4'>"+esc(e.message)+"</td></tr>";
+
  }
 }
 
-// Admin session listener
 db.auth.onAuthStateChange((event,session)=>{
 
  if(event==="SIGNED_OUT"){
+
   adminVerified=false;
+
   document.getElementById("mainPanel").classList.add("hidden");
+
   document.getElementById("loginStatus").innerHTML=
   "<h3>❌ লগইন সেশন শেষ হয়েছে</h3>"+
   "<p>Admin Panel থেকে পুনরায় লগইন করুন।</p>";
+
  }
 
 });
@@ -661,10 +661,14 @@ db.auth.onAuthStateChange((event,session)=>{
  const ok=await checkAdmin();
 
  if(ok){
+
+  await loadUsers();
   await loadHistory();
+
  }
 
 })();
 </script>
+
 </body>
 </html>
