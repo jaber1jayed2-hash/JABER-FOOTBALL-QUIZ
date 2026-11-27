@@ -85,7 +85,7 @@ class _StartupScreenState extends State<StartupScreen>
     await _blurController.forward();
 
     // স্পষ্ট অবস্থায় আরও ৮ সেকেন্ড থাকবে
-    await Future.delayed(const Duration(seconds: 8));
+    await Future.delayed(const Duration(seconds: 4));
 
     if (!mounted) return;
 
