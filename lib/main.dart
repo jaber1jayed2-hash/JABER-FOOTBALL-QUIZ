@@ -74,16 +74,18 @@ class _StartupScreenState extends State<StartupScreen>
 
     _blurController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(seconds: 2),
     );
 
     _startSequence();
   }
 
   Future<void> _startSequence() async {
+    // প্রথম ২ সেকেন্ড Blur থেকে স্পষ্ট হবে
     await _blurController.forward();
 
-    await Future.delayed(const Duration(milliseconds: 700));
+    // স্পষ্ট অবস্থায় আরও ৮ সেকেন্ড থাকবে
+    await Future.delayed(const Duration(seconds: 8));
 
     if (!mounted) return;
 
@@ -95,17 +97,9 @@ class _StartupScreenState extends State<StartupScreen>
   }
 
   Future<void> _startProgress() async {
-    final progressSteps = [
-      3, 6, 9, 12, 15, 18, 21, 24, 27, 30,
-      33, 36, 39, 42, 45, 48, 51, 54, 57, 60,
-      63, 66, 69, 72, 75, 78, 81, 84, 87, 90,
-      93, 96, 98, 100
-    ];
-
-    for (final value in progressSteps) {
-      await Future.delayed(
-        Duration(milliseconds: value < 90 ? 100 : 180),
-      );
+    // ১% থেকে ১০০% পর্যন্ত মোট ৩০ সেকেন্ড
+    for (int value = 1; value <= 100; value++) {
+      await Future.delayed(const Duration(milliseconds: 300));
 
       if (!mounted) return;
 
@@ -114,7 +108,8 @@ class _StartupScreenState extends State<StartupScreen>
       });
     }
 
-    await Future.delayed(const Duration(milliseconds: 500));
+    // ১০০% হওয়ার পর ২ সেকেন্ড থাকবে
+    await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 
