@@ -102,8 +102,8 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 <button type="button" onclick="show('tournaments')">টুর্নামেন্ট পরিচালনা</button>
 <button type="button" onclick="show('users')">👥 ব্যবহারকারী পরিচালনা</button>
 <button type="button" onclick="show('settings')">অ্যাপ সেটিংস</button>
-<button type="button" onclick="show('rank-management')">🏆 Rank Management</button>
-<button type="button" onclick="show('loading-design')">🖼️ Loading Screen Design</button>
+<button type="button" onclick="location.href='rank_management.html'">🏆 Rank Management</button>
+<button type="button" onclick="location.href='loading_screen_design.html'">🖼️ Loading Screen Design</button>
 <button type="button" onclick="show('quiz-settings')">কুইজ সেটিংস</button>
 <button type="button" onclick="show('developer')">Contact with Developer</button>
 </div>
@@ -256,20 +256,6 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 
 <button id="saveDeveloperButton" type="button">Save Developer Settings</button>
 <p id="developerStatus" class="status"></p>
-</div>
-
-<div id="rank-management" class="card hidden">
-<h2>🏆 Rank Management</h2>
-<p class="status">২২টি Rank-এর emblem Gallery থেকে upload, replace বা remove করুন।</p>
-<div id="rankGrid" class="rank-grid">Rank লোড হচ্ছে...</div>
-<p id="rankStatus" class="status"></p>
-</div>
-<div id="loading-design" class="card hidden">
-<h2>🖼️ Loading Screen Design</h2>
-<p class="status">Loading screen-এর জন্য দুটি ছবি আলাদাভাবে Gallery থেকে নির্বাচন করে সংরক্ষণ করুন।</p>
-<label>Loading Image 1</label><input type="file" id="loadingFile1" accept="image/*"><img id="loadingPreview1" class="preview hidden" alt="Loading Image 1">
-<label>Loading Image 2</label><input type="file" id="loadingFile2" accept="image/*"><img id="loadingPreview2" class="preview hidden" alt="Loading Image 2">
-<button id="saveLoadingButton" type="button">Loading Screen Images Save</button><p id="loadingStatus" class="status"></p>
 </div>
 
 <div id="section" class="card hidden">
@@ -493,6 +479,18 @@ function show(name){
 
  if(name==="developer"){
   showElement("developer");
+  return;
+ }
+
+ if(name==="rank-management"){
+  showElement("rank-management");
+  loadRanks();
+  return;
+ }
+
+ if(name==="loading-design"){
+  showElement("loading-design");
+  loadLoadingSettings();
   return;
  }
 
@@ -1004,7 +1002,7 @@ async function loadRanks(){
    const xp=document.createElement("small");xp.textContent="Minimum XP: "+r.min_xp;
    const input=document.createElement("input");input.type="file";input.accept="image/*";
    const save=document.createElement("button");save.textContent="ছবি Upload/Replace";
-   save.onclick=async()=>{const f=input.files[0];if(!f)return alert("Gallery থেকে ছবি নির্বাচন করুন");const err=validateImage(f);if(err)return alert(err);save.disabled=true;setStatus("rankStatus",r.rank_name+" upload হচ্ছে...");try{const url=await uploadImage(f,"quiz-ranks");const {error}=await db.from("quiz_ranks").update({image_url:url}).eq("id",r.id);if(error)throw error;img.src=url;setStatus("rankStatus",r.rank_name+" ছবি সংরক্ষিত হয়েছে।");}catch(e){setStatus("rankStatus","Error: "+e.message);}finally{save.disabled=false;}};
+   save.onclick=async()=>{const f=input.files[0];if(!f)return alert("Gallery থেকে ছবি নির্বাচন করুন");const err=validateImage(f);if(err)return alert(err);save.disabled=true;setStatus("rankStatus",r.rank_name+" upload হচ্ছে...");try{const ext=(f.name.split(".").pop()||"img").toLowerCase().replace(/[^a-z0-9]/g,"")||"img";const path="ranks/"+Date.now()+"-"+crypto.randomUUID()+"."+ext;const {error:upErr}=await db.storage.from("quiz-rank-images").upload(path,f,{cacheControl:"3600",upsert:false,contentType:f.type});if(upErr)throw upErr;const {data:pub}=db.storage.from("quiz-rank-images").getPublicUrl(path);const url=pub?.publicUrl;if(!url)throw new Error("Public URL পাওয়া যায়নি");const {error}=await db.from("quiz_ranks").update({image_url:url}).eq("id",r.id);if(error)throw error;img.src=url;r.image_url=url;setStatus("rankStatus",r.rank_name+" ছবি সংরক্ষিত হয়েছে।");}catch(e){setStatus("rankStatus","Error: "+e.message);}finally{save.disabled=false;}};
    const remove=document.createElement("button");remove.className="danger";remove.textContent="ছবি সরান";remove.onclick=async()=>{if(!r.image_url)return alert("এই Rank-এর ছবি নেই");if(!confirm(r.rank_name+"-এর ছবি সরাবেন?"))return;remove.disabled=true;try{const {error}=await db.from("quiz_ranks").update({image_url:null}).eq("id",r.id);if(error)throw error;img.removeAttribute("src");r.image_url=null;setStatus("rankStatus","ছবি সরানো হয়েছে (Storage file থেকে যেতে পারে)।");}catch(e){setStatus("rankStatus","Error: "+e.message);}finally{remove.disabled=false;}};
    card.append(img,title,xp,input,save,remove);grid.append(card);
   });
