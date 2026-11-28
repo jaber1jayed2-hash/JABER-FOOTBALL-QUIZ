@@ -36,6 +36,10 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 .danger{background:#a83232;color:white}
 .secondary{background:#294b35;color:white}
 .section-note{padding:12px;background:#1a3022;border-radius:8px}
+.rank-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.rank-card{background:#1a3022;padding:12px;border-radius:10px;text-align:center;border:1px solid #315b3d}
+.rank-card img{width:100%;height:130px;object-fit:contain;background:#0b140e;border-radius:8px}
+.rank-card button{padding:9px;font-size:13px}
 .form-card{background:#1a3022;padding:14px;border-radius:10px;margin:15px 0}
 .form-card h3{margin-top:0;color:#20e879}
 .check-row,.bulk-select-all{display:flex;align-items:center;gap:10px;margin:12px 0}
@@ -254,6 +258,20 @@ label{display:block;margin-top:14px;color:#d5e5da;font-weight:bold}
 <p id="developerStatus" class="status"></p>
 </div>
 
+<div id="rank-management" class="card hidden">
+<h2>🏆 Rank Management</h2>
+<p class="status">২২টি Rank-এর emblem Gallery থেকে upload, replace বা remove করুন।</p>
+<div id="rankGrid" class="rank-grid">Rank লোড হচ্ছে...</div>
+<p id="rankStatus" class="status"></p>
+</div>
+<div id="loading-design" class="card hidden">
+<h2>🖼️ Loading Screen Design</h2>
+<p class="status">Loading screen-এর জন্য দুটি ছবি আলাদাভাবে Gallery থেকে নির্বাচন করে সংরক্ষণ করুন।</p>
+<label>Loading Image 1</label><input type="file" id="loadingFile1" accept="image/*"><img id="loadingPreview1" class="preview hidden" alt="Loading Image 1">
+<label>Loading Image 2</label><input type="file" id="loadingFile2" accept="image/*"><img id="loadingPreview2" class="preview hidden" alt="Loading Image 2">
+<button id="saveLoadingButton" type="button">Loading Screen Images Save</button><p id="loadingStatus" class="status"></p>
+</div>
+
 <div id="section" class="card hidden">
 <h2 id="sectionTitle"></h2>
 <p id="sectionText" class="section-note"></p>
@@ -438,7 +456,7 @@ async function loadDashboardCounts(){
 }
 
 function hidePanels(){
- ["settings","quiz-settings","developer","section","subjectManager"].forEach(hideElement);
+ ["settings","quiz-settings","developer","section","subjectManager","rank-management","loading-design"].forEach(hideElement);
 }
 
 /* Admin Page Navigation */
@@ -973,6 +991,34 @@ async function bulkDeleteSubjects(){
  }
 }
 
+async function loadRanks(){
+ setStatus("rankStatus","Rank লোড হচ্ছে...");
+ try{
+  const {data,error}=await db.from("quiz_ranks").select("id,rank_name,min_xp,image_url,sort_order").order("sort_order",{ascending:true});
+  if(error)throw error;
+  const grid=$("rankGrid");grid.innerHTML="";
+  (data||[]).forEach(r=>{
+   const card=document.createElement("div");card.className="rank-card";
+   const img=document.createElement("img");img.alt=r.rank_name; if(r.image_url)img.src=r.image_url;
+   const title=document.createElement("strong");title.textContent=r.rank_name;
+   const xp=document.createElement("small");xp.textContent="Minimum XP: "+r.min_xp;
+   const input=document.createElement("input");input.type="file";input.accept="image/*";
+   const save=document.createElement("button");save.textContent="ছবি Upload/Replace";
+   save.onclick=async()=>{const f=input.files[0];if(!f)return alert("Gallery থেকে ছবি নির্বাচন করুন");const err=validateImage(f);if(err)return alert(err);save.disabled=true;setStatus("rankStatus",r.rank_name+" upload হচ্ছে...");try{const url=await uploadImage(f,"quiz-ranks");const {error}=await db.from("quiz_ranks").update({image_url:url}).eq("id",r.id);if(error)throw error;img.src=url;setStatus("rankStatus",r.rank_name+" ছবি সংরক্ষিত হয়েছে।");}catch(e){setStatus("rankStatus","Error: "+e.message);}finally{save.disabled=false;}};
+   const remove=document.createElement("button");remove.className="danger";remove.textContent="ছবি সরান";remove.onclick=async()=>{if(!r.image_url)return alert("এই Rank-এর ছবি নেই");if(!confirm(r.rank_name+"-এর ছবি সরাবেন?"))return;remove.disabled=true;try{const {error}=await db.from("quiz_ranks").update({image_url:null}).eq("id",r.id);if(error)throw error;img.removeAttribute("src");r.image_url=null;setStatus("rankStatus","ছবি সরানো হয়েছে (Storage file থেকে যেতে পারে)।");}catch(e){setStatus("rankStatus","Error: "+e.message);}finally{remove.disabled=false;}};
+   card.append(img,title,xp,input,save,remove);grid.append(card);
+  });
+  setStatus("rankStatus","মোট "+(data||[]).length+"টি Rank loaded.");
+ }catch(e){setStatus("rankStatus","Load Error: "+e.message);}
+}
+async function loadLoadingSettings(){
+ try{const {data,error}=await db.from("app_settings").select("key,value").in("key",["loading_image_1_url","loading_image_2_url"]);if(error)throw error;const s={};(data||[]).forEach(x=>s[x.key]=x.value);setRemotePreview("loadingPreview1",s.loading_image_1_url);setRemotePreview("loadingPreview2",s.loading_image_2_url);setStatus("loadingStatus","বর্তমান Loading Screen settings loaded.");}catch(e){setStatus("loadingStatus","Load Error: "+e.message);}
+}
+async function saveLoadingImages(){
+ const b=$("saveLoadingButton");b.disabled=true;setStatus("loadingStatus","ছবি upload ও save হচ্ছে...");
+ try{for(const [input,key,preview,folder] of [["loadingFile1","loading_image_1_url","loadingPreview1","loading-screen-1"],["loadingFile2","loading_image_2_url","loadingPreview2","loading-screen-2"]]){const f=$(input).files[0];if(f){const url=await uploadImage(f,folder);await saveSetting(key,url);clearFilePreview(input,preview);setRemotePreview(preview,url);}}setStatus("loadingStatus","Loading Screen-এর ছবিগুলো সফলভাবে সংরক্ষিত হয়েছে।");}catch(e){setStatus("loadingStatus","Save Error: "+e.message);}finally{b.disabled=false;}
+}
+
 function setupPreview(inputId,previewId){
  $(inputId).addEventListener("change",function(){
   const f=this.files[0];
@@ -987,6 +1033,9 @@ setupPreview("coverFile","coverPreview");
 setupPreview("logoFile","logoPreview");
 setupPreview("iconFile","iconPreview");
 setupPreview("developerPhotoFile","developerPreview");
+setupPreview("loadingFile1","loadingPreview1");
+setupPreview("loadingFile2","loadingPreview2");
+$("saveLoadingButton").addEventListener("click",saveLoadingImages);
 
 async function saveSetting(key,value){
  if(!isAdminVerified||!currentUser)throw new Error("Admin অনুমতি নেই।");
