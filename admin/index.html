@@ -1031,9 +1031,6 @@ setupPreview("coverFile","coverPreview");
 setupPreview("logoFile","logoPreview");
 setupPreview("iconFile","iconPreview");
 setupPreview("developerPhotoFile","developerPreview");
-setupPreview("loadingFile1","loadingPreview1");
-setupPreview("loadingFile2","loadingPreview2");
-$("saveLoadingButton").addEventListener("click",saveLoadingImages);
 
 async function saveSetting(key,value){
  if(!isAdminVerified||!currentUser)throw new Error("Admin অনুমতি নেই।");
